@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CoLabr — Build an update</title>
 <style>
-  :root{--acc:#FF6600;--bg:#0d0d0d;--card:#161616;--card2:#1c1c1c;--line:#2a2a2a;--muted:#8b9096;--text:#f2f3f4;--green:#3ecf8e;--red:#e0524e;}
+  :root{--acc:#FF6600;--bg:#f4f1ec;--card:#ffffff;--card2:#f4f1ec;--line:#e7e4e0;--muted:#7a756f;--text:#241f1b;--green:#2f9e63;--red:#c0392b;}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
   svg{display:block}
@@ -55,14 +55,20 @@
   .blk .bctl button.del{color:var(--red)}
   .blk textarea{min-height:74px}
   .blk .two{display:flex;gap:9px;margin-top:9px}.blk .two>*{flex:1}
+  .drop{border:1.5px dashed var(--line);border-radius:11px;padding:16px;text-align:center;cursor:pointer;transition:.12s;background:var(--card2)}
+  .drop.over{border-color:var(--acc);background:#fff4e8}
+  .drop.busy{opacity:.7;pointer-events:none}
+  .drop .dinner{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .drop .dprev{max-width:100%;border-radius:9px;margin:0 auto 8px;display:block}
+  .urlin{margin-top:9px}
   .hint{font-size:11.5px;color:#6a6f75;margin-top:6px}
   .actions{display:flex;gap:12px;margin-top:26px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 26%);padding:16px 0 6px}
   .btn{flex:1;font-weight:700;font-size:15px;padding:15px;border-radius:12px;border:none;cursor:pointer}
   .btn.pub{background:var(--acc);color:#fff}.btn.draft{background:var(--card);color:var(--text);border:1px solid var(--line)}
   .btn:disabled{opacity:.55}
   .msg{margin-top:14px;padding:14px 16px;border-radius:11px;font-size:13.5px;line-height:1.5;display:none}
-  .msg.ok{display:block;background:#123021;color:var(--green);border:1px solid #1c4a34}
-  .msg.err{display:block;background:#2a1513;color:#f0a19d;border:1px solid #4a201d}
+  .msg.ok{display:block;background:#eafaf1;color:#1f7a48;border:1px solid #cdeeda}
+  .msg.err{display:block;background:#fdecea;color:#b0342b;border:1px solid #f5c6c0}
   .msg a{color:var(--acc);font-weight:700;text-decoration:none}
   #form{display:none}
 </style>
@@ -101,7 +107,7 @@
         <button type="button" class="pbtn" data-t="prayer"><svg viewBox="0 0 24 24"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4C9 6.4 10.4 5 12 3z"/><path d="M8.5 21h7"/></svg> Prayer</button>
       </div>
       <div class="canvas" id="canvas"></div>
-      <div class="hint">Photos &amp; videos: paste an image URL or a YouTube/Vimeo link. (Direct uploads come later.) The first photo becomes the cover.</div>
+      <div class="hint">Photos: drag one in or tap to choose from your Photos/desktop, or paste a URL. Videos: paste a YouTube/Vimeo link. The first photo becomes the cover.</div>
 
       <div class="actions">
         <button class="btn draft" id="saveDraft">Save draft</button>
@@ -116,6 +122,7 @@ async function guard(){
   try{
     const r=await fetch('/.netlify/functions/me'); if(!r.ok) throw 0;
     const me=await r.json();
+    if(me.upload) UPLOAD_READY=me.upload.ready;
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
     document.getElementById('form').style.display='block';
     document.getElementById('date').value=new Date().toISOString().slice(0,10);
@@ -136,7 +143,7 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 function fieldHtml(b){
   if(b.type==='text') return `<textarea data-id="${b.id}" data-f="text" placeholder="Write this section…">${esc(b.text)}</textarea>`;
   if(b.type==='prayer') return `<textarea data-id="${b.id}" data-f="text" placeholder="A prayer request…">${esc(b.text)}</textarea>`;
-  if(b.type==='photo') return `<input data-id="${b.id}" data-f="url" placeholder="Image URL (https://…)" value="${esc(b.url)}"><div class="two"><input data-id="${b.id}" data-f="caption" placeholder="Caption (optional)" value="${esc(b.caption)}"></div>`;
+  if(b.type==='photo') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a photo here, or tap to choose from Photos / desktop</div><input type="file" accept="image/*" hidden></div><input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><div class="two"><input data-id="${b.id}" data-f="caption" placeholder="Caption (optional)" value="${esc(b.caption)}"></div>`;
   if(b.type==='video') return `<input data-id="${b.id}" data-f="url" placeholder="YouTube or Vimeo URL" value="${esc(b.url)}">`;
   if(b.type==='quote') return `<textarea data-id="${b.id}" data-f="text" placeholder="“A quote from someone…”">${esc(b.text)}</textarea><div class="two"><input data-id="${b.id}" data-f="by" placeholder="— who said it" value="${esc(b.by)}"></div>`;
   return '';
@@ -153,6 +160,52 @@ function render(){
   c.querySelectorAll('[data-down]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();move(+el.dataset.down,1);}));
   c.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();blocks.splice(+el.dataset.del,1);render();}));
   c.querySelectorAll('[data-grip]').forEach(el=>el.addEventListener('pointerdown',e=>beginDrag(e,'move',{from:+el.dataset.grip,label:NAME[blocks[+el.dataset.grip].type]})));
+  c.querySelectorAll('[data-drop]').forEach(setupDrop);
+}
+let UPLOAD_READY=false;
+function setupDrop(zone){
+  const file=zone.querySelector('input[type=file]');
+  const blk=zone.closest('.blk');
+  const urlIn=blk.querySelector('[data-f="url"]');
+  const prev=zone.querySelector('.dprev');
+  zone.addEventListener('click',e=>{ if(e.target!==urlIn) file.click(); });
+  file.addEventListener('change',()=>{ if(file.files[0]) uploadPhoto(file.files[0],zone,urlIn,prev); });
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('over');});
+  zone.addEventListener('dragleave',()=>zone.classList.remove('over'));
+  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))uploadPhoto(f,zone,urlIn,prev);});
+}
+function resizeImage(file,maxW,quality){
+  return new Promise((resolve,reject)=>{
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let w=img.width,h=img.height;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(cv.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Could not read that image.'));};
+    img.src=url;
+  });
+}
+async function uploadPhoto(f,zone,urlIn,prev){
+  if(!UPLOAD_READY){ alert('Photo storage isn’t set up yet. For now, paste an image URL below — uploads turn on once JV’s photo storage is connected.'); return; }
+  const inner=zone.querySelector('.dinner'); const was=inner.textContent;
+  zone.classList.add('busy'); inner.textContent='Uploading…';
+  try{
+    const dataUrl=await resizeImage(f,1600,0.85);
+    const base64=dataUrl.split(',')[1];
+    const r=await fetch('/.netlify/functions/upload-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:base64,type:'image/jpeg'})});
+    if(r.status===401){location.replace('login.html');return;}
+    const d=await r.json();
+    if(!r.ok||!d.url) throw new Error(d.error||'Upload failed');
+    urlIn.value=d.url;
+    const b=blocks.find(x=>x.id==urlIn.dataset.id); if(b)b.url=d.url;
+    prev.src=d.url; prev.style.display='block';
+    inner.textContent='Photo added — drag another to replace';
+  }catch(e){ inner.textContent=was; alert('Could not upload: '+e.message); }
+  zone.classList.remove('busy');
 }
 function syncFromDOM(){
   document.querySelectorAll('#canvas [data-id]').forEach(inp=>{
