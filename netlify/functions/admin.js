@@ -92,6 +92,38 @@ exports.handler = async function (event) {
       return resp(200, { ok: true, style: b.style });
     }
 
+    if (b.action === 'responses') {
+      const RTABLE = 'tblVNMG5VnOnFFeto';
+      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}?pageSize=100`, { headers: auth });
+      const data = await r.json();
+      if (!r.ok) return resp(r.status, { error: 'Could not load responses.' });
+      const rows = (data.records || []).map(rec => {
+        const c = rec.fields || {};
+        return {
+          id: rec.id,
+          name: c['Name'] || 'A supporter',
+          type: c['Type'] || 'Note',
+          message: c['Message'] || '',
+          email: c['Email'] || '',
+          isPublic: !!c['Public'],
+          read: !!c['Read'],
+          updateTitle: c['Update Title'] || '',
+          updateId: c['Update ID'] || '',
+          created: rec.createdTime
+        };
+      }).sort((a, b2) => (b2.created || '').localeCompare(a.created || ''));
+      return resp(200, { ok: true, rows });
+    }
+
+    if (b.action === 'markRead') {
+      if (!b.id) return resp(400, { error: 'Missing id.' });
+      const RTABLE = 'tblVNMG5VnOnFFeto';
+      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: b.id, fields: { Read: b.read !== false } }], typecast: true }) });
+      if (!r.ok) return resp(r.status, { error: 'Update failed.' });
+      return resp(200, { ok: true });
+    }
+
     return resp(400, { error: 'Unknown action.' });
   } catch (e) {
     return resp(502, { error: 'Could not reach Airtable.' });

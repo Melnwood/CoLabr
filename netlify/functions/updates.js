@@ -33,6 +33,7 @@ exports.handler = async function () {
     const updates = (data.records || []).map(rec => {
       const c = rec.fields || {};
       return {
+        id:      rec.id,
         title:   c[F.title] || '',
         rawdate: c[F.date] || '',
         opens:   c[F.opens] || 0,

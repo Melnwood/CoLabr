@@ -179,6 +179,26 @@
   .sheet .give{display:block;margin-top:20px;background:var(--ink);border-radius:13px;padding:18px;text-align:center;color:#fff}
   .sheet .give .t{font-size:15px;font-weight:750}.sheet .give .d{font-size:12px;opacity:.8;margin:4px 0 12px}
   .sheet .give a{display:inline-block;background:var(--acc);color:#fff;font-weight:700;font-size:14px;padding:11px 26px;border-radius:9px}
+  /* supporter respond section */
+  .eng{margin:20px 0 4px;border-top:1px solid var(--line);padding-top:18px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .eng h4{font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);margin:0 0 12px}
+  .prayrow{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .praybtn{display:inline-flex;align-items:center;gap:8px;background:#eef3fe;color:#2f6df0;border:1px solid #cfe0fb;font-weight:750;font-size:14px;padding:11px 18px;border-radius:24px;cursor:pointer}
+  .praybtn.done{background:#2f6df0;color:#fff;border-color:#2f6df0;cursor:default}
+  .praycount{font-size:12.5px;color:var(--muted)}
+  .rtabs{display:flex;gap:8px;margin-bottom:12px}
+  .rtab{font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+  .rtab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .rform input,.rform textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;margin-bottom:9px;outline:none;color:var(--text)}
+  .rform textarea{min-height:82px;resize:vertical}
+  .rform .send{background:var(--acc);color:#fff;font-weight:700;font-size:14px;padding:11px 22px;border:none;border-radius:9px;cursor:pointer}
+  .rhint{font-size:11.5px;color:var(--muted);margin:-2px 0 10px}
+  .rmsg{font-size:12.5px;margin-top:8px;min-height:15px}.rmsg.ok{color:#2f9e63}.rmsg.err{color:#c0392b}
+  .ewall{margin-top:20px}
+  .ewall .ewt{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px}
+  .ewall .wc{background:#faf7f2;border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:9px}
+  .ewall .wc b{font-size:13px;color:var(--text)}
+  .ewall .wc p{margin:3px 0 0;font-size:13.5px;color:#463a28;line-height:1.5}
 </style>
 </head>
 <body class="fieldnotes">
@@ -382,9 +402,75 @@ function openReader(i){
     <div class="rmeta"><span>${u.date}, ${u.y}</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#7a756f" stroke-width="1.9"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>${(u.opens||0).toLocaleString()} opens</span></div>
     ${bodyHtml(u)}
     ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
+    ${respondHTML(u)}
     <div class="give"><div class="t">Partner with the Ellenwoods</div><div class="d">Stand with us in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
+  wireRespond(u);
+}
+const FAMILY='The Ellenwood Family', FAMSHORT='Ellenwoods';
+function respondHTML(u){
+  return `<div class="eng">
+    <h4>Respond to the ${FAMSHORT}</h4>
+    <div class="prayrow"><button class="praybtn" id="prayBtn">🙏 I'm praying</button><span class="praycount" id="prayCount"></span></div>
+    <div class="rtabs"><button class="rtab on" data-m="Encouragement">Leave encouragement</button><button class="rtab" data-m="Note">Send a private note</button></div>
+    <div class="rform">
+      <input id="rName" placeholder="Your name">
+      <input id="rEmail" placeholder="Email (optional)" type="email">
+      <textarea id="rMsg" placeholder="Write something…"></textarea>
+      <div class="rhint" id="rHint">Public — shown under this update so others can be encouraged too.</div>
+      <button class="send" id="rSend">Send</button>
+      <div class="rmsg" id="rMsgOut"></div>
+    </div>
+    <div class="ewall" id="ewall"></div>
+  </div>`;
+}
+let respondMode='Encouragement';
+function wireRespond(u){
+  respondMode='Encouragement';
+  const q=id=>document.getElementById(id);
+  const hint=q('rHint');
+  q('prayBtn').addEventListener('click',async()=>{
+    const btn=q('prayBtn'); if(btn.classList.contains('done'))return;
+    try{ await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim()});
+      btn.classList.add('done'); btn.textContent='🙏 Praying — thank you';
+      loadEngagement(u.id);
+    }catch(e){ /* ignore */ }
+  });
+  document.querySelectorAll('.rtab').forEach(t=>t.addEventListener('click',()=>{
+    respondMode=t.dataset.m; document.querySelectorAll('.rtab').forEach(x=>x.classList.toggle('on',x===t));
+    hint.textContent = respondMode==='Encouragement' ? 'Public — shown under this update so others can be encouraged too.' : 'Private — only the family will see this note.';
+  }));
+  q('rSend').addEventListener('click',async()=>{
+    const out=q('rMsgOut'); const name=(q('rName').value||'').trim(); const message=(q('rMsg').value||'').trim();
+    if(!name){ out.className='rmsg err'; out.textContent='Please add your name.'; return; }
+    if(!message){ out.className='rmsg err'; out.textContent='Please write a message.'; return; }
+    q('rSend').disabled=true; out.className='rmsg'; out.textContent='Sending…';
+    try{
+      await postResp({type:respondMode,updateId:u.id,updateTitle:u.title,missionary:FAMILY,name,email:(q('rEmail').value||'').trim(),message,public:respondMode==='Encouragement'});
+      out.className='rmsg ok'; out.textContent = respondMode==='Encouragement' ? 'Thank you — your encouragement is posted below.' : 'Thank you — your note was sent privately to the family.';
+      q('rMsg').value='';
+      if(respondMode==='Encouragement') loadEngagement(u.id);
+    }catch(e){ out.className='rmsg err'; out.textContent=e.message||'Could not send.'; }
+    finally{ q('rSend').disabled=false; }
+  });
+  loadEngagement(u.id);
+}
+async function postResp(payload){
+  const r=await fetch('/.netlify/functions/respond',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Could not send.'); return d;
+}
+async function loadEngagement(id){
+  try{
+    const r=await fetch('/.netlify/functions/engage?updateId='+encodeURIComponent(id));
+    if(!r.ok) return; const d=await r.json();
+    const pc=document.getElementById('prayCount');
+    if(pc) pc.textContent = d.prayers ? (d.prayers===1?'1 person praying':d.prayers+' people praying') : 'Be the first to pray';
+    const ew=document.getElementById('ewall');
+    if(ew){ const list=d.encouragements||[];
+      ew.innerHTML = list.length ? `<div class="ewt">Encouragement from supporters</div>`+list.map(e=>`<div class="wc"><b>${esc(e.name)}</b><p>${esc(e.message)}</p></div>`).join('') : '';
+    }
+  }catch(e){}
 }
 function closeReader(){document.getElementById('reader').classList.remove('open');document.getElementById('sheet').innerHTML='';document.body.style.overflow='';}
 document.getElementById('reader').addEventListener('click',e=>{if(e.target.id==='reader')closeReader();});
