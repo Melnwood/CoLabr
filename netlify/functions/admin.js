@@ -4,6 +4,10 @@
 const { sessionFromEvent } = require('./_auth');
 const BASE = 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
+const MIS_TABLE = 'tbli1L8AO0JUDL7Wl';          // Missionaries
+const MIS_STYLE = 'fldvLZXckaQVUbD7F';           // Style (single select)
+const STYLES = ['Field Notes', 'Cover Grid', 'Timeline', 'Gallery Wall'];
+const SITE_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') return resp(405, { error: 'Method not allowed' });
@@ -70,9 +74,36 @@ exports.handler = async function (event) {
       return resp(200, { ok: true });
     }
 
+    if (b.action === 'getStyle') {
+      const rec = await findMissionary(auth);
+      if (!rec) return resp(404, { error: 'Missionary record not found.' });
+      const s = rec.fields && rec.fields[MIS_STYLE];
+      return resp(200, { ok: true, style: (s && s.name) ? s.name : (s || 'Field Notes'), styles: STYLES });
+    }
+
+    if (b.action === 'setStyle') {
+      if (!b.style || !STYLES.includes(b.style)) return resp(400, { error: 'Unknown style.' });
+      const rec = await findMissionary(auth);
+      if (!rec) return resp(404, { error: 'Missionary record not found.' });
+      const misApi = `https://api.airtable.com/v0/${BASE}/${MIS_TABLE}`;
+      const r = await fetch(misApi, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: rec.id, fields: { [MIS_STYLE]: b.style } }], typecast: true }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); return resp(r.status, { error: (e.error && e.error.message) || 'Could not save style.' }); }
+      return resp(200, { ok: true, style: b.style });
+    }
+
     return resp(400, { error: 'Unknown action.' });
   } catch (e) {
     return resp(502, { error: 'Could not reach Airtable.' });
+  }
+
+  async function findMissionary(headers) {
+    const mf = encodeURIComponent(`{Name}='${SITE_MISSIONARY.replace(/'/g, "\\'")}'`);
+    const u = `https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${mf}`;
+    const r = await fetch(u, { headers });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return (d.records || [])[0] || null;
   }
 };
 

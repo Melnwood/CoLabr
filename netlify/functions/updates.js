@@ -4,6 +4,9 @@
 
 const BASE = 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
+const MIS_TABLE = 'tbli1L8AO0JUDL7Wl';         // Missionaries
+const MIS_STYLE = 'fldvLZXckaQVUbD7F';          // Style (single select)
+const SITE_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 const F = {
   title:  'fldhkHAXyvqtrx3cu',
   date:   'fldvi8dFkZBFANacG',
@@ -41,7 +44,22 @@ exports.handler = async function () {
         blocks:  parseBlocks(c[F.blocks])
       };
     }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate));
-    return json(200, updates, 'no-store');
+
+    // Which supporter-page layout has this missionary chosen?
+    let style = 'Field Notes';
+    try {
+      const mf = encodeURIComponent(`{Name}='${SITE_MISSIONARY.replace(/'/g, "\\'")}'`);
+      const mUrl = `https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${mf}`;
+      const mr = await fetch(mUrl, { headers: { Authorization: 'Bearer ' + token } });
+      if (mr.ok) {
+        const md = await mr.json();
+        const rec = (md.records || [])[0];
+        const s = rec && rec.fields && rec.fields[MIS_STYLE];
+        if (s) style = (s && s.name) ? s.name : s;
+      }
+    } catch (e) { /* fall back to Field Notes */ }
+
+    return json(200, { style, updates }, 'no-store');
   } catch (e) {
     return json(502, { error: 'Could not reach Airtable.' });
   }

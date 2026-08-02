@@ -68,6 +68,22 @@
   .act a.edit{color:var(--acc);border-color:#f3d3b6}
   .act .pub{border-color:#bfe6cf;color:var(--green)}.act .unpub{color:var(--amber)}.act .del{color:var(--red)}
   .state{color:var(--muted);padding:34px 4px;font-size:14px}
+  .appearance h2 .hint{font-size:11px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:8px}
+  .styles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:720px){.styles{grid-template-columns:repeat(2,1fr)}}
+  .scard{border:2px solid var(--line);border-radius:12px;padding:11px;cursor:pointer;background:var(--card2);transition:.14s;position:relative}
+  .scard:hover{border-color:#f3d3b6}
+  .scard.on{border-color:var(--acc);background:#fff;box-shadow:0 6px 18px rgba(255,102,0,.12)}
+  .scard .thumb{height:64px;border-radius:8px;margin-bottom:9px;overflow:hidden;border:1px solid var(--line);background:#f4f1ec}
+  .scard .thumb svg{width:100%;height:100%;display:block}
+  .scard .nm{font-size:13.5px;font-weight:750;display:flex;align-items:center;gap:6px}
+  .scard .nm .ck{color:var(--acc)}
+  .scard .ds{font-size:11px;color:var(--muted);line-height:1.35;margin-top:3px;min-height:29px}
+  .scard .prev{display:inline-block;margin-top:8px;font-size:11.5px;font-weight:700;color:var(--acc)}
+  .scard .cur{position:absolute;top:9px;right:9px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#fff;background:var(--acc);padding:3px 7px;border-radius:20px;display:none}
+  .scard.on .cur{display:block}
+  .savenote{font-size:11.5px;color:var(--muted);margin-top:10px;min-height:15px}
+  .savenote.err{color:var(--red)}.savenote.ok{color:var(--green)}
 </style>
 </head>
 <body>
@@ -79,6 +95,11 @@
     <div class="panel insights" id="insightsPanel">
       <h2>Insights <span class="aib">AI</span><a id="refreshins">Refresh</a></h2>
       <div id="insights"><div class="state">Reading your updates…</div></div>
+    </div>
+    <div class="panel appearance" id="appearance">
+      <h2>Supporter page style <span class="hint">Pick how your supporters see your updates</span></h2>
+      <div class="styles" id="styles"><div class="state" style="padding:10px 0">Loading styles…</div></div>
+      <div class="savenote" id="savenote"></div>
     </div>
     <div class="panels">
       <div class="panel"><h2>Opens by year</h2><div class="chart" id="chart"></div></div>
@@ -181,7 +202,46 @@ async function act(a,id){
     ROWS=(await api('list')).rows; renderAll();
   }catch(e){ alert(e.message); }
 }
-(async()=>{ if(await guard()) load(); })();
+/* ---- Supporter page style picker ---- */
+const THUMB={
+  fieldnotes:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#efe7d4"/><g transform="rotate(-6 42 32)"><rect x="20" y="14" width="44" height="40" fill="#fff" stroke="#e0d6c0"/><rect x="24" y="18" width="36" height="24" fill="#e8a24b"/><rect x="34" y="10" width="18" height="7" fill="#ffd68f" opacity=".8"/></g><rect x="72" y="20" width="34" height="4" rx="2" fill="#b04a1f"/><rect x="72" y="30" width="40" height="3" rx="1.5" fill="#c9bfa8"/><rect x="72" y="37" width="40" height="3" rx="1.5" fill="#c9bfa8"/><rect x="72" y="44" width="26" height="3" rx="1.5" fill="#c9bfa8"/></svg>`,
+  grid:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#f4f1ec"/><g fill="#fff" stroke="#e2ddd3"><rect x="8" y="8" width="32" height="22" rx="3"/><rect x="44" y="8" width="32" height="22" rx="3"/><rect x="80" y="8" width="32" height="22" rx="3"/><rect x="8" y="34" width="32" height="22" rx="3"/><rect x="44" y="34" width="32" height="22" rx="3"/><rect x="80" y="34" width="32" height="22" rx="3"/></g><g fill="#e8a24b"><rect x="10" y="10" width="28" height="12" rx="2"/><rect x="46" y="10" width="28" height="12" rx="2" fill="#5f8fb0"/><rect x="82" y="10" width="28" height="12" rx="2" fill="#5fae7d"/><rect x="10" y="36" width="28" height="12" rx="2" fill="#5fae7d"/><rect x="46" y="36" width="28" height="12" rx="2" fill="#e8a24b"/><rect x="82" y="36" width="28" height="12" rx="2" fill="#5f8fb0"/></g></svg>`,
+  timeline:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#f4f1ec"/><rect x="17" y="8" width="2" height="48" fill="#e0d9cb"/><g><circle cx="18" cy="16" r="4" fill="#FF6600"/><circle cx="18" cy="34" r="4" fill="#FF6600"/><circle cx="18" cy="50" r="4" fill="#FF6600"/></g><g fill="#fff" stroke="#e2ddd3"><rect x="30" y="10" width="80" height="14" rx="3"/><rect x="30" y="28" width="80" height="14" rx="3"/><rect x="30" y="46" width="80" height="12" rx="3"/></g><g fill="#d8c4a0"><rect x="34" y="13" width="20" height="8" rx="2"/><rect x="34" y="31" width="20" height="8" rx="2"/></g></svg>`,
+  wall:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#f4f1ec"/><g><rect x="8" y="8" width="32" height="30" rx="3" fill="#e8a24b"/><rect x="8" y="42" width="32" height="14" rx="3" fill="#5f8fb0"/><rect x="44" y="8" width="32" height="16" rx="3" fill="#5fae7d"/><rect x="44" y="28" width="32" height="28" rx="3" fill="#c99a3f"/><rect x="80" y="8" width="32" height="24" rx="3" fill="#5f8fb0"/><rect x="80" y="36" width="32" height="20" rx="3" fill="#5fae7d"/></g></svg>`
+};
+const STYLE_DEFS=[
+  {name:'Field Notes',key:'fieldnotes',ds:'Handmade scrapbook — taped photos & typed letters'},
+  {name:'Cover Grid',key:'grid',ds:'A clean gallery of cover cards'},
+  {name:'Timeline',key:'timeline',ds:'A vertical journey, year by year'},
+  {name:'Gallery Wall',key:'wall',ds:'A photo wall / mosaic of moments'}
+];
+let curStyle='Field Notes';
+async function loadStyle(){
+  try{ const d=await api('getStyle'); if(d.style) curStyle=d.style; }catch(e){}
+  renderStyles();
+}
+function renderStyles(){
+  document.getElementById('styles').innerHTML=STYLE_DEFS.map(s=>`
+    <div class="scard ${s.name===curStyle?'on':''}" data-style="${s.name}">
+      <span class="cur">Current</span>
+      <div class="thumb">${THUMB[s.key]}</div>
+      <div class="nm">${s.name}${s.name===curStyle?'<span class="ck">✓</span>':''}</div>
+      <div class="ds">${s.ds}</div>
+      <a class="prev" href="index.html?style=${s.key}" target="_blank" rel="noopener">Preview →</a>
+    </div>`).join('');
+  document.querySelectorAll('.scard').forEach(c=>c.addEventListener('click',e=>{
+    if(e.target.closest('.prev')) return;
+    pickStyle(c.dataset.style);
+  }));
+}
+async function pickStyle(name){
+  if(name===curStyle) return;
+  const prev=curStyle; curStyle=name; renderStyles();
+  const note=document.getElementById('savenote'); note.className='savenote'; note.textContent='Saving…';
+  try{ await api('setStyle',{style:name}); note.className='savenote ok'; note.textContent='Saved — your supporter page now uses “'+name+'.” Refresh it to see the change.'; }
+  catch(e){ curStyle=prev; renderStyles(); note.className='savenote err'; note.textContent='Could not save: '+e.message; }
+}
+(async()=>{ if(await guard()){ load(); loadStyle(); } })();
 </script>
 </body>
 </html>
