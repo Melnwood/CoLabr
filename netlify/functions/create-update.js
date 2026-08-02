@@ -44,14 +44,18 @@ exports.handler = async function (event) {
   const video = b.video || firstVideo; if (video) fields['Video URL'] = video;
 
   try {
-    const r = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields, typecast: true })
-    });
+    const api = `https://api.airtable.com/v0/${BASE}/${TABLE}`;
+    const headers = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+    let r;
+    if (b.id) {
+      r = await fetch(api, { method: 'PATCH', headers, body: JSON.stringify({ records: [{ id: b.id, fields }], typecast: true }) });
+    } else {
+      r = await fetch(api, { method: 'POST', headers, body: JSON.stringify({ fields, typecast: true }) });
+    }
     const data = await r.json();
     if (!r.ok) return resp(r.status, { error: (data.error && data.error.message) || 'Airtable rejected the write.' });
-    return resp(200, { ok: true, id: data.id, status: fields.Status });
+    const recId = b.id ? (data.records && data.records[0] && data.records[0].id) : data.id;
+    return resp(200, { ok: true, id: recId, status: fields.Status });
   } catch (e) {
     return resp(502, { error: 'Could not reach Airtable.' });
   }

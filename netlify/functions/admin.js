@@ -41,6 +41,20 @@ exports.handler = async function (event) {
       return resp(200, { ok: true, rows });
     }
 
+    if (b.action === 'get') {
+      if (!b.id) return resp(400, { error: 'Missing id.' });
+      const r = await fetch(`${api}/${b.id}`, { headers: auth });
+      const rec = await r.json();
+      if (!r.ok) return resp(r.status, { error: 'Could not load that update.' });
+      const c = rec.fields || {};
+      let blocks = []; try { blocks = JSON.parse(c['Blocks'] || '[]'); } catch {}
+      return resp(200, { ok: true, record: {
+        id: rec.id, title: c['Title'] || '', date: c['Date'] || '',
+        type: c['Type'] || 'Newsletter', audiences: c['Audiences'] || [],
+        status: c['Status'] || 'Draft', blocks
+      }});
+    }
+
     if (b.action === 'setStatus') {
       if (!b.id || !b.status) return resp(400, { error: 'Missing id/status.' });
       const r = await fetch(api, { method: 'PATCH', headers: auth,
