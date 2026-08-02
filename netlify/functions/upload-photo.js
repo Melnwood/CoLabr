@@ -16,8 +16,9 @@ exports.handler = async function (event) {
   if (!b.data) return r(400, { error: 'No image data.' });
 
   const type = b.type || 'image/jpeg';
-  const ext = (type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
-  const name = `updates/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const ext = (type.split('/')[1] || 'jpg').replace('jpeg', 'jpg').replace('svg+xml', 'svg');
+  const folder = /^[a-z0-9_-]{1,24}$/i.test(b.folder || '') ? b.folder : 'updates';
+  const name = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   try {
     const token = await getAccessToken(sa);
