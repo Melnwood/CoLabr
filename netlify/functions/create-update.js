@@ -21,9 +21,11 @@ exports.handler = async function (event) {
   if (!b.title || !b.title.trim()) return resp(400, { error: 'A title is required.' });
 
   const blocks = Array.isArray(b.blocks) ? b.blocks : [];
-  const bodyText = blocks.filter(x => ['text','quote','prayer'].includes(x.type))
-    .map(x => x.text || '').filter(Boolean).join('\n\n').trim();
-  const firstPhoto = (blocks.find(x => x.type === 'photo' && x.url) || {}).url || '';
+  const bodyText = blocks.filter(x => ['heading','text','quote','prayer','praise','signoff'].includes(x.type))
+    .map(x => x.text || '')
+    .concat(blocks.filter(x => x.type === 'hero').map(x => x.heading || ''))
+    .filter(Boolean).join('\n\n').trim();
+  const firstPhoto = (blocks.find(x => (x.type === 'hero' || x.type === 'photo') && x.url) || {}).url || '';
   const firstVideo = (blocks.find(x => x.type === 'video' && x.url) || {}).url || '';
 
   const fields = {

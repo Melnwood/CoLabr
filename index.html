@@ -25,6 +25,11 @@
   .search{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 13px}
   .search svg{width:17px;height:17px;fill:none;stroke:var(--muted);stroke-width:2}
   .search input{flex:1;border:none;outline:none;font-size:14.5px;background:none;color:var(--text)}
+  .ctrls{display:flex;gap:10px;align-items:center;margin-top:10px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .seg button{border:none;background:none;font-size:13px;font-weight:650;padding:9px 15px;color:var(--muted);cursor:pointer}
+  .seg button.on{background:var(--acc);color:#fff}
+  .ctrls select{margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);font-weight:600;cursor:pointer}
   .hero{display:block;border-radius:20px;overflow:hidden;border:1px solid var(--line);margin:6px 0 8px;transition:.14s;cursor:pointer}
   .hero:hover{box-shadow:0 16px 40px rgba(60,40,20,.12);transform:translateY(-2px)}
   .hcover{position:relative;height:340px;background:linear-gradient(155deg,#9a7c4a,#5d4a2c)}
@@ -83,6 +88,21 @@
   .sheet .rquote span{display:block;font-style:normal;font-size:12.5px;color:var(--acc);font-weight:700;margin-top:6px}
   .sheet .rprayer{background:#eef3fe;border-left:3px solid #2f6df0;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;color:#3c3733;line-height:1.55}
   .sheet .rprayer b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#2f6df0;margin-bottom:4px}
+  .sheet .rh{font-size:19px;font-weight:750;margin:8px 0 10px;color:#1c1814;letter-spacing:-.01em}
+  .sheet .rhr{border:none;border-top:1px solid var(--line);margin:18px 0}
+  .sheet .rsign{font-family:Georgia,serif;font-style:italic;color:#3c3733;margin:6px 0 16px;line-height:1.5}
+  .sheet .rgive{display:inline-block;background:var(--acc);color:#fff;font-weight:700;font-size:15px;padding:12px 28px;border-radius:10px;margin:6px 0 16px}
+  .sheet .rnums{display:flex;gap:10px;margin:8px 0 18px}
+  .sheet .rnum{flex:1;background:var(--soft);border:1px solid var(--line);border-radius:11px;padding:13px 8px;text-align:center}
+  .sheet .rnum b{display:block;font-size:22px;font-weight:750;color:var(--acc)}
+  .sheet .rnum span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .sheet .rhero{position:relative;border-radius:12px;overflow:hidden;min-height:200px;background:linear-gradient(155deg,#9a7c4a,#4a3a22);background-size:cover;background-position:center;margin:4px 0 16px;display:flex;align-items:flex-end}
+  .sheet .rherog{position:absolute;inset:0;background:linear-gradient(to top,rgba(15,10,6,.75),rgba(15,10,6,.1) 60%,transparent)}
+  .sheet .rherot{position:relative;padding:20px 22px;color:#fff}
+  .sheet .rherot h2{color:#fff;margin:0;font-size:24px;font-weight:770;letter-spacing:-.02em}
+  .sheet .rherot span{display:block;margin-top:6px;font-size:13.5px;opacity:.92}
+  .sheet .rpraise{background:#eafaf1;border-left:3px solid #2f9e63;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;color:#2c4a38;line-height:1.55}
+  .sheet .rpraise b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#2f9e63;margin-bottom:4px}
   .sheet .rorig{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--acc);border:1px solid var(--line);border-radius:10px;padding:11px 16px}
   .sheet .rorig svg{width:15px;height:15px;fill:none;stroke:var(--acc);stroke-width:2.2}
   .sheet .give{display:block;margin-top:20px;background:var(--ink);border-radius:13px;padding:18px;text-align:center;color:#fff}
@@ -99,7 +119,13 @@
       <p>Every update we've shared, in one place — catch up on what God has been doing, from the beginning.</p>
       <div class="meta" id="meta" style="display:none"></div>
     </div>
-    <div class="filter"><div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="q" placeholder="Search past updates…"></div></div>
+    <div class="filter">
+      <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="q" placeholder="Search past updates…"></div>
+      <div class="ctrls">
+        <div class="seg" id="sortseg"><button data-s="new" class="on">Newest</button><button data-s="old">Oldest</button></div>
+        <select id="yearsel"><option value="all">All years</option></select>
+      </div>
+    </div>
     <div id="stream"><div class="state">Loading updates…</div></div>
     <div class="foot">This is the Ellenwoods' public update archive — every newsletter since 2012, live from CoLabr. Share it with anyone who wants to follow along.</div>
   </div>
@@ -108,8 +134,15 @@
 <script>
 const GIVE='https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969';
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-let U=[],qs='';
+let U=[],qs='',sortDir='new',yearFilter='all';
 document.getElementById('q').addEventListener('input',e=>{qs=e.target.value.toLowerCase().trim();render();});
+document.querySelectorAll('#sortseg button').forEach(b=>b.addEventListener('click',()=>{sortDir=b.dataset.s;document.querySelectorAll('#sortseg button').forEach(x=>x.classList.toggle('on',x===b));render();}));
+document.getElementById('yearsel').addEventListener('change',e=>{yearFilter=e.target.value;render();});
+function buildYears(){
+  const yrs=[...new Set(U.map(u=>u.y).filter(Boolean))].sort((a,b)=>b-a);
+  const sel=document.getElementById('yearsel');
+  sel.innerHTML='<option value="all">All years</option>'+yrs.map(y=>`<option value="${y}">${y}</option>`).join('');
+}
 
 async function load(){
   try{
@@ -122,6 +155,7 @@ async function load(){
       return {...u, y, date:`${mo} ${d}`};
     });
     buildMeta();
+    buildYears();
     render();
   }catch(e){
     document.getElementById('stream').innerHTML='<div class="state">Couldn’t load updates right now. Please refresh in a moment.</div>';
@@ -152,7 +186,9 @@ function rowHTML(u,i){
 }
 function render(){
   const s=document.getElementById('stream');
-  const items=U.map((u,idx)=>({u,idx})).filter(o=>!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs));
+  let items=U.map((u,idx)=>({u,idx}))
+    .filter(o=>(!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs)) && (yearFilter==='all'||String(o.u.y)===yearFilter));
+  items.sort((a,b)=> sortDir==='new' ? (b.u.rawdate||'').localeCompare(a.u.rawdate||'') : (a.u.rawdate||'').localeCompare(b.u.rawdate||''));
   if(!items.length){s.innerHTML='<div class="state">No updates match that.</div>';return;}
   let html='';
   items.forEach((o,vi)=>{
@@ -168,6 +204,13 @@ function embedURL(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=
 function bodyHtml(u){
   if(u.blocks && u.blocks.length){
     return u.blocks.map(bk=>{
+      if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}')"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+      if(bk.type==='praise') return `<div class="rpraise"><b>Praise</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
+      if(bk.type==='heading') return `<h3 class="rh">${esc(bk.text||'')}</h3>`;
+      if(bk.type==='divider') return `<hr class="rhr">`;
+      if(bk.type==='signoff') return `<p class="rsign">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
+      if(bk.type==='give') return `<a class="rgive" href="${esc(bk.url||GIVE)}" target="_blank" rel="noopener">${esc(bk.label||'Give')}</a>`;
+      if(bk.type==='numbers'){ const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]); if(!it.length)return ''; return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`; }
       if(bk.type==='text') return `<p class="rtext">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
       if(bk.type==='photo'){ if(!bk.url) return ''; let h=`<img class="rimg" src="${esc(bk.url)}" alt="" onerror="this.style.display='none'">`; if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`; return h; }
       if(bk.type==='video'){ const e=embedURL(bk.url||''); return e?`<div class="rvid"><iframe src="${e}" allow="fullscreen" allowfullscreen></iframe></div>`:''; }

@@ -41,7 +41,7 @@ exports.handler = async function () {
         blocks:  parseBlocks(c[F.blocks])
       };
     }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate));
-    return json(200, updates, 'public, max-age=300');
+    return json(200, updates, 'no-store');
   } catch (e) {
     return json(502, { error: 'Could not reach Airtable.' });
   }
