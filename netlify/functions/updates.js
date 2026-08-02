@@ -36,7 +36,7 @@ exports.handler = async function () {
         title:   c[F.title] || '',
         rawdate: c[F.date] || '',
         opens:   c[F.opens] || 0,
-        cover:   c[F.cover] || '',
+        cover:   https(c[F.cover] || ''),
         video:   c[F.video] || '',
         excerpt: c[F.excerpt] || '',
         arc:     c[F.arc] || '',
@@ -67,8 +67,14 @@ exports.handler = async function () {
 
 function parseBlocks(v) {
   if (!v) return [];
-  try { const a = JSON.parse(v); return Array.isArray(a) ? a : []; } catch { return []; }
+  try {
+    const a = JSON.parse(v);
+    if (!Array.isArray(a)) return [];
+    return a.map(bk => (bk && bk.url) ? { ...bk, url: https(bk.url) } : bk);
+  } catch { return []; }
 }
+// Upgrade http image URLs to https so they aren't blocked as mixed content on the https site.
+function https(u) { return typeof u === 'string' ? u.replace(/^http:\/\//i, 'https://') : u; }
 
 function json(statusCode, body, cache) {
   const headers = { 'Content-Type': 'application/json' };
