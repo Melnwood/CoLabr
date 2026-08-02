@@ -3,114 +3,117 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CoLabr — Publish an update</title>
+<title>CoLabr — New update</title>
 <style>
-  :root{--base:#141414;--acc:#FF6600;--soft:#fff2e8;--bg:#0e0e0e;--card:#1a1a1a;--line:#2c2c2c;--muted:#9aa0a8;--text:#f4f4f5;}
+  :root{--acc:#FF6600;--bg:#0d0d0d;--card:#161616;--card2:#1c1c1c;--line:#2a2a2a;--muted:#8b9096;--text:#f2f3f4;--green:#3ecf8e;--red:#e0524e;}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:520px;margin:0 auto;padding:22px 18px 60px}
-  .top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-  .lg{width:30px;height:30px;border-radius:8px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:900;font-size:12px}
-  .top b{font-size:16px;font-weight:800}
-  .sub{color:var(--muted);font-size:13px;margin:0 0 20px}
-  label{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 7px}
-  input,textarea,select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--text);
-    font-size:15px;padding:12px 13px;outline:none;font-family:inherit}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+  svg{display:block}
+  .wrap{max-width:640px;margin:0 auto;padding:0 18px 80px}
+  .top{display:flex;align-items:center;gap:12px;padding:18px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:24px}
+  .lg{width:34px;height:34px;border-radius:9px;background:var(--acc);display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff}
+  .top b{font-size:15px;font-weight:700}.top span{font-size:11.5px;color:var(--muted);display:block}
+  .top .nav{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .top a{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);padding:7px 12px;border-radius:8px}
+  .who{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .who img{width:26px;height:26px;border-radius:50%}
+  h1{font-size:24px;font-weight:750;letter-spacing:-.02em;margin:6px 0 4px}
+  .sub{font-size:13.5px;color:var(--muted);margin:0 0 22px;line-height:1.5}
+  label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 7px}
+  input,textarea,select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 14px;color:var(--text);font-size:14.5px;font-family:inherit;outline:none}
   input:focus,textarea:focus,select:focus{border-color:var(--acc)}
-  textarea{resize:vertical;min-height:90px}
-  .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:9px 14px;font-size:13px;font-weight:650;cursor:pointer;user-select:none;transition:.12s}
+  textarea{min-height:180px;resize:vertical;line-height:1.6}
+  .rowg{display:flex;gap:12px}.rowg>div{flex:1}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:13px;font-weight:600;padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
   .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
-  .pub{width:100%;margin-top:24px;background:var(--acc);color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:13px;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(255,102,0,.35)}
-  .pub:disabled{opacity:.6}
-  .msg{margin-top:16px;border-radius:12px;padding:13px 15px;font-size:13.5px;line-height:1.5;display:none}
-  .msg.show{display:block}
-  .msg.ok{background:#12331f;border:1px solid #1f7a4a;color:#a7f0c6}
-  .msg.err{background:#3a1414;border:1px solid #a03030;color:#f2b8b8}
-  .hint{font-size:11.5px;color:var(--muted);margin-top:22px;line-height:1.55;border-top:1px solid var(--line);padding-top:14px}
-  .hint b{color:var(--text)}
+  .hint{font-size:11.5px;color:#6a6f75;margin-top:6px}
+  .actions{display:flex;gap:12px;margin-top:26px}
+  .btn{flex:1;font-weight:700;font-size:15px;padding:15px;border-radius:12px;border:none;cursor:pointer}
+  .btn.pub{background:var(--acc);color:#fff}
+  .btn.draft{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .msg{margin-top:18px;padding:14px 16px;border-radius:11px;font-size:13.5px;line-height:1.5;display:none}
+  .msg.ok{display:block;background:#123021;color:var(--green);border:1px solid #1c4a34}
+  .msg.err{display:block;background:#2a1513;color:#f0a19d;border:1px solid #4a201d}
+  .msg a{color:var(--acc);font-weight:700;text-decoration:none}
+  #form{display:none}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top"><span class="lg">JV</span><b>CoLabr · Publish an update</b></div>
-  <p class="sub">This posts a real record into your Airtable Updates table — live.</p>
+  <div class="wrap">
+    <div class="top"><div class="lg">JV</div><div><b>CoLabr</b><span>New update</span></div>
+      <div class="nav"><span class="who" id="who"></span><a href="manage.html">Manage</a><a href="index.html">View site</a></div></div>
 
-  <label>Missionary</label>
-  <select id="missionary">
-    <option>Petra &amp; Tomáš Novák</option>
-    <option>The Ellenwood Family</option>
-  </select>
+    <div id="form">
+      <h1>Write an update</h1>
+      <p class="sub">Publish and it goes live on your archive right away. Save as draft to finish later.</p>
 
-  <label>Title</label>
-  <input id="title" placeholder="e.g. Camp week: 47 students, 12 decisions">
+      <label>Title</label>
+      <input id="title" placeholder="e.g. God is on the move — 100 camps this summer">
 
-  <label>Update</label>
-  <textarea id="body" placeholder="Tell the story…"></textarea>
+      <div class="rowg">
+        <div><label>Date</label><input id="date" type="date"></div>
+        <div><label>Type</label><select id="type"><option>Newsletter</option><option>Camp</option><option>Prayer</option><option>Praise</option><option>Ministry</option></select></div>
+      </div>
 
-  <label>Type</label>
-  <select id="type">
-    <option>Camp</option><option>Prayer</option><option>Praise</option>
-    <option>Ministry</option><option>Newsletter</option><option>Photos</option>
-  </select>
+      <label>Who is this for?</label>
+      <div class="chips" id="aud">
+        <div class="chip on" data-a="International (JV)">International (JV · English)</div>
+        <div class="chip" data-a="In-country (national)">In-country (KAM · Czech)</div>
+      </div>
 
-  <label>Audiences</label>
-  <div class="chips" id="audiences">
-    <div class="chip on" data-v="In-country (national)">In-country</div>
-    <div class="chip on" data-v="International (JV)">International</div>
+      <label>Your update</label>
+      <textarea id="body" placeholder="Dear friends and family,&#10;&#10;Write your update here…"></textarea>
+
+      <div class="rowg">
+        <div><label>Cover photo link (optional)</label><input id="cover" placeholder="https://…"></div>
+        <div><label>Video link (optional)</label><input id="video" placeholder="YouTube or Vimeo URL"></div>
+      </div>
+      <div class="hint">Paste an image URL or a YouTube/Vimeo link. (Uploads come in a later version.)</div>
+
+      <div class="actions">
+        <button class="btn draft" id="saveDraft">Save draft</button>
+        <button class="btn pub" id="publish">Publish now</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
   </div>
-
-  <label>Channels</label>
-  <div class="chips" id="channels">
-    <div class="chip on" data-v="In-app">In-app</div>
-    <div class="chip on" data-v="Email">Email</div>
-    <div class="chip" data-v="Text">Text</div>
-  </div>
-
-  <label>Status</label>
-  <select id="status">
-    <option>Draft</option><option>Scheduled</option><option>Published</option>
-  </select>
-
-  <button class="pub" id="pub">Publish to Airtable →</button>
-  <div class="msg" id="msg"></div>
-
-  <div class="hint">Pipeline: this form → <b>Make</b> webhook → <b>Airtable</b> Updates table. No login, no keys in the page. After you publish, the row appears in your base within a few seconds.</div>
-</div>
 
 <script>
-const HOOK="https://hook.us2.make.com/mme99eedxq3dvxal3fgfizoguv9utopj";
-document.querySelectorAll('.chips').forEach(g=>g.addEventListener('click',e=>{
-  const c=e.target.closest('.chip'); if(c)c.classList.toggle('on');
-}));
-function picked(id){return [...document.querySelectorAll('#'+id+' .chip.on')].map(c=>c.dataset.v);}
-const msg=document.getElementById('msg'), pub=document.getElementById('pub');
-function show(type,text){msg.className='msg show '+type;msg.innerHTML=text;}
-pub.addEventListener('click',async()=>{
-  const title=document.getElementById('title').value.trim();
-  if(!title){show('err','Please add a title first.');return;}
-  const payload={
-    missionary:[document.getElementById('missionary').value],
-    title:title,
-    body:document.getElementById('body').value.trim(),
-    type:document.getElementById('type').value,
-    audiences:picked('audiences'),
-    channels:picked('channels'),
-    status:document.getElementById('status').value,
-    date:new Date().toISOString().slice(0,10)
-  };
-  pub.disabled=true; pub.textContent='Publishing…';
+async function guard(){
   try{
-    await fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    show('ok','✓ Sent! Check your Airtable <b>Updates</b> table — the row “'+title.replace(/</g,'')+'” should appear within a few seconds.');
-    pub.textContent='Publish another →';
-  }catch(err){
-    // Make webhooks are cross-origin; the POST usually still lands even if the response is opaque.
-    show('ok','✓ Sent to the pipeline. If the browser blocked reading the reply that\\'s normal — check your Airtable <b>Updates</b> table to confirm the row landed.');
-    pub.textContent='Publish another →';
-  }
-  pub.disabled=false;
-});
+    const r=await fetch('/.netlify/functions/me'); if(!r.ok) throw 0;
+    const me=await r.json();
+    document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
+    document.getElementById('form').style.display='block';
+    document.getElementById('date').value=new Date().toISOString().slice(0,10);
+  }catch{ location.replace('login.html'); }
+}
+const aud=document.getElementById('aud');
+aud.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on')));
+async function submit(publish){
+  const msg=document.getElementById('msg'); msg.className='msg';
+  const title=document.getElementById('title').value.trim();
+  if(!title){show('err','Please add a title.');return;}
+  const audiences=[...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a);
+  const payload={publish,title,date:document.getElementById('date').value,type:document.getElementById('type').value,audiences,body:document.getElementById('body').value,cover:document.getElementById('cover').value.trim(),video:document.getElementById('video').value.trim()};
+  const bp=document.getElementById('publish'), bd=document.getElementById('saveDraft');
+  bp.disabled=bd.disabled=true; bp.textContent=publish?'Publishing…':'Publish now';
+  try{
+    const r=await fetch('/.netlify/functions/create-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(r.status===401){location.replace('login.html');return;}
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Something went wrong.');
+    show('ok', publish?'Published! It’s live now — <a href="index.html">view it on your site →</a>':'Saved as a draft. It won’t show on the site until you publish it.');
+    document.getElementById('title').value='';document.getElementById('body').value='';document.getElementById('cover').value='';document.getElementById('video').value='';
+  }catch(e){ show('err', e.message); }
+  bp.disabled=bd.disabled=false; bp.textContent='Publish now';
+}
+function show(kind,html){const m=document.getElementById('msg');m.className='msg '+kind;m.innerHTML=html;m.scrollIntoView({behavior:'smooth',block:'nearest'});}
+document.getElementById('publish').addEventListener('click',()=>submit(true));
+document.getElementById('saveDraft').addEventListener('click',()=>submit(false));
+guard();
 </script>
 </body>
 </html>

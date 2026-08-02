@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoLabr — Manage updates</title>
+<style>
+  :root{--acc:#FF6600;--bg:#0d0d0d;--card:#161616;--card2:#1c1c1c;--line:#2a2a2a;--muted:#8b9096;--text:#f2f3f4;--green:#3ecf8e;--amber:#e0a63e;--red:#e0524e;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+  svg{display:block}
+  .wrap{max-width:820px;margin:0 auto;padding:0 18px 80px}
+  .top{display:flex;align-items:center;gap:12px;padding:18px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .lg{width:34px;height:34px;border-radius:9px;background:var(--acc);display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff}
+  .top b{font-size:15px;font-weight:700}.top span{font-size:11.5px;color:var(--muted);display:block}
+  .top .nav{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .top a{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);padding:7px 12px;border-radius:8px}
+  .top a.acc{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .who{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .who img{width:26px;height:26px;border-radius:50%}
+  h1{font-size:23px;font-weight:750;letter-spacing:-.02em;margin:6px 0 16px}
+  .sum{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 15px}
+  .stat b{font-size:19px;font-weight:750;color:var(--acc);display:block;font-variant-numeric:tabular-nums}
+  .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .item{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:9px}
+  .item .st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:4px 8px;border-radius:11px;flex:none}
+  .st.Published{background:#123021;color:var(--green)}.st.Draft{background:#2a2412;color:var(--amber)}.st.Scheduled{background:#12212a;color:#5bb8e0}
+  .item .tt{flex:1;min-width:0}
+  .item .tt b{font-size:14.5px;font-weight:650;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .tt span{font-size:11.5px;color:var(--muted)}
+  .item .act{display:flex;gap:7px;flex:none}
+  .item .act button{font-size:12px;font-weight:650;padding:8px 11px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--text);cursor:pointer}
+  .item .act .pub{border-color:#1c4a34;color:var(--green)}
+  .item .act .unpub{color:var(--amber)}
+  .item .act .del{color:var(--red)}
+  .state{color:var(--muted);padding:34px 4px;font-size:14px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top"><div class="lg">JV</div><div><b>CoLabr</b><span>Manage updates</span></div>
+      <div class="nav"><span class="who" id="who"></span><a href="index.html">View site</a><a class="acc" href="compose.html">New update</a><a href="/.netlify/functions/logout">Sign out</a></div></div>
+    <h1>Your updates</h1>
+    <div class="sum" id="sum"></div>
+    <div id="list"><div class="state">Loading…</div></div>
+  </div>
+
+<script>
+async function guard(){
+  try{
+    const r=await fetch('/.netlify/functions/me');
+    if(!r.ok) throw 0;
+    const me=await r.json();
+    const who=document.getElementById('who');
+    who.innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
+    return true;
+  }catch{ location.replace('login.html'); return false; }
+}
+async function api(action,extra){
+  const r=await fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...extra})});
+  if(r.status===401){location.replace('login.html');throw new Error('Please sign in.');}
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||'Error');
+  return d;
+}
+async function load(){
+  try{ renderRows((await api('list')).rows); }
+  catch(e){ document.getElementById('list').innerHTML='<div class="state">'+e.message+'</div>'; }
+}
+function renderRows(rows){
+  const pub=rows.filter(r=>r.status==='Published').length;
+  const dr=rows.filter(r=>r.status==='Draft').length;
+  const opens=rows.reduce((s,r)=>s+(r.opens||0),0);
+  document.getElementById('sum').innerHTML=
+    `<div class="stat"><b>${rows.length}</b><span>Total</span></div>`+
+    `<div class="stat"><b>${pub}</b><span>Published</span></div>`+
+    `<div class="stat"><b>${dr}</b><span>Drafts</span></div>`+
+    `<div class="stat"><b>${opens.toLocaleString()}</b><span>Opens</span></div>`;
+  const list=document.getElementById('list');
+  if(!rows.length){list.innerHTML='<div class="state">No updates yet.</div>';return;}
+  list.innerHTML=rows.map(r=>{
+    const toggle=r.status==='Published'
+      ? `<button class="unpub" data-act="unpub" data-id="${r.id}">Unpublish</button>`
+      : `<button class="pub" data-act="pub" data-id="${r.id}">Publish</button>`;
+    const tags=[r.type,(r.aud||[]).join(' + '),r.hasVideo?'video':'',r.hasCover?'photo':''].filter(Boolean).join(' · ');
+    return `<div class="item"><span class="st ${r.status}">${r.status}</span>
+      <div class="tt"><b>${escapeHtml(r.title)}</b><span>${r.date||'—'} · ${tags}${r.opens?(' · '+r.opens.toLocaleString()+' opens'):''}</span></div>
+      <div class="act">${toggle}<button class="del" data-act="del" data-id="${r.id}">Delete</button></div></div>`;
+  }).join('');
+  list.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>act(btn.dataset.act,btn.dataset.id)));
+}
+async function act(a,id){
+  try{
+    if(a==='pub') await api('setStatus',{id,status:'Published'});
+    else if(a==='unpub') await api('setStatus',{id,status:'Draft'});
+    else if(a==='del'){ if(!confirm('Delete this update permanently?'))return; await api('delete',{id}); }
+    await load();
+  }catch(e){ alert(e.message); }
+}
+function escapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+(async()=>{ if(await guard()) load(); })();
+</script>
+</body>
+</html>
