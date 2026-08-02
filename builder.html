@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CoLabr — Build an update</title>
+<style>
+  :root{--acc:#FF6600;--bg:#0e0e0e;--card:#1a1a1a;--line:#2b2b2b;--muted:#9aa0a8;--text:#f4f4f5;--blue:#5b8def;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:#000;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  svg{display:block}
+
+  .bar{flex:none;display:flex;align-items:center;gap:10px;padding:13px 16px;background:#141414;border-bottom:1px solid var(--line)}
+  .bar .lg{width:26px;height:26px;border-radius:7px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:11px;letter-spacing:.02em}
+  .bar b{font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .bar .sp{flex:1}
+  .bar .btn{font-size:12.5px;font-weight:650;padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:#1a1a1a;color:var(--muted)}
+  .bar .btn:hover{color:var(--text);border-color:#3a3a3a}
+  .bar .btn.on{background:var(--acc);border-color:var(--acc);color:#fff}
+
+  .main{flex:1;display:flex;flex-direction:column;min-height:0}
+  .palette{flex:none;background:#141414;border-top:1px solid var(--line);padding:11px 10px 16px;order:2}
+  .palette .lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 4px 10px;text-align:center}
+  .pgrid{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .pgrid::-webkit-scrollbar{height:0}
+  .chip{flex:none;width:80px;background:#1c1c1c;border:1px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center;touch-action:none;user-select:none;transition:.12s;color:#b8bdc4}
+  .chip:hover{border-color:#3d3d3d;color:var(--text)}
+  .chip:active{border-color:var(--acc);color:var(--acc);background:#1a1510}
+  .chip .ic{height:24px;display:flex;align-items:center;justify-content:center}
+  .chip .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .chip .nm{font-size:11px;font-weight:600;margin-top:6px;color:var(--text)}
+
+  .stage{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 0 22px;display:flex;justify-content:center;min-height:0}
+  .device{width:390px;max-width:94vw;align-self:flex-start}
+  .dhead{background:#161616;border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;padding:13px 15px;display:flex;align-items:center;gap:11px;position:relative}
+  .dhead::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--acc)}
+  .dhead .lg{width:36px;height:36px;border-radius:9px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+  .dhead h1{margin:0;font-size:14.5px;font-weight:700}.dhead .s{font-size:11px;color:var(--muted);margin-top:1px}
+  .dhead .give{margin-left:auto;background:var(--acc);color:#fff;font-size:11.5px;font-weight:650;padding:7px 14px;border-radius:8px}
+
+  .canvas{background:#0e0e0e;border:1px solid var(--line);border-top:none;border-radius:0 0 18px 18px;min-height:220px;padding:9px 9px 16px;position:relative}
+  .empty{margin:22px 10px;border:1.5px dashed #313131;border-radius:14px;padding:32px 18px;text-align:center;color:var(--muted)}
+  .empty svg{width:26px;height:26px;stroke:#4a4a4a;fill:none;stroke-width:1.6;margin:0 auto}
+  .empty b{color:var(--text);display:block;font-size:14px;margin:10px 0 3px;font-weight:650}
+  .empty span{font-size:12px}
+
+  .blk{position:relative;margin:8px 4px;border-radius:12px}
+  .blk .inner{border:1.5px solid transparent;border-radius:12px;overflow:hidden}
+  .blk.sel .inner{border-color:var(--acc);box-shadow:0 0 0 3px rgba(255,102,0,.15)}
+  .blk .tools{position:absolute;top:-12px;right:8px;display:none;gap:2px;background:#000;border:1px solid var(--line);border-radius:9px;padding:2px;z-index:6}
+  .blk.sel .tools{display:flex}
+  .blk .tools button{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;color:#b8bdc4}
+  .blk .tools button:hover{background:var(--acc);color:#fff}
+  .blk .tools svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .blk .grip{position:absolute;top:6px;left:-3px;width:26px;height:34px;display:none;align-items:center;justify-content:center;color:#7a7a7a;touch-action:none;cursor:grab;z-index:6;background:#000;border:1px solid var(--line);border-radius:8px}
+  .blk.sel .grip{display:flex}
+  .blk .grip svg{width:15px;height:15px;fill:currentColor}
+  .blk.dragging{opacity:.3}
+
+  .dropline{height:2px;background:var(--acc);border-radius:2px;margin:7px 6px;box-shadow:0 0 8px rgba(255,102,0,.6);display:none}
+  .dropline.show{display:block}
+
+  .pad{padding:13px 15px}
+  [data-ed]{outline:none}
+  [data-ed]:focus{background:rgba(255,102,0,.08);border-radius:5px}
+  .lbl-ic{display:inline-flex;align-items:center;gap:6px}
+  .lbl-ic svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+  .m-hero .cover{height:118px;background:#181818;display:flex;align-items:center;justify-content:center;gap:8px;color:#5c5c5c;font-size:12px;position:relative;border-bottom:1px solid #242424}
+  .m-hero .cover svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6}
+  .m-hero .cover .st{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--acc)}
+  .m-hero .tx{padding:12px 15px}
+  .m-hero h2{margin:0;font-size:17px;font-weight:750;line-height:1.22;letter-spacing:-.01em}
+  .m-hero .sub{font-size:11.5px;color:var(--acc);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .m-text{font-size:13.5px;line-height:1.6;color:#cdd1d7}
+  .m-photo .img{height:150px;background:#181818;border:1px solid #242424;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:8px;color:#5c5c5c;font-size:12px}
+  .m-photo .img svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6}
+  .m-callout{border-radius:10px;padding:12px 14px}
+  .m-callout .l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+  .m-callout p{margin:0;font-size:13px;line-height:1.5;color:#cdd1d7}
+  .m-prayer{background:#12161f;border:1px solid #232c3d;border-left:2px solid var(--blue)}
+  .m-prayer .l{color:var(--blue)}
+  .m-praise{background:#1a1409;border:1px solid #352810;border-left:2px solid var(--acc)}
+  .m-praise .l{color:var(--acc)}
+  .m-nums{display:flex;gap:8px}
+  .m-nums .n{flex:1;background:#000;border:1px solid var(--line);border-radius:10px;padding:12px 6px;text-align:center}
+  .m-nums .n b{font-size:21px;color:var(--acc);font-weight:750;display:block;letter-spacing:-.02em}
+  .m-nums .n span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .m-quote{border-left:2px solid var(--acc);padding:2px 0 2px 14px}
+  .m-quote .q{font-size:14.5px;font-style:italic;line-height:1.45;color:#e8eaed}
+  .m-quote .by{font-size:11.5px;color:var(--acc);font-weight:600;margin-top:7px}
+  .m-give{background:#151515;border:1px solid var(--line);border-radius:11px;padding:15px;text-align:center}
+  .m-give .t{font-size:13.5px;font-weight:700}.m-give .d{font-size:11.5px;color:var(--muted);margin:4px 0 11px}
+  .m-give .b{display:inline-block;background:var(--acc);color:#fff;font-weight:650;font-size:12.5px;padding:10px 24px;border-radius:8px}
+  .m-sign{display:flex;gap:11px;align-items:center}
+  .m-sign .av{width:38px;height:38px;border-radius:50%;background:#000;color:var(--acc);border:1.5px solid var(--acc);display:grid;place-items:center;font-weight:750;font-size:14px}
+  .m-sign b{font-size:13px;font-weight:650}.m-sign span{font-size:11.5px;color:var(--muted)}
+  .m-div{height:1px;background:var(--line);margin:4px 6px}
+
+  #ghost{position:fixed;z-index:999;pointer-events:none;background:var(--acc);color:#fff;font-weight:650;font-size:12.5px;padding:9px 15px;border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.5);display:none;transform:translate(-50%,-50%);white-space:nowrap}
+  .toast{position:fixed;left:50%;bottom:112px;transform:translateX(-50%) translateY(14px);background:#000;border:1px solid var(--acc);color:#fff;padding:10px 16px;border-radius:10px;font-size:12.5px;font-weight:600;opacity:0;transition:.2s;z-index:50;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  body.preview .tools,body.preview .grip{display:none!important}
+  body.preview .blk.sel .inner{border-color:transparent!important;box-shadow:none!important}
+  body.preview .palette{opacity:.35;pointer-events:none}
+
+  @media(min-width:820px){
+    .main{flex-direction:row}
+    .palette{order:0;border-top:none;border-right:1px solid var(--line);width:216px;overflow-y:auto}
+    .pgrid{flex-direction:column;overflow-x:visible}
+    .chip{width:100%;display:flex;align-items:center;gap:11px;text-align:left;padding:11px 13px}
+    .chip .ic{height:auto}.chip .nm{margin-top:0}
+    .palette .lbl{text-align:left}
+  }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <span class="lg">JV</span><b>Build an update</b>
+    <span class="sp"></span>
+    <button class="btn" id="clr">Clear</button>
+    <button class="btn" id="pv">Preview</button>
+  </div>
+
+  <div class="main">
+    <div class="palette">
+      <div class="lbl" id="plbl">Drag a block in — or tap it</div>
+      <div class="pgrid" id="pgrid"></div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="device">
+        <div class="dhead">
+          <div class="lg">JV</div>
+          <div><h1>The Ellenwood Family</h1><div class="s">Josiah Venture · Frýdek-Místek, Czechia</div></div>
+          <div class="give">Give</div>
+        </div>
+        <div class="canvas" id="canvas"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ghost"></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+const I={
+  hero:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>',
+  text:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',
+  photo:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg>',
+  prayer:'<svg viewBox="0 0 24 24"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4C9 6.4 10.4 5 12 3z"/><path d="M8.5 21h7"/><path d="M12 21v-3.5"/></svg>',
+  praise:'<svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.2 5.6.8-4 4 1 5.6L12 16l-5.1 2.6 1-5.6-4-4 5.6-.8z"/></svg>',
+  nums:'<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6.5 21V11M12 21V4.5M17.5 21v-7"/></svg>',
+  quote:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  give:'<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg>',
+  sign:'<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  divider:'<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>'
+};
+const CAT={
+  hero:{ic:I.hero,nm:'Hero',make:()=>({title:'God is on the move — 100 camps this summer',sub:'Summer 2026'}),
+    html:d=>`<div class="m-hero"><div class="cover">${I.photo} Cover photo<div class="st"></div></div><div class="tx"><h2 data-ed="title">${d.title}</h2><div class="sub" data-ed="sub">${d.sub}</div></div></div>`},
+  text:{ic:I.text,nm:'Text',make:()=>({t:'Tell the story in your own words…'}),
+    html:d=>`<div class="pad m-text" data-ed="t">${d.t}</div>`},
+  photo:{ic:I.photo,nm:'Photo',make:()=>({}),html:()=>`<div class="pad"><div class="m-photo"><div class="img">${I.photo} Add a photo</div></div></div>`},
+  prayer:{ic:I.prayer,nm:'Prayer',make:()=>({t:'Please pray for the local church and interns serving in camps this summer.'}),
+    html:d=>`<div class="pad"><div class="m-callout m-prayer"><div class="l lbl-ic">${I.prayer} Please pray</div><p data-ed="t">${d.t}</p></div></div>`},
+  praise:{ic:I.praise,nm:'Praise',make:()=>({t:'Praise God — 12 students made first-time decisions at camp!'}),
+    html:d=>`<div class="pad"><div class="m-callout m-praise"><div class="l lbl-ic">${I.praise} Praise report</div><p data-ed="t">${d.t}</p></div></div>`},
+  nums:{ic:I.nums,nm:'Numbers',make:()=>({a:'100',al:'camps',b:'47',bl:'students',c:'12',cl:'decisions'}),
+    html:d=>`<div class="pad"><div class="m-nums"><div class="n"><b data-ed="a">${d.a}</b><span data-ed="al">${d.al}</span></div><div class="n"><b data-ed="b">${d.b}</b><span data-ed="bl">${d.bl}</span></div><div class="n"><b data-ed="c">${d.c}</b><span data-ed="cl">${d.cl}</span></div></div></div>`},
+  quote:{ic:I.quote,nm:'Quote',make:()=>({q:'I never knew God could actually know me.',by:'— a student at camp'}),
+    html:d=>`<div class="pad"><div class="m-quote"><div class="q" data-ed="q">${d.q}</div><div class="by" data-ed="by">${d.by}</div></div></div>`},
+  give:{ic:I.give,nm:'Give',make:()=>({t:'Partner with the Ellenwoods',d:'Stand side by side with us this summer.'}),
+    html:d=>`<div class="pad"><div class="m-give"><div class="t" data-ed="t">${d.t}</div><div class="d" data-ed="d">${d.d}</div><span class="b">Give</span></div></div>`},
+  sign:{ic:I.sign,nm:'Sign-off',make:()=>({n:'With love, the Ellenwoods',s:'Thank you for standing with us.'}),
+    html:d=>`<div class="pad"><div class="m-sign"><div class="av">E</div><div><b data-ed="n">${d.n}</b><br><span data-ed="s">${d.s}</span></div></div></div>`},
+  divider:{ic:I.divider,nm:'Divider',make:()=>({}),html:()=>`<div class="pad" style="padding:5px 6px"><div class="m-div"></div></div>`}
+};
+const ORDER=['hero','text','photo','prayer','praise','nums','quote','give','sign','divider'];
+
+let blocks=[], sel=null, uid=1;
+blocks=[
+  {id:'b'+(uid++),t:'hero',d:CAT.hero.make()},
+  {id:'b'+(uid++),t:'text',d:{t:'Though life and ministry has returned to a version of normal after COVID, the war in Ukraine continues. And yet, ministry continues — our team will serve in 100 evangelistic camps across Central and Eastern Europe over these next three months.'}}
+];
+
+const canvas=document.getElementById('canvas');
+function render(){
+  if(!blocks.length){canvas.innerHTML='<div class="empty"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><b>Your update is empty</b><span>Drag a block in from the side, or tap one.</span></div>';return;}
+  let h='<div class="dropline" data-i="0"></div>';
+  blocks.forEach((b,i)=>{ h+=blockHTML(b); h+=`<div class="dropline" data-i="${i+1}"></div>`; });
+  canvas.innerHTML=h; bindEd();
+}
+function blockHTML(b){
+  return `<div class="blk${b.id===sel?' sel':''}" data-id="${b.id}">
+    <div class="grip"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+    <div class="tools">
+      <button data-act="up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button data-act="down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button data-act="del"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+    </div>
+    <div class="inner">${CAT[b.t].html(b.d)}</div>
+  </div>`;
+}
+function bindEd(){
+  canvas.querySelectorAll('.blk').forEach(el=>{
+    const id=el.dataset.id;
+    el.addEventListener('click',e=>{ if(e.target.closest('.tools')||e.target.closest('.grip'))return; sel=id; markSel(); });
+    el.querySelectorAll('.tools button').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();act(btn.dataset.act,id);}));
+    el.querySelectorAll('[data-ed]').forEach(n=>{
+      n.setAttribute('contenteditable','true');
+      n.addEventListener('focus',()=>{sel=id;markSel();});
+      n.addEventListener('blur',()=>{const b=blocks.find(x=>x.id===id); if(b)b.d[n.dataset.ed]=n.textContent;});
+    });
+    const grip=el.querySelector('.grip'); if(grip)grip.addEventListener('pointerdown',e=>startDrag(e,{mode:'move',id}));
+  });
+}
+function markSel(){canvas.querySelectorAll('.blk').forEach(el=>el.classList.toggle('sel',el.dataset.id===sel));}
+function act(a,id){const i=blocks.findIndex(x=>x.id===id);if(i<0)return;
+  if(a==='up'&&i>0)[blocks[i-1],blocks[i]]=[blocks[i],blocks[i-1]];
+  else if(a==='down'&&i<blocks.length-1)[blocks[i+1],blocks[i]]=[blocks[i],blocks[i+1]];
+  else if(a==='del'){blocks.splice(i,1);if(sel===id)sel=null;}
+  render();}
+function addBlock(t,index){const b={id:'b'+(uid++),t,d:CAT[t].make()};if(index==null||index>=blocks.length)blocks.push(b);else blocks.splice(index,0,b);sel=b.id;return b;}
+
+const pgrid=document.getElementById('pgrid');
+pgrid.innerHTML=ORDER.map(k=>`<div class="chip" data-key="${k}"><div class="ic">${CAT[k].ic}</div><div class="nm">${CAT[k].nm}</div></div>`).join('');
+pgrid.querySelectorAll('.chip').forEach(c=>c.addEventListener('pointerdown',e=>startDrag(e,{mode:'new',key:c.dataset.key})));
+
+const ghost=document.getElementById('ghost');
+let drag=null;
+function startDrag(e,info){
+  e.preventDefault();
+  drag={...info,startX:e.clientX,startY:e.clientY,moved:false,idx:null};
+  if(info.mode==='move'){const el=canvas.querySelector('.blk[data-id="'+info.id+'"]');if(el)el.classList.add('dragging');}
+  window.addEventListener('pointermove',onMove);
+  window.addEventListener('pointerup',onUp,{once:true});
+}
+function onMove(e){
+  if(!drag)return;
+  const dist=Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY);
+  if(!drag.moved && dist<8)return;
+  if(!drag.moved){drag.moved=true;ghost.textContent=drag.mode==='new'?('Add '+CAT[drag.key].nm):'Moving…';ghost.style.display='block';}
+  ghost.style.left=e.clientX+'px'; ghost.style.top=e.clientY+'px';
+  const els=[...canvas.querySelectorAll('.blk')];
+  let idx=els.length;
+  for(let i=0;i<els.length;i++){const r=els[i].getBoundingClientRect();if(e.clientY<r.top+r.height/2){idx=i;break;}}
+  drag.idx=idx;
+  canvas.querySelectorAll('.dropline').forEach(l=>l.classList.remove('show'));
+  const line=canvas.querySelector('.dropline[data-i="'+idx+'"]'); if(line)line.classList.add('show');
+  const st=document.getElementById('stage'), sr=st.getBoundingClientRect();
+  if(e.clientY<sr.top+50)st.scrollTop-=9; else if(e.clientY>sr.bottom-50)st.scrollTop+=9;
+}
+function onUp(e){
+  window.removeEventListener('pointermove',onMove);
+  ghost.style.display='none';
+  canvas.querySelectorAll('.dropline').forEach(l=>l.classList.remove('show'));
+  if(!drag)return;
+  const d=drag; drag=null;
+  if(!d.moved){
+    if(d.mode==='new'){addBlock(d.key);render();scrollToSel();toast('Added '+CAT[d.key].nm);}
+    else{canvas.querySelector('.blk.dragging')?.classList.remove('dragging');}
+    return;
+  }
+  const idx=d.idx==null?blocks.length:d.idx;
+  if(d.mode==='new'){addBlock(d.key,idx);render();scrollToSel();}
+  else{
+    const from=blocks.findIndex(x=>x.id===d.id); if(from<0){render();return;}
+    let to=idx; const [m]=blocks.splice(from,1); if(from<to)to--; blocks.splice(to,0,m); sel=d.id; render();
+  }
+}
+function scrollToSel(){const el=canvas.querySelector('.blk[data-id="'+sel+'"]');el?.scrollIntoView({block:'center',behavior:'smooth'});}
+
+document.getElementById('clr').addEventListener('click',()=>{blocks=[];sel=null;render();});
+document.getElementById('pv').addEventListener('click',function(){
+  const on=document.body.classList.toggle('preview'); this.classList.toggle('on',on);
+  sel=null; markSel();
+  document.getElementById('plbl').textContent=on?'Preview — what supporters see':'Drag a block in — or tap it';
+});
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1400);}
+
+render();
+</script>
+</body>
+</html>

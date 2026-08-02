@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoLabr — Supporter experience (in-country / KAM)</title>
+<style>
+  /* KAM national brand: deep blue accent instead of JV orange. Same CoLabr system, brand follows the reader. */
+  :root{--acc:#1d5b9e;--acc2:#123f70;--ink:#111820;--paper:#ffffff;--soft:#f2f4f7;--line:#e2e6ec;--muted:#6b7480;--text:#1b232c;--blue:#1d5b9e;--bluebg:#eaf1f9;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:#0c0c0c;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:22px 16px 40px}
+  svg{display:block}
+  .cap{max-width:430px;text-align:center;margin-bottom:16px}
+  .cap .step{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+  .cap h2{font-size:19px;font-weight:750;margin:6px 0 4px;color:#fff;letter-spacing:-.01em}
+  .cap p{font-size:13px;color:#9aa0a8;margin:0;line-height:1.5}
+  .cap .flag{display:inline-block;margin-top:9px;font-size:11px;font-weight:700;color:#cfd6df;background:#1a2632;border:1px solid #2a3a4a;padding:5px 11px;border-radius:20px}
+
+  .phone{width:390px;max-width:94vw;height:760px;max-height:74vh;background:var(--paper);border-radius:32px;overflow:hidden;position:relative;box-shadow:0 30px 70px rgba(0,0,0,.55),0 0 0 9px #0a0a0a,0 0 0 11px #262626;display:flex;flex-direction:column;color:var(--text)}
+  .scr{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .scr::-webkit-scrollbar{width:0}
+  .view{display:none}.view.on{display:block}
+
+  .inbox{background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:11px;position:sticky;top:0;z-index:3}
+  .inbox .bk{width:26px;height:26px;color:var(--muted)}.inbox .bk svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+  .inbox .who b{font-size:13px}.inbox .who span{font-size:11px;color:var(--muted);display:block}
+  .noacct{margin-left:auto;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#3a8f5a;background:#e9f7ef;padding:4px 8px;border-radius:12px}
+
+  .bh{background:var(--ink);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:11px;position:relative}
+  .bh::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--acc)}
+  .bh .lg{width:36px;height:36px;border-radius:9px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;letter-spacing:.02em}
+  .bh b{font-size:14px;font-weight:700}.bh span{font-size:11px;opacity:.75;display:block}
+
+  /* VIDEO hero — poster + prominent play */
+  .hero{height:190px;position:relative;overflow:hidden}
+  .hero svg.scene{position:absolute;inset:0;width:100%;height:100%}
+  .hero .grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,15,22,.55),transparent 55%)}
+  .hero .st{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--acc)}
+  .hero .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .hero .play::after{content:"";border-left:17px solid var(--acc);border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px}
+  .hero .vlabel{position:absolute;left:12px;bottom:12px;color:#fff;font-size:11px;font-weight:700;background:rgba(10,15,22,.5);backdrop-filter:blur(4px);padding:5px 10px;border-radius:16px;display:flex;align-items:center;gap:6px}
+  .hero .vlabel svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:1.9}
+
+  .body{padding:18px}
+  .ttl{font-size:21px;font-weight:750;line-height:1.22;letter-spacing:-.01em;margin:0 0 4px}
+  .kick{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--acc);margin-bottom:9px}
+  .para{font-size:14.5px;line-height:1.62;color:#3c414a;margin:0 0 15px}
+  .cta{display:block;background:var(--acc);color:#fff;font-weight:700;font-size:15px;text-align:center;padding:14px;border-radius:11px;text-decoration:none;margin:4px 0 6px}
+  .cta.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .prayteaser{background:var(--bluebg);border:1px solid #d3e2f2;border-left:2px solid var(--blue);border-radius:10px;padding:12px 14px;margin:14px 0}
+  .prayteaser .l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .prayteaser .l svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.9}
+  .prayteaser p{margin:0;font-size:13px;line-height:1.5;color:#3c414a}
+  .row2{display:flex;gap:9px;margin-top:12px}
+  .row2 a{flex:1;text-align:center;padding:11px;border-radius:10px;font-size:13.5px;font-weight:650;text-decoration:none;border:1px solid var(--line);color:var(--ink)}
+  .foot{border-top:1px solid var(--line);margin-top:18px;padding-top:14px;font-size:12px;color:var(--muted);line-height:1.55}
+  .foot b{color:var(--text)}
+  .foot .pref{color:var(--acc);text-decoration:none;font-weight:600}
+
+  .mod{padding:0 18px 16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .grid .g{height:96px;border-radius:8px;position:relative;overflow:hidden}
+  .grid .g svg{position:absolute;inset:0;width:100%;height:100%}
+  .grid .g span{position:absolute;left:8px;bottom:7px;color:#fff;font-size:11px;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+  .nums{display:flex;gap:8px}
+  .nums .n{flex:1;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:13px 6px;text-align:center}
+  .nums .n b{font-size:22px;color:var(--acc);font-weight:750;display:block}
+  .nums .n span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .quote{border-left:2px solid var(--acc);padding:2px 0 2px 14px;margin:0 18px 16px}
+  .quote .q{font-size:15px;font-style:italic;line-height:1.45;color:var(--ink)}
+  .quote .by{font-size:12px;color:var(--acc);font-weight:600;margin-top:6px}
+  .give{margin:0 18px 16px;background:var(--ink);border-radius:13px;padding:18px;text-align:center;color:#fff}
+  .give .t{font-size:15px;font-weight:750}.give .d{font-size:12px;opacity:.8;margin:4px 0 12px}
+  .give a{display:inline-block;background:var(--acc);color:#fff;font-weight:700;font-size:14px;padding:11px 26px;border-radius:9px;text-decoration:none}
+  .give .note{font-size:10.5px;opacity:.6;margin-top:9px}
+  .sign{margin:0 18px;display:flex;gap:11px;align-items:center;padding-bottom:16px}
+  .sign .av{width:40px;height:40px;border-radius:50%;background:var(--soft);color:var(--acc);border:1.5px solid var(--acc);display:grid;place-items:center;font-weight:750}
+  .sign b{font-size:13.5px}.sign span{font-size:11.5px;color:var(--muted)}
+
+  .engage{flex:none;border-top:1px solid var(--line);background:#fff;display:flex;padding:8px}
+  .engage button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:650;color:var(--muted);padding:7px 4px;background:none;border:none;cursor:pointer}
+  .engage button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
+  .engage button.done{color:var(--acc)}
+  .engage a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:650;color:var(--acc);padding:7px 4px;text-decoration:none}
+  .engage a svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
+
+  .toast{position:absolute;left:50%;bottom:78px;transform:translateX(-50%) translateY(12px);background:var(--ink);color:#fff;padding:11px 16px;border-radius:11px;font-size:12.5px;font-weight:600;opacity:0;transition:.22s;z-index:9;max-width:86%;text-align:center;line-height:1.4}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .controls{display:flex;gap:10px;margin-top:18px;align-items:center}
+  .controls button{font-size:13px;font-weight:650;padding:10px 18px;border-radius:10px;border:1px solid #2a2a2a;background:#161616;color:#eee}
+  .controls button.acc{background:var(--acc);border-color:var(--acc);color:#fff}
+  .dots{display:flex;gap:6px;margin:0 6px}
+  .dots i{width:7px;height:7px;border-radius:50%;background:#333}.dots i.on{background:var(--acc)}
+</style>
+</head>
+<body>
+  <div class="cap" id="cap">
+    <div class="step" id="capstep">Krok 1 ze 3</div>
+    <h2 id="caph">Přijde jim do schránky</h2>
+    <p id="capp">A beautiful, branded email — no login. This is the same Ellenwood update, but a Czech supporter sees the national KAM brand, in Czech.</p>
+    <span class="flag">Brand follows the reader · in-country = KAM, in Czech</span>
+  </div>
+
+  <div class="phone">
+    <div class="scr" id="scr">
+      <!-- STEP 1: EMAIL -->
+      <div class="view on" id="v-email">
+        <div class="inbox"><div class="bk"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div><div class="who"><b>Rodina Ellenwoodových</b><span>vám · přes KAM</span></div><span class="noacct">Bez účtu</span></div>
+        <div class="bh"><div class="lg">KAM</div><div><b>Rodina Ellenwoodových</b><span>Křesťanská akademie mladých · Frýdek-Místek</span></div></div>
+        <div class="hero"><svg class="scene" viewBox="0 0 420 190" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="e1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fb0dd"/><stop offset=".55" stop-color="#3f79b0"/><stop offset="1" stop-color="#1a3d5f"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#e1)"/><circle cx="80%" cy="30%" r="30" fill="#fff" opacity=".85"/><path d="M0,190 L120,90 L240,190 Z" fill="#26527a"/><path d="M170,190 L320,70 L470,190 Z" fill="#1a3d5f"/></svg><div class="grad"></div><div class="play"></div><div class="vlabel"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Video · 60 s z tábora</div><div class="st"></div></div>
+        <div class="body">
+          <div class="kick">Léto 2026</div>
+          <h1 class="ttl">Bůh jedná — 100 táborů letos v létě</h1>
+          <p class="para">Milí přátelé a rodino, i když se život vrátil do jisté normality, válka na Ukrajině pokračuje. A přesto pokračuje i služba — náš tým bude letos v létě sloužit na 100 evangelizačních táborech napříč střední a východní Evropou.</p>
+          <a class="cta" id="toUpdate">Přečíst celou zprávu</a>
+          <div class="prayteaser"><div class="l"><svg viewBox="0 0 24 24"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4z"/><path d="M8.5 21h7"/></svg> Prosba o modlitbu</div><p>Prosíme, modlete se za stážisty, kteří věnují své léto tomu, aby mladým lidem přinesli evangelium.</p></div>
+          <div class="row2"><a id="toUpdate2">Modlit se</a><a href="https://www.kam.cz/podporte-nas" target="_blank" rel="noopener" style="background:var(--acc);color:#fff;border-color:var(--acc)">Darovat</a></div>
+          <a class="cta ghost" href="history.html" style="margin-top:12px">Zobrazit všechny zprávy</a>
+          <div class="foot"><b>Odpovězte</b> na tento e-mail a přijde přímo Melovi a Amy do schránky.<br><span style="font-size:11px">Zprávy dostáváte týdně · <a class="pref" href="#">změnit četnost</a></span></div>
+        </div>
+      </div>
+
+      <!-- STEP 2: FULL UPDATE PAGE -->
+      <div class="view" id="v-update">
+        <div class="bh"><div class="lg">KAM</div><div><b>Rodina Ellenwoodových</b><span>Křesťanská akademie mladých · Frýdek-Místek</span></div></div>
+        <div class="hero"><svg class="scene" viewBox="0 0 420 190" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="e2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6a24b"/><stop offset=".55" stop-color="#e8622a"/><stop offset="1" stop-color="#7d2d12"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#e2)"/><circle cx="78%" cy="30%" r="32" fill="#fff" opacity=".85"/><path d="M0,190 L120,95 L240,190 Z" fill="#2b1608" opacity=".9"/><path d="M180,190 L340,80 L500,190 Z" fill="#25130a"/></svg><div class="grad"></div><div class="play"></div><div class="vlabel"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Přehrát video</div><div class="st"></div></div>
+        <div class="body" style="padding-bottom:8px">
+          <div class="kick">Léto 2026</div>
+          <h1 class="ttl">Bůh jedná — 100 táborů letos v létě</h1>
+          <p class="para">Milí přátelé a rodino, i když se život vrátil do jisté normality, válka na Ukrajině pokračuje. A přesto pokračuje i služba — náš tým bude sloužit na 100 evangelizačních táborech napříč střední a východní Evropou.</p>
+          <p class="para" style="margin-bottom:4px">Modlete se prosím za ty, které si Duch už teď přitahuje, aby půda jejich srdcí byla připravena pro dobré semeno Slova.</p>
+        </div>
+        <div class="mod"><div class="grid">
+          <div class="g"><svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice"><rect width="100%" height="100%" fill="#7d54c9"/><circle cx="50%" cy="40%" r="20" fill="#fff" opacity=".25"/></svg><span>Večer chval</span></div>
+          <div class="g"><svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice"><rect width="100%" height="100%" fill="#4f7fa8"/><path d="M0,100 L80,40 L160,100 Z" fill="#213a52"/></svg><span>Výšlap za úsvitu</span></div>
+          <div class="g"><svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice"><rect width="100%" height="100%" fill="#5fae7d"/><path d="M0,70 C60,55 120,80 200,65 L200,100 L0,100 Z" fill="#26694a"/></svg><span>Skupinky</span></div>
+          <div class="g"><svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice"><rect width="100%" height="100%" fill="#e8622a"/><path d="M60,100 L100,50 L140,100 Z" fill="#7d2d12"/></svg><span>Táborák</span></div>
+        </div></div>
+        <div class="mod"><div class="nums"><div class="n"><b>100</b><span>táborů</span></div><div class="n"><b>47</b><span>studentů</span></div><div class="n"><b>12</b><span>rozhodnutí</span></div></div></div>
+        <div class="quote"><div class="q">„Nikdy jsem nevěděl, že mě Bůh může doopravdy znát. Tenhle týden všechno změnil.“</div><div class="by">— Marek, 16</div></div>
+        <div class="give"><div class="t">Podpořte Ellenwoodovy</div><div class="d">Stůjte s námi bok po boku i letos v létě.</div><a href="https://www.kam.cz/podporte-nas" target="_blank" rel="noopener">Darovat</a><div class="note">Darování v Kč přes KAM (národní organizace)</div></div>
+        <div class="sign"><div class="av">E</div><div><b>S láskou, rodina Ellenwoodových</b><br><span>Děkujeme, že s námi stojíte.</span></div></div>
+        <a class="cta ghost" href="history.html" style="margin:8px 18px 20px;width:calc(100% - 36px)">Zobrazit všechny zprávy &nbsp;→</a>
+      </div>
+    </div>
+
+    <div class="engage" id="engage" style="display:none">
+      <button id="prayBtn"><svg viewBox="0 0 24 24"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4C9 6.4 10.4 5 12 3z"/><path d="M8.5 21h7"/><path d="M12 21v-3.5"/></svg><span id="prayLbl">Modlit se</span></button>
+      <button id="cmtBtn"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>Komentář</button>
+      <a href="https://www.kam.cz/podporte-nas" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg>Darovat</a>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <div class="controls">
+    <button id="back">Zpět</button>
+    <div class="dots"><i class="on" id="d0"></i><i id="d1"></i></div>
+    <button class="acc" id="next">Dále: otevřou ji →</button>
+  </div>
+
+<script>
+let step=0;
+const CAPS=[
+  ['Krok 1 ze 3','Přijde jim do schránky','Same update as the JV version — but the in-country reader gets the national KAM brand, in Czech, and the Czech way to give.'],
+  ['Krok 2 ze 3','Otevřou celou zprávu','One tap (no login) opens the rich update — video, photos, numbers, a student’s story, and a Give button in Czech koruna via KAM.'],
+  ['Krok 3 ze 3','Odpoví jedním klepnutím','Pray, comment, or give — replies and prayers flow back to your Google inbox, same as the JV version.']
+];
+function setCap(i){document.getElementById('capstep').textContent=CAPS[i][0];document.getElementById('caph').textContent=CAPS[i][1];document.getElementById('capp').textContent=CAPS[i][2];document.getElementById('d0').classList.toggle('on',i===0);document.getElementById('d1').classList.toggle('on',i>=1);}
+function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));document.getElementById('scr').scrollTop=0;document.getElementById('engage').style.display=v==='update'?'flex':'none';}
+function goUpdate(){step=1;show('update');setCap(1);document.getElementById('next').textContent='Ukázat odpověď →';document.getElementById('next').style.display='inline-block';}
+function goEmail(){step=0;show('email');setCap(0);document.getElementById('next').textContent='Dále: otevřou ji →';document.getElementById('next').style.display='inline-block';}
+document.getElementById('toUpdate').addEventListener('click',goUpdate);
+document.getElementById('toUpdate2').addEventListener('click',goUpdate);
+document.getElementById('next').addEventListener('click',()=>{ if(step===0)goUpdate(); else {setCap(2);document.getElementById('next').style.display='none';toast('Try Modlit se and Darovat below.');} });
+document.getElementById('back').addEventListener('click',goEmail);
+let prayed=false;
+document.getElementById('prayBtn').addEventListener('click',function(){prayed=!prayed;this.classList.toggle('done',prayed);document.getElementById('prayLbl').textContent=prayed?'Pomodleno':'Modlit se';if(prayed)toast('Odesláno — Ellenwoodovi uvidí, že jste se modlili.');});
+document.getElementById('cmtBtn').addEventListener('click',()=>toast('Váš komentář dorazí Melovi a Amy.'));
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2400);}
+setCap(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoLabr</title>
+<style>
+  :root{--base:#141414;--acc:#FF6600;--soft:#fff2e8;--acink:#b24800;--bg:#0e0e0e;--card:#1a1a1a;--line:#2b2b2b;--muted:#9aa0a8;--text:#f4f4f5;--blue:#3b74e0;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:12px}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .phone{width:390px;max-width:100%;height:800px;max-height:94vh;background:var(--bg);border-radius:34px;overflow:hidden;position:relative;
+    box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 9px #0a0a0a,0 0 0 11px #262626;display:flex;flex-direction:column;color:var(--text)}
+  .sb{height:40px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 6px;font-size:12px;font-weight:700}
+  .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .screen::-webkit-scrollbar{width:0}
+
+  /* header */
+  .hd{background:linear-gradient(160deg,#2a2a2a,#141414);padding:14px 16px 16px;position:relative;border-bottom:1px solid var(--line)}
+  .hd::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--acc)}
+  .hd .row{display:flex;align-items:center;gap:11px}
+  .hd .lg{width:42px;height:42px;border-radius:12px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:900;font-size:16px;flex:none}
+  .hd h1{margin:0;font-size:17px;font-weight:800}
+  .hd .s{font-size:12px;color:var(--muted);margin-top:1px}
+  .hd .foll{margin-left:auto;background:var(--acc);color:#fff;font-size:12px;font-weight:750;padding:8px 13px;border-radius:20px}
+
+  /* feed */
+  .feed{padding:12px 12px 20px}
+  .post{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:13px;overflow:hidden}
+  .ph{display:flex;align-items:center;gap:9px;padding:12px 13px 8px}
+  .ph .av{width:34px;height:34px;border-radius:50%;background:var(--base);color:var(--acc);border:1.5px solid var(--acc);display:grid;place-items:center;font-weight:800;font-size:13px}
+  .ph .nm{font-size:13px;font-weight:750}.ph .tm{font-size:11px;color:var(--muted)}
+  .ph .tag{margin-left:auto;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:var(--acc);padding:4px 9px;border-radius:8px}
+  .ttl{font-size:16px;font-weight:800;padding:2px 13px 5px}
+  .bd{font-size:13.5px;line-height:1.5;color:#d4d7dc;padding:0 13px 11px}
+  .media{height:180px;background:#0a0a0a;position:relative;display:grid;place-items:center;color:#555;font-size:14px}
+  .media .stripe{position:absolute;left:0;right:0;bottom:0;height:7px;background:var(--acc)}
+  .media .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:50px;height:50px;border-radius:50%;background:var(--acc);display:grid;place-items:center;box-shadow:0 6px 20px rgba(255,102,0,.5)}
+  .acts{display:flex;gap:5px;padding:9px 9px}
+  .act{display:flex;align-items:center;gap:6px;padding:8px 11px;border-radius:10px;font-size:13px;font-weight:650;color:var(--muted)}
+  .act.liked{color:var(--acc)}
+  .act svg{width:18px;height:18px}
+
+  /* support */
+  .sup{padding:16px 14px 24px}
+  .sup h2{font-size:19px;margin:2px 2px 3px}
+  .sup .lead{font-size:12.5px;color:var(--muted);margin:0 2px 16px}
+  .bigcard{background:linear-gradient(160deg,#232323,#151515);border:1px solid var(--line);border-radius:18px;padding:18px;text-align:center;margin-bottom:14px}
+  .bigcard .lab{font-size:11.5px;color:var(--muted);font-weight:650}
+  .bigcard .amt{font-size:34px;font-weight:800;color:var(--acc);letter-spacing:-.02em;margin:3px 0}
+  .bigcard .of{font-size:12.5px;color:var(--muted)}
+  .track{height:14px;background:#2a2a2a;border-radius:8px;overflow:hidden;margin:13px 0 6px}
+  .fill{height:100%;background:linear-gradient(90deg,var(--acc),#ff8c3a);border-radius:8px}
+  .pct{font-size:12.5px;color:var(--acc);font-weight:800}
+  .doors .dr{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:9px}
+  .doors .dr .fl{font-size:19px;flex:none}
+  .doors .dr .dt{flex:1}
+  .doors .dr .dt b{font-size:13.5px;display:block}
+  .doors .dr .dt span{font-size:11px;color:var(--muted)}
+  .doors .dr .v{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+  .sech{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 2px 10px}
+
+  /* compose */
+  .cmp{padding:16px 14px 24px}
+  .cmp h2{font-size:19px;margin:2px 2px 14px}
+  .cmp label{display:block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 6px}
+  .cmp input,.cmp textarea,.cmp select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--text);font-size:15px;padding:12px;outline:none;font-family:inherit}
+  .cmp input:focus,.cmp textarea:focus,.cmp select:focus{border-color:var(--acc)}
+  .cmp textarea{min-height:80px;resize:vertical}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:8px 13px;font-size:12.5px;font-weight:650}
+  .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  .pub{width:100%;margin-top:20px;background:var(--acc);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:13px;box-shadow:0 8px 22px rgba(255,102,0,.35)}
+  .msg{margin-top:14px;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.45;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:#12331f;border:1px solid #1f7a4a;color:#a7f0c6}
+
+  /* give */
+  .give{padding:26px 18px 24px;text-align:center}
+  .gv-hero .gv-ic svg{width:46px;height:46px;stroke:var(--acc);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin:0 auto}
+  .gv-hero h2{font-size:22px;margin:12px 0 8px}
+  .gv-hero p{font-size:13.5px;color:var(--muted);line-height:1.55;margin:0 4px 22px}
+  .gv-btn{display:block;background:var(--acc);color:#fff;font-weight:800;font-size:16px;padding:16px;border-radius:14px;text-decoration:none;box-shadow:0 10px 30px rgba(255,102,0,.4)}
+  .gv-note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+  .gv-mini{font-size:11.5px;color:#6a6f77;margin-top:20px;line-height:1.55;border-top:1px solid var(--line);padding-top:16px}
+
+  /* tabbar */
+  .tabs{flex:none;display:flex;background:#151515;border-top:1px solid var(--line);padding:9px 6px 20px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--muted);padding:4px}
+  .tab.on{color:var(--acc)}
+  .tab svg{width:23px;height:23px}
+  .view{display:none}
+  .view.on{display:block}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="sb"><span>9:41</span><span>● ● ●&nbsp; 5G</span></div>
+
+  <div class="hd">
+    <div class="row">
+      <div class="lg">JV</div>
+      <div>
+        <h1>The Ellenwood Family</h1>
+        <div class="s">Josiah Venture · Frýdek-Místek, Czechia</div>
+      </div>
+      <a class="foll" href="https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969" target="_blank" rel="noopener" style="text-decoration:none">Give</a>
+    </div>
+  </div>
+
+  <div class="screen">
+    <!-- FEED -->
+    <div class="view on" id="v-feed">
+      <div class="feed" id="feed"></div>
+    </div>
+
+    <!-- GIVE -->
+    <div class="view" id="v-give">
+      <div class="give">
+        <div class="gv-hero">
+          <div class="gv-ic"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg></div>
+          <h2>Partner with the Ellenwoods</h2>
+          <p>Your gift supports their ministry with young people in Czechia — given securely through Josiah Venture. You choose the amount and whether it's one-time or monthly.</p>
+        </div>
+        <a class="gv-btn" href="https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969" target="_blank" rel="noopener">Give to the Ellenwood Family →</a>
+        <div class="gv-note">Opens Josiah Venture's official secure giving page for this staff member.</div>
+        <div class="gv-mini">Behind the scenes: every CoLabr staff member has their own giving link, so this button always sends people to the right person's page.</div>
+      </div>
+    </div>
+
+    <!-- COMPOSE -->
+    <div class="view" id="v-post">
+      <div class="cmp">
+        <h2>Share an update</h2>
+        <label>Title</label>
+        <input id="c-title" placeholder="e.g. Camp week: 47 students, 12 decisions">
+        <label>Update</label>
+        <textarea id="c-body" placeholder="Tell the story…"></textarea>
+        <label>Type</label>
+        <select id="c-type"><option>Camp</option><option>Prayer</option><option>Praise</option><option>Ministry</option><option>Newsletter</option><option>Photos</option></select>
+        <label>Who sees it</label>
+        <div class="chips" id="c-aud">
+          <div class="chip on" data-v="In-country (national)">In-country</div>
+          <div class="chip on" data-v="International (JV)">International</div>
+        </div>
+        <label>Send by</label>
+        <div class="chips" id="c-chan">
+          <div class="chip on" data-v="In-app">In-app</div>
+          <div class="chip on" data-v="Email">Email</div>
+          <div class="chip" data-v="Text">Text</div>
+        </div>
+        <button class="pub" id="c-pub">Publish →</button>
+        <div class="msg" id="c-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-v="feed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Feed</button>
+    <button class="tab" data-v="post">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Post</button>
+    <button class="tab" data-v="give">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5 6 5c2 0 3.2 1.2 4 2.3C10.8 6.2 12 5 14 5c3.5 0 5 4 3.5 7-2.5 4.5-5.5 9-5.5 9z"/></svg>Give</button>
+  </div>
+</div>
+
+<script>
+const HOOK="https://hook.us2.make.com/mme99eedxq3dvxal3fgfizoguv9utopj";
+const POSTS=[
+  {tag:"Camp",when:"2h",title:"Camp week: 47 students, 12 first-time decisions",body:"We just wrapped our biggest English camp yet. Please pray for the new believers as local leaders begin follow-up. Marek shared his story on camera — bring tissues!",video:true,label:"Camp highlights",likes:38,liked:false},
+  {tag:"Prayer",when:"1d",title:"Prayer: visa renewal next Tuesday",body:"Our residency paperwork is up for renewal. Would you pray for a smooth appointment at 9am Tuesday?",video:false,label:null,likes:64,liked:false},
+  {tag:"Ministry",when:"3d",title:"Photos from the youth retreat",body:"A weekend in the mountains with 30 teenagers — worship, hikes, hard conversations, and a lot of hot chocolate.",video:false,label:"Retreat photos",likes:52,liked:false}
+];
+const heart='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5 6 5c2 0 3.2 1.2 4 2.3C10.8 6.2 12 5 14 5c3.5 0 5 4 3.5 7-2.5 4.5-5.5 9-5.5 9z"/></svg>';
+const heartF='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5 6 5c2 0 3.2 1.2 4 2.3C10.8 6.2 12 5 14 5c3.5 0 5 4 3.5 7-2.5 4.5-5.5 9-5.5 9z"/></svg>';
+const chat='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>';
+function renderFeed(){
+  document.getElementById('feed').innerHTML=POSTS.map((p,i)=>`
+    <div class="post">
+      <div class="ph"><div class="av">E</div><div><div class="nm">The Ellenwood Family</div><div class="tm">${p.when}</div></div><span class="tag">${p.tag}</span></div>
+      <div class="ttl">${p.title}</div><div class="bd">${p.body}</div>
+      ${p.label?`<div class="media">${p.label}${p.video?'<div class="play"><svg viewBox="0 0 24 24" width="18" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>':''}<div class="stripe"></div></div>`:''}
+      <div class="acts">
+        <button class="act ${p.liked?'liked':''}" onclick="like(${i},this)"><span class="hi">${p.liked?heartF:heart}</span><span class="n">${p.likes}</span></button>
+        <button class="act">${chat}<span>Reply</span></button>
+      </div>
+    </div>`).join('');
+}
+function like(i,el){const p=POSTS[i];p.liked=!p.liked;p.likes+=p.liked?1:-1;el.classList.toggle('liked',p.liked);el.querySelector('.hi').innerHTML=p.liked?heartF:heart;el.querySelector('.n').textContent=p.likes;}
+renderFeed();
+
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
+  const v=b.dataset.v;
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
+  document.querySelector('.screen').scrollTop=0;
+});
+
+// compose chips + publish
+document.querySelectorAll('#v-post .chips').forEach(g=>g.addEventListener('click',e=>{const c=e.target.closest('.chip');if(c)c.classList.toggle('on');}));
+function picked(id){return [...document.querySelectorAll('#'+id+' .chip.on')].map(c=>c.dataset.v);}
+document.getElementById('c-pub').addEventListener('click',async()=>{
+  const title=document.getElementById('c-title').value.trim();
+  const msg=document.getElementById('c-msg');
+  if(!title){msg.className='msg show ok';msg.style.background='#3a1414';msg.style.borderColor='#a03030';msg.style.color='#f2b8b8';msg.textContent='Add a title first.';return;}
+  const payload={missionary:["The Ellenwood Family"],title,body:document.getElementById('c-body').value.trim(),type:document.getElementById('c-type').value,audiences:picked('c-aud'),channels:picked('c-chan'),status:"Draft",date:new Date().toISOString().slice(0,10)};
+  const pub=document.getElementById('c-pub');pub.disabled=true;pub.textContent='Publishing…';
+  try{await fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});}catch(e){}
+  msg.className='msg show ok';msg.style.cssText='';msg.classList.add('show','ok');
+  msg.innerHTML='✓ Sent! It saves into your Airtable Updates table in a few seconds.';
+  pub.textContent='Publish another →';pub.disabled=false;
+});
+</script>
+</body>
+</html>

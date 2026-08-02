@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoLabr — Connect your tools</title>
+<style>
+  :root{--acc:#FF6600;--bg:#0d0d0d;--card:#161616;--card2:#1c1c1c;--line:#2a2a2a;--muted:#8b9096;--text:#f2f3f4;--green:#3ecf8e;--mc:#ffe01b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+  svg{display:block}
+  .wrap{max-width:620px;margin:0 auto;padding:0 18px 60px}
+  .top{display:flex;align-items:center;gap:12px;padding:18px 2px 10px;border-bottom:1px solid var(--line);margin-bottom:24px}
+  .lg{width:34px;height:34px;border-radius:9px;background:var(--acc);display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff}
+  .top b{font-size:15px;font-weight:700}.top span{font-size:11.5px;color:var(--muted);display:block}
+  .who{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted)}
+  .who .av{width:30px;height:30px;border-radius:50%;background:#241a10;border:1.5px solid var(--acc);color:var(--acc);display:grid;place-items:center;font-weight:700;font-size:12px}
+
+  h1{font-size:24px;font-weight:750;letter-spacing:-.02em;margin:6px 0 6px}
+  .sub{font-size:14px;color:var(--muted);line-height:1.55;margin:0 0 24px;max-width:520px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+  .chead{display:flex;align-items:center;gap:14px}
+  .icon{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex:none}
+  .icon.mc{background:var(--mc)}
+  .icon.mc svg{width:26px;height:26px}
+  .chead .t b{font-size:16px;font-weight:700;display:block}
+  .chead .t span{font-size:12.5px;color:var(--muted)}
+  .status{margin-left:auto;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:5px 10px;border-radius:20px}
+  .status.off{background:#241a10;color:var(--acc)}
+  .status.on{background:#123021;color:var(--green)}
+
+  .desc{font-size:13.5px;color:#c3c7cb;line-height:1.6;margin:16px 0 4px}
+  .pull{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+  .pill{font-size:11.5px;font-weight:600;color:var(--muted);background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:6px 12px;display:flex;align-items:center;gap:6px}
+  .pill svg{width:13px;height:13px;fill:none;stroke:var(--acc);stroke-width:2}
+
+  .btn{width:100%;margin-top:18px;background:var(--acc);color:#fff;font-weight:700;font-size:15px;padding:14px;border:none;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px}
+  .btn svg{width:17px;height:17px;fill:none;stroke:#fff;stroke-width:2}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:11px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .note svg{width:12px;height:12px;fill:none;stroke:var(--muted);stroke-width:1.8}
+
+  /* connected / progress panel */
+  .panel{display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:18px}
+  .panel.show{display:block}
+  .bar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden;margin:10px 0 8px}
+  .bar i{display:block;height:100%;width:0;background:var(--acc);border-radius:6px;transition:width .3s}
+  .prog{font-size:12.5px;color:var(--muted)}
+  .prog b{color:var(--text)}
+  .stats{display:flex;gap:10px;margin-top:16px}
+  .stat{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:13px 8px;text-align:center}
+  .stat b{font-size:22px;font-weight:750;color:var(--acc);display:block;font-variant-numeric:tabular-nums}
+  .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .done{display:none;align-items:center;gap:8px;margin-top:14px;font-size:13px;color:var(--green);font-weight:600}
+  .done.show{display:flex}
+  .done svg{width:16px;height:16px;fill:none;stroke:var(--green);stroke-width:2.2}
+  .linkrow{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+  .linkrow a{color:var(--acc);text-decoration:none;font-weight:600}
+
+  .foot{font-size:11.5px;color:#6a6f75;line-height:1.6;margin-top:26px;text-align:center}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="lg">JV</div>
+      <div><b>CoLabr</b><span>Connect your tools</span></div>
+      <div class="who"><span>Mel &amp; Amy Ellenwood</span><div class="av">E</div></div>
+    </div>
+
+    <h1>Bring your history into CoLabr</h1>
+    <p class="sub">Already sending updates through another tool? Connect it once and CoLabr pulls in your whole history — so every past update lives in your archive and counts in your stats. Nothing is sent on your behalf; this is read-only.</p>
+
+    <!-- Mailchimp card -->
+    <div class="card">
+      <div class="chead">
+        <div class="icon mc"><svg viewBox="0 0 32 32"><path d="M22.9 12.6c.3 0 .6 0 .9.1-.4-1.6-1.6-2.7-3.2-2.7-2 0-4 1.8-4.4 4.3-1-.6-2-.5-2.7.1-.7.6-.9 1.6-.6 2.5-1.2.4-2 1.4-2 2.7 0 1.7 1.4 3 3.4 3h9.9c2.6 0 4.7-1.9 4.7-4.5s-2-4.6-4.6-4.6c-.6 0-1.1.1-1.6.3" fill="none" stroke="#241a00" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12.5" cy="9" r="2.4" fill="#241a00"/></svg></div>
+        <div class="t"><b>Mailchimp</b><span>Email newsletters &amp; campaigns</span></div>
+        <div class="status off" id="mcstatus">Not connected</div>
+      </div>
+
+      <p class="desc">Turn this on to import every newsletter you've ever sent — text, photos, videos, and real open counts — straight into your CoLabr archive.</p>
+
+      <div class="pull">
+        <div class="pill"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 8h16"/></svg> Past updates</div>
+        <div class="pill"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5-4 4"/></svg> Photos</div>
+        <div class="pill"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Videos</div>
+        <div class="pill"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg> Open stats</div>
+      </div>
+
+      <button class="btn" id="connectBtn"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> Connect Mailchimp</button>
+      <div class="note"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Secure sign-in with Mailchimp · read-only · disconnect anytime</div>
+
+      <!-- progress / result -->
+      <div class="panel" id="panel">
+        <div class="prog" id="progtext">Importing your history…</div>
+        <div class="bar"><i id="progbar"></i></div>
+        <div class="stats">
+          <div class="stat"><b id="s1">0</b><span>Updates</span></div>
+          <div class="stat"><b id="s2">0</b><span>Photos</span></div>
+          <div class="stat"><b id="s3">0</b><span>Videos</span></div>
+          <div class="stat"><b id="s4">0</b><span>Total opens</span></div>
+        </div>
+        <div class="done" id="done"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 6"/></svg> <span>Your history is in. It's live in your archive and counting in your stats.</span></div>
+        <div class="linkrow" id="linkrow" style="display:none">View it now → <a href="history.html">The story so far</a></div>
+      </div>
+    </div>
+
+    <!-- other connectors (coming soon, shows the bigger vision) -->
+    <div class="card" style="opacity:.6">
+      <div class="chead">
+        <div class="icon" style="background:#1c1c1c;border:1px solid var(--line)"><svg viewBox="0 0 24 24" style="width:24px;height:24px" fill="none" stroke="#8b9096" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 8l9 6 9-6"/></svg></div>
+        <div class="t"><b>Google Contacts &amp; Gmail</b><span>Your supporter list &amp; sending</span></div>
+        <div class="status off">Connected</div>
+      </div>
+    </div>
+    <div class="card" style="opacity:.45">
+      <div class="chead">
+        <div class="icon" style="background:#1c1c1c;border:1px solid var(--line)"><svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="#8b9096" stroke-width="1.7"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/></svg></div>
+        <div class="t"><b>Constant Contact · Flodesk · others</b><span>More update tools</span></div>
+        <div class="status off" style="background:#1c1c1c;color:#6a6f75">Coming soon</div>
+      </div>
+    </div>
+
+    <div class="foot">Every missionary connects their own accounts. CoLabr never sends anything without you — it only brings your own history home.</div>
+  </div>
+
+<script>
+// Demo of the real flow: click → (secure Mailchimp auth) → import runs → live counts climb → done.
+const btn=document.getElementById('connectBtn');
+const panel=document.getElementById('panel');
+const bar=document.getElementById('progbar');
+const status=document.getElementById('mcstatus');
+const TARGET={updates:76,photos:71,videos:22,opens:48213};
+let started=false;
+function animate(el,to,dur){const s=performance.now();function tick(t){const p=Math.min(1,(t-s)/dur);el.textContent=Math.floor(p*to).toLocaleString();if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);}
+btn.addEventListener('click',()=>{
+  if(started)return;started=true;
+  btn.innerHTML='Connecting to Mailchimp…';btn.style.opacity='.7';
+  setTimeout(()=>{
+    status.textContent='Connected';status.className='status on';
+    btn.style.display='none';panel.classList.add('show');
+    let p=0;const bi=setInterval(()=>{p+=Math.random()*16;if(p>=100){p=100;clearInterval(bi);finish();}bar.style.width=p+'%';document.getElementById('progtext').innerHTML='Importing your history… <b>'+Math.floor(p)+'%</b>';},260);
+  },1100);
+});
+function finish(){
+  document.getElementById('progtext').innerHTML='<b>Import complete.</b>';
+  animate(document.getElementById('s1'),TARGET.updates,900);
+  animate(document.getElementById('s2'),TARGET.photos,900);
+  animate(document.getElementById('s3'),TARGET.videos,900);
+  animate(document.getElementById('s4'),TARGET.opens,1100);
+  document.getElementById('done').classList.add('show');
+  document.getElementById('linkrow').style.display='block';
+}
+</script>
+</body>
+</html>

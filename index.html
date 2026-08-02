@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoLabr — Mission Updates</title>
+<style>
+  :root{--base:#141414;--acc:#FF6600;--soft:#fff2e8;--muted:#8a8f97;--line:#2a2a2a;}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%,#242424,#0e0e0e);
+    color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px}
+  .mark{width:60px;height:60px;border-radius:17px;background:var(--acc);display:grid;place-items:center;font-weight:900;font-size:24px;box-shadow:0 10px 40px rgba(255,102,0,.4)}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:18px 0 6px;text-align:center}
+  .sub{color:var(--muted);font-size:15px;text-align:center;max-width:440px;margin:0 0 30px;line-height:1.55}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px}
+  @media(max-width:540px){.cards{grid-template-columns:1fr}}
+  a.card{text-decoration:none;color:inherit;background:#1a1a1a;border:1px solid var(--line);border-radius:18px;padding:22px;
+    transition:.15s;display:block}
+  a.card:hover{border-color:var(--acc);transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.5)}
+  a.card .ic{width:46px;height:46px;border-radius:13px;background:#232323;border:1px solid var(--line);display:grid;place-items:center;margin-bottom:14px}
+  a.card .ic svg{width:23px;height:23px;stroke:var(--acc);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  a.card b{font-size:17px;display:block;margin-bottom:5px}
+  a.card span{font-size:13px;color:var(--muted);line-height:1.5}
+  a.card .go{color:var(--acc);font-weight:800;font-size:13px;margin-top:12px;display:inline-block}
+  .foot{margin-top:34px;font-size:12px;color:#5f636a;text-align:center;line-height:1.6;max-width:480px}
+  .badge{display:inline-block;background:rgba(255,102,0,.15);color:var(--acc);font-size:11px;font-weight:800;
+    text-transform:uppercase;letter-spacing:.06em;padding:5px 11px;border-radius:20px;margin-bottom:4px}
+</style>
+</head>
+<body>
+  <div class="badge">Live prototype</div>
+  <div class="mark">JV</div>
+  <h1>CoLabr</h1>
+  <p class="sub">The mission-update platform for Josiah Venture — write an update once, reach supporters by app, email &amp; text, branded per organization.</p>
+
+  <div class="cards">
+    <a class="card" href="app.html">
+      <div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></div>
+      <b>The app</b>
+      <span>The whole thing in one place — feed, post an update, and give — with tabs at the bottom.</span>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card" href="builder.html">
+      <div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="11" width="16" height="9" rx="1.5"/></svg></div>
+      <b>Update builder</b>
+      <span>Drag blocks — hero, photos, prayer, numbers, give — to compose an update on phone or laptop.</span>
+      <span class="go">Open →</span>
+    </a>
+    <a class="card" href="feed.html">
+      <div class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10.5 18h3"/></svg></div>
+      <b>Supporter view</b>
+      <span>How a supporter follows a missionary — the branded feed, with the brand switcher.</span>
+      <span class="go">Open →</span>
+    </a>
+  </div>
+
+  <p class="foot">This is an early, clickable prototype — the look and feel are real, live data and sending come next. Built for Josiah Venture.</p>
+</body>
+</html>

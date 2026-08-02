@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoLabr</title>
+<style>
+  :root{--acc:#FF6600;--bg:#0d0d0d;--panel:#141414;--card:#191919;--card2:#1e1e1e;--line:#2a2a2a;--muted:#9aa0a8;--dim:#6a6f77;--text:#f4f4f5;--blue:#5b8def;--green:#3ecf8e;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+  svg{display:block}
+  .app{display:flex;height:100vh}
+  ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:6px}
+
+  .rail{width:238px;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 14px}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
+  .brand .lg{width:32px;height:32px;border-radius:9px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+  .brand b{font-size:17px;font-weight:750}
+  .nav button{width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--muted);text-align:left;margin-bottom:2px}
+  .nav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .nav button:hover{background:#1e1e1e;color:var(--text)}
+  .nav button.on{background:#241a10;color:var(--acc)}
+  .rail .sp{flex:1}
+  .prof{display:flex;align-items:center;gap:11px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  .prof .av{width:34px;height:34px;border-radius:50%;background:#000;color:var(--acc);border:1.5px solid var(--acc);display:grid;place-items:center;font-weight:750;font-size:13px}
+  .prof b{font-size:12px;display:block}.prof span{font-size:10.5px;color:var(--muted)}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .top{flex:none;height:62px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 26px;gap:14px;background:var(--panel)}
+  .top h1{font-size:18px;font-weight:750;margin:0}
+  .top .sub{font-size:12px;color:var(--muted)}
+  .top .sp{flex:1}
+  .btn{font-size:13px;font-weight:650;padding:9px 15px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text);display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:#3a3a3a}.btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
+  .btn.acc{background:var(--acc);border-color:var(--acc);color:#fff}
+  .content{flex:1;overflow-y:auto;padding:24px 26px 40px}
+  .view{display:none}.view.on{display:block}
+
+  /* generic panels */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;margin-bottom:20px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 16px}
+  .kpi .k{font-size:11px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
+  .kpi .k svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9}
+  .kpi .v{font-size:26px;font-weight:750;margin-top:8px;letter-spacing:-.02em}
+  .kpi .d{font-size:11px;margin-top:3px;color:var(--green)}
+  .kpi .d.flat{color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1.9fr 1fr;gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .card .h{padding:14px 17px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .card .h b{font-size:14px;font-weight:700}.card .h .sp{flex:1}.card .h a{font-size:12px;color:var(--acc);text-decoration:none;font-weight:600}
+  .card .h svg{width:15px;height:15px;fill:none;stroke:var(--muted);stroke-width:1.8}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;padding:10px 17px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line)}
+  tbody td{padding:12px 17px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#1c1c1c}
+  td .tt b{font-size:13px;font-weight:600;display:block}
+  td .tt span{font-size:11px;color:var(--muted)}
+  .pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px;white-space:nowrap}
+  .pill.intl{background:#1a2540;color:#8fb3f7}.pill.nat{background:#241a10;color:var(--acc)}
+  .pill.pub{background:#12291d;color:var(--green)}.pill.draft{background:#232323;color:var(--muted)}
+  .num{font-variant-numeric:tabular-nums;font-weight:650}
+  .mut{color:var(--muted)}
+
+  .rail2{display:flex;flex-direction:column;gap:18px}
+  .resp{display:flex;align-items:flex-start;gap:11px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .resp:last-child{border-bottom:none}
+  .resp .av{width:30px;height:30px;border-radius:50%;background:#232323;display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted);flex:none}
+  .resp .rt{font-size:12.5px;line-height:1.4}.resp .rt b{font-weight:650}.resp .rt .w{color:var(--muted)}
+  .resp .rt .tm{font-size:10.5px;color:var(--dim);margin-top:2px}
+  .resp .ic{margin-left:auto;flex:none}.resp .ic svg{width:15px;height:15px;fill:none;stroke-width:1.8}
+  .digest{padding:14px 16px}
+  .drow{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:7px 0}
+  .drow .bar{flex:1;height:7px;background:#232323;border-radius:5px;margin:0 12px;overflow:hidden}
+  .drow .bar i{display:block;height:100%;background:var(--acc);border-radius:5px}
+
+  /* insights bars */
+  .chart{padding:18px 18px 8px;display:flex;align-items:flex-end;gap:14px;height:180px}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+  .bar .col{width:100%;max-width:46px;background:linear-gradient(180deg,var(--acc),#c44f08);border-radius:6px 6px 0 0}
+  .bar .cl{font-size:10.5px;color:var(--muted);text-align:center;line-height:1.3}
+  .bar .vv{font-size:11px;font-weight:700}
+
+  /* build 3-pane */
+  .buildwrap{display:flex;gap:20px;align-items:flex-start}
+  .bpal{width:196px;flex:none}
+  .bpal .lbl,.bset .lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 2px 10px}
+  .chip{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:7px;color:#b8bdc4;touch-action:none;user-select:none;cursor:grab}
+  .chip:hover{border-color:#3a3a3a;color:var(--text)}.chip:active{border-color:var(--acc);color:var(--acc)}
+  .chip svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7}.chip .nm{font-size:12.5px;font-weight:600;color:var(--text)}
+  .bcanvas{flex:1;max-width:560px;background:#0e0e0e;border:1px solid var(--line);border-radius:15px;min-height:400px;padding:10px 10px 16px;overflow:hidden}
+  .bset{width:230px;flex:none}
+  .setcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+  .setcard .t{font-size:12.5px;font-weight:700;margin-bottom:10px}
+  .opt{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:6px 0;color:var(--muted)}
+  .opt .bx{width:18px;height:18px;border:1.5px solid #444;border-radius:5px;display:grid;place-items:center}
+  .opt.on{color:var(--text)}.opt.on .bx{background:var(--acc);border-color:var(--acc)}
+  .opt .bx svg{width:11px;height:11px;fill:none;stroke:#fff;stroke-width:2.6;display:none}.opt.on .bx svg{display:block}
+  .bch{background:#161616;border-bottom:1px solid var(--line);margin:-10px -10px 8px;padding:12px 15px;display:flex;align-items:center;gap:10px;border-radius:15px 15px 0 0;position:relative}
+  .bch::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--acc)}
+  .bch .lg{width:32px;height:32px;border-radius:8px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px}
+  .bch b{font-size:13.5px}.bch span{font-size:10.5px;color:var(--muted);display:block}
+  .blk{position:relative;margin:8px 4px}.blk .inner{border:1.5px solid transparent;border-radius:11px;overflow:hidden}
+  .blk.sel .inner{border-color:var(--acc);box-shadow:0 0 0 3px rgba(255,102,0,.15)}.blk:hover .inner{border-color:#333}
+  .blk .tools{position:absolute;top:-12px;right:8px;display:none;gap:2px;background:#000;border:1px solid var(--line);border-radius:8px;padding:2px;z-index:6}
+  .blk.sel .tools,.blk:hover .tools{display:flex}.blk .tools button{width:25px;height:25px;border-radius:6px;display:grid;place-items:center;color:#b8bdc4}
+  .blk .tools button:hover{background:var(--acc);color:#fff}.blk .tools svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+  .blk .grip{position:absolute;top:6px;left:-3px;width:22px;height:30px;display:none;align-items:center;justify-content:center;color:#777;cursor:grab;z-index:6;background:#000;border:1px solid var(--line);border-radius:7px;touch-action:none}
+  .blk:hover .grip,.blk.sel .grip{display:flex}.blk .grip svg{width:13px;height:13px;fill:currentColor}
+  .dropline{height:2px;background:var(--acc);border-radius:2px;margin:7px 6px;display:none}.dropline.show{display:block}
+  .pad{padding:12px 15px}[data-ed]{outline:none}[data-ed]:focus{background:rgba(255,102,0,.08);border-radius:5px}
+  .lbl-ic{display:inline-flex;align-items:center;gap:6px}.lbl-ic svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.9}
+  .m-hero .cover{height:130px;background:#181818;display:flex;align-items:center;justify-content:center;gap:8px;color:#5c5c5c;font-size:12px;position:relative;border-bottom:1px solid #242424}.m-hero .cover svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6}.m-hero .cover .st{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--acc)}
+  .m-hero .tx{padding:12px 15px}.m-hero h2{margin:0;font-size:18px;font-weight:750;line-height:1.2}.m-hero .sub{font-size:11px;color:var(--acc);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .m-text{font-size:13.5px;line-height:1.6;color:#cdd1d7}
+  .m-photo .img{height:150px;background:#181818;border:1px solid #242424;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:8px;color:#5c5c5c;font-size:12px}.m-photo .img svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6}
+  .m-callout{border-radius:10px;padding:12px 14px}.m-callout .l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}.m-callout p{margin:0;font-size:13px;line-height:1.5;color:#cdd1d7}
+  .m-prayer{background:#12161f;border:1px solid #232c3d;border-left:2px solid var(--blue)}.m-prayer .l{color:var(--blue)}
+  .m-praise{background:#1a1409;border:1px solid #352810;border-left:2px solid var(--acc)}.m-praise .l{color:var(--acc)}
+  .m-nums{display:flex;gap:8px}.m-nums .n{flex:1;background:#000;border:1px solid var(--line);border-radius:10px;padding:12px 6px;text-align:center}.m-nums .n b{font-size:21px;color:var(--acc);font-weight:750;display:block}.m-nums .n span{font-size:10px;color:var(--muted);text-transform:uppercase}
+  .m-give{background:#151515;border:1px solid var(--line);border-radius:11px;padding:15px;text-align:center}.m-give .t{font-size:13.5px;font-weight:700}.m-give .d{font-size:11.5px;color:var(--muted);margin:4px 0 11px}.m-give .b{display:inline-block;background:var(--acc);color:#fff;font-weight:650;font-size:12.5px;padding:9px 24px;border-radius:8px}
+  .m-sign{display:flex;gap:11px;align-items:center}.m-sign .av{width:38px;height:38px;border-radius:50%;background:#000;color:var(--acc);border:1.5px solid var(--acc);display:grid;place-items:center;font-weight:750}.m-sign b{font-size:13px}.m-sign span{font-size:11px;color:var(--muted)}
+  .m-div{height:1px;background:var(--line);margin:4px 6px}
+  #ghost{position:fixed;z-index:999;pointer-events:none;background:var(--acc);color:#fff;font-weight:650;font-size:12px;padding:8px 14px;border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.5);display:none;transform:translate(-50%,-50%);white-space:nowrap}
+
+  /* give */
+  .gcard{max-width:440px;margin:24px auto;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:32px 26px}
+  .gcard .gi svg{width:48px;height:48px;fill:none;stroke:var(--acc);stroke-width:1.4;margin:0 auto 14px}
+  .gcard h2{font-size:22px;font-weight:750;margin:0 0 8px}.gcard p{font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 20px}
+  .gcard a{display:block;background:var(--acc);color:#fff;font-weight:700;font-size:15px;padding:14px;border-radius:12px;text-decoration:none}
+  .gcard .note{font-size:11.5px;color:var(--dim);margin-top:13px}
+
+  .sech{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 12px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><div class="lg">JV</div><b>CoLabr</b></div>
+    <div class="nav" id="nav">
+      <button class="on" data-v="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg> Home</button>
+      <button data-v="build"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="11" width="16" height="9" rx="1.5"/></svg> Build update</button>
+      <button data-v="supporters"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5 6.5-5s6.5 1.7 6.5 5"/><path d="M17 5.5a3 3 0 0 1 0 5.6M21.5 20c0-2.6-1.2-4.2-3.5-4.8"/></svg> Supporters</button>
+      <button data-v="insights"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg> Insights</button>
+      <button data-v="give"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg> Give page</button>
+    </div>
+    <div class="sp"></div>
+    <div class="prof"><div class="av">E</div><div><b>The Ellenwood Family</b><span>Josiah Venture · Czechia</span></div></div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div><h1 id="ptitle">Home</h1><div class="sub" id="psub">Good afternoon, Mel — here's how your ministry updates are doing</div></div>
+      <div class="sp"></div>
+      <button class="btn" id="secondary" style="display:none"></button>
+      <button class="btn acc" id="primary"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> <span>New update</span></button>
+    </div>
+    <div class="content">
+
+      <!-- HOME / DASHBOARD -->
+      <div class="view on" id="v-home">
+        <div class="kpis">
+          <div class="kpi"><div class="k"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg> Updates sent</div><div class="v">4</div><div class="d">this month</div></div>
+          <div class="kpi"><div class="k"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg> Open rate</div><div class="v">73%</div><div class="d">+6% vs last</div></div>
+          <div class="kpi"><div class="k"><svg viewBox="0 0 24 24"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4C9 6.4 10.4 5 12 3z"/><path d="M8.5 21h7"/></svg> Prayers</div><div class="v">142</div><div class="d">this month</div></div>
+          <div class="kpi"><div class="k"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg> Comments</div><div class="v">38</div><div class="d">this month</div></div>
+          <div class="kpi"><div class="k"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg> Gifts via JV</div><div class="v">9</div><div class="d">from updates</div></div>
+        </div>
+
+        <div class="grid2">
+          <div class="card">
+            <div class="h"><b>Recent updates</b><div class="sp"></div><a href="#">View all</a></div>
+            <table><thead><tr><th>Update</th><th>Sent</th><th>Audience</th><th>Opens</th><th>Prayers</th></tr></thead>
+            <tbody>
+              <tr><td><div class="tt"><b>Camp week: 47 students, 12 decisions</b><span>Camp</span></div></td><td class="mut">Jul 30</td><td><span class="pill intl">Intl + Czech</span></td><td class="num">211</td><td class="num">54</td></tr>
+              <tr><td><div class="tt"><b>Prayer: visa renewal next Tuesday</b><span>Prayer</span></div></td><td class="mut">Jul 24</td><td><span class="pill intl">International</span></td><td class="num">198</td><td class="num">61</td></tr>
+              <tr><td><div class="tt"><b>Photos from the youth retreat</b><span>Ministry</span></div></td><td class="mut">Jul 18</td><td><span class="pill intl">International</span></td><td class="num">176</td><td class="num">18</td></tr>
+              <tr><td><div class="tt"><b>Newsletter: July in review</b><span>Newsletter</span></div></td><td class="mut">Jul 12</td><td><span class="pill nat">Czech (KAM)</span></td><td class="num">83</td><td class="num">9</td></tr>
+            </tbody></table>
+          </div>
+          <div class="rail2">
+            <div class="card">
+              <div class="h"><b>Latest responses</b></div>
+              <div class="resp"><div class="av">RF</div><div class="rt"><b>Rylee Free</b> <span class="w">— Currey Creek Church prayed</span><div class="tm">12 min ago</div></div><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5b8def" stroke-width="1.8"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4z"/><path d="M8.5 21h7"/></svg></div></div>
+              <div class="resp"><div class="av">DF</div><div class="rt"><b>Dave Fuehring</b> <span class="w">commented: "Praying for Marek!"</span><div class="tm">1 hr ago</div></div></div>
+              <div class="resp"><div class="av">HH</div><div class="rt"><b>Hannah Hartman</b> <span class="w">gave a gift</span><div class="tm">3 hrs ago</div></div><div class="ic"><svg viewBox="0 0 24 24" fill="#FF6600" stroke="none"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg></div></div>
+              <div class="resp"><div class="av">BN</div><div class="rt"><b>Brenda Nickerson</b> <span class="w">liked your update</span><div class="tm">Yesterday</div></div></div>
+            </div>
+            <div class="card">
+              <div class="h"><b>Digest schedule</b></div>
+              <div class="digest">
+                <div class="drow"><span>Weekly</span><div class="bar"><i style="width:64%"></i></div><span class="num mut">148</span></div>
+                <div class="drow"><span>Monthly</span><div class="bar"><i style="width:34%"></i></div><span class="num mut">79</span></div>
+                <div class="drow"><span>Each update</span><div class="bar"><i style="width:18%"></i></div><span class="num mut">42</span></div>
+                <div style="font-size:11px;color:var(--dim);margin-top:8px;line-height:1.5">Each supporter gets your updates on their own rhythm — CoLabr bundles them automatically.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BUILD -->
+      <div class="view" id="v-build">
+        <div class="buildwrap">
+          <div class="bpal"><div class="lbl">Blocks — drag onto the update</div><div id="bpal"></div></div>
+          <div class="bcanvas" id="bcanvas"></div>
+          <div class="bset">
+            <div class="lbl">Update settings</div>
+            <div class="setcard"><div class="t">Audiences</div>
+              <div class="opt on"><div class="bx"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 6"/></svg></div>International (JV brand · English)</div>
+              <div class="opt on"><div class="bx"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 6"/></svg></div>In-country (KAM brand · Czech)</div>
+            </div>
+            <div class="setcard"><div class="t">Send by</div>
+              <div class="opt on"><div class="bx"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 6"/></svg></div>In-app feed</div>
+              <div class="opt on"><div class="bx"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 6"/></svg></div>Email (via your Gmail)</div>
+              <div class="opt"><div class="bx"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 6"/></svg></div>Text (high-signal only)</div>
+            </div>
+            <button class="btn acc" style="width:100%;justify-content:center"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-6-7-2z"/></svg> Choose groups &amp; send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUPPORTERS -->
+      <div class="view" id="v-supporters">
+        <div class="sech">Synced from your Google Contacts — no separate list</div>
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="k">Total supporters</div><div class="v">336</div><div class="d flat">across 6 groups</div></div>
+          <div class="kpi"><div class="k">Giving partners</div><div class="v">84</div><div class="d flat">monthly</div></div>
+          <div class="kpi"><div class="k">Prayer team</div><div class="v">126</div><div class="d flat">receive prayer alerts</div></div>
+          <div class="kpi"><div class="k">In-country</div><div class="v">27</div><div class="d flat">Czech · KAM brand</div></div>
+        </div>
+        <div class="card">
+          <div class="h"><b>Groups &amp; people</b><div class="sp"></div><a href="#">Open in Google Contacts</a></div>
+          <table><thead><tr><th>Name</th><th>Group</th><th>Digest</th><th>Audience</th><th>Last gift</th></tr></thead>
+          <tbody>
+            <tr><td><div class="tt"><b>Rylee Free</b><span>rfree@curreycreek.com</span></div></td><td>Currey Creek Church</td><td class="mut">Weekly</td><td><span class="pill intl">International</span></td><td class="num">$250</td></tr>
+            <tr><td><div class="tt"><b>Dave &amp; Geri Fuehring</b><span>dfuehring@…</span></div></td><td>Prayer team</td><td class="mut">Each update</td><td><span class="pill intl">International</span></td><td class="mut">—</td></tr>
+            <tr><td><div class="tt"><b>Hannah Hartman</b><span>hhartman@…</span></div></td><td>Monthly partners</td><td class="mut">Monthly</td><td><span class="pill intl">International</span></td><td class="num">$100</td></tr>
+            <tr><td><div class="tt"><b>Brenda Nickerson</b><span>bnickerson@…</span></div></td><td>Family &amp; friends</td><td class="mut">Weekly</td><td><span class="pill intl">International</span></td><td class="mut">—</td></tr>
+            <tr><td><div class="tt"><b>Martina Pixová</b><span>mpixova@…</span></div></td><td>Czech friends &amp; church</td><td class="mut">Weekly</td><td><span class="pill nat">In-country</span></td><td class="num">2 000 Kč</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div class="view" id="v-insights">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="k">Open rate (90d)</div><div class="v">71%</div><div class="d">well above email avg</div></div>
+          <div class="kpi"><div class="k">Prayers logged</div><div class="v">418</div><div class="d">90 days</div></div>
+          <div class="kpi"><div class="k">Comments</div><div class="v">96</div><div class="d">90 days</div></div>
+          <div class="kpi"><div class="k">Gifts from updates</div><div class="v">$4,120</div><div class="d">attributed via JV</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="h"><b>Opens by update</b><div class="sp"></div><span class="mut" style="font-size:12px">last 6</span></div>
+            <div class="chart">
+              <div class="bar"><div class="vv">83</div><div class="col" style="height:40%"></div><div class="cl">Jul 12</div></div>
+              <div class="bar"><div class="vv">176</div><div class="col" style="height:74%"></div><div class="cl">Jul 18</div></div>
+              <div class="bar"><div class="vv">198</div><div class="col" style="height:86%"></div><div class="cl">Jul 24</div></div>
+              <div class="bar"><div class="vv">211</div><div class="col" style="height:100%"></div><div class="cl">Jul 30</div></div>
+              <div class="bar"><div class="vv">169</div><div class="col" style="height:71%"></div><div class="cl">Aug 4</div></div>
+              <div class="bar"><div class="vv">190</div><div class="col" style="height:82%"></div><div class="cl">Aug 9</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="h"><b>Most engaged supporters</b></div>
+            <table><thead><tr><th>Supporter</th><th>Opens</th><th>Prayed</th></tr></thead>
+            <tbody>
+              <tr><td class="tt"><b>Rylee Free</b></td><td class="num">12/12</td><td class="num">9</td></tr>
+              <tr><td class="tt"><b>Dave Fuehring</b></td><td class="num">12/12</td><td class="num">11</td></tr>
+              <tr><td class="tt"><b>Hannah Hartman</b></td><td class="num">10/12</td><td class="num">6</td></tr>
+              <tr><td class="tt"><b>Brenda Nickerson</b></td><td class="num">11/12</td><td class="num">7</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- GIVE -->
+      <div class="view" id="v-give">
+        <div class="gcard">
+          <div class="gi"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg></div>
+          <h2>Partner with the Ellenwoods</h2>
+          <p>Your gift supports their ministry with young people in Czechia — given securely through Josiah Venture. You choose the amount and how often.</p>
+          <a href="https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969" target="_blank" rel="noopener">Give to the Ellenwood Family</a>
+          <div class="note">Opens Josiah Venture's official secure giving page for this staff member.</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<div id="ghost"></div>
+
+<script>
+const TITLES={
+  home:['Home',"Good afternoon, Mel — here's how your updates are doing",'New update'],
+  build:['Build update','Drag blocks to compose — saved as you go','Preview'],
+  supporters:['Supporters','Your people, straight from Google Contacts',''],
+  insights:['Insights','Who is opening, praying, and giving',''],
+  give:['Give page','What supporters see when they partner with you','']
+};
+function go(v){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
+  const t=TITLES[v];document.getElementById('ptitle').textContent=t[0];document.getElementById('psub').textContent=t[1];
+  const pr=document.getElementById('primary');pr.style.display=t[2]?'inline-flex':'none';if(t[2])pr.querySelector('span').textContent=t[2];
+  document.querySelector('.content').scrollTop=0;
+}
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.v);});
+document.getElementById('primary').addEventListener('click',()=>{const cur=document.querySelector('.nav button.on').dataset.v;if(cur==='home')go('build');});
+document.querySelectorAll('.bset .opt').forEach(o=>o.addEventListener('click',()=>o.classList.toggle('on')));
+
+/* build drag */
+const I={hero:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>',text:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',photo:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg>',prayer:'<svg viewBox="0 0 24 24"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4C9 6.4 10.4 5 12 3z"/><path d="M8.5 21h7"/><path d="M12 21v-3.5"/></svg>',praise:'<svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.2 5.6.8-4 4 1 5.6L12 16l-5.1 2.6 1-5.6-4-4 5.6-.8z"/></svg>',nums:'<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6.5 21V11M12 21V4.5M17.5 21v-7"/></svg>',give:'<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg>',sign:'<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',divider:'<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>'};
+const CAT={
+  hero:{ic:I.hero,nm:'Hero',make:()=>({title:'God is on the move — 100 camps this summer',sub:'Summer 2026'}),html:d=>`<div class="m-hero"><div class="cover">${I.photo} Cover photo<div class="st"></div></div><div class="tx"><h2 data-ed="title">${d.title}</h2><div class="sub" data-ed="sub">${d.sub}</div></div></div>`},
+  text:{ic:I.text,nm:'Text',make:()=>({t:'Tell the story in your own words…'}),html:d=>`<div class="pad m-text" data-ed="t">${d.t}</div>`},
+  photo:{ic:I.photo,nm:'Photo',make:()=>({}),html:()=>`<div class="pad"><div class="m-photo"><div class="img">${I.photo} Add a photo</div></div></div>`},
+  prayer:{ic:I.prayer,nm:'Prayer',make:()=>({t:'Please pray for the local church and interns serving in camps this summer.'}),html:d=>`<div class="pad"><div class="m-callout m-prayer"><div class="l lbl-ic">${I.prayer} Please pray</div><p data-ed="t">${d.t}</p></div></div>`},
+  praise:{ic:I.praise,nm:'Praise',make:()=>({t:'Praise God — 12 students made first-time decisions at camp!'}),html:d=>`<div class="pad"><div class="m-callout m-praise"><div class="l lbl-ic">${I.praise} Praise report</div><p data-ed="t">${d.t}</p></div></div>`},
+  nums:{ic:I.nums,nm:'Numbers',make:()=>({a:'100',al:'camps',b:'47',bl:'students',c:'12',cl:'decisions'}),html:d=>`<div class="pad"><div class="m-nums"><div class="n"><b data-ed="a">${d.a}</b><span data-ed="al">${d.al}</span></div><div class="n"><b data-ed="b">${d.b}</b><span data-ed="bl">${d.bl}</span></div><div class="n"><b data-ed="c">${d.c}</b><span data-ed="cl">${d.cl}</span></div></div></div>`},
+  give:{ic:I.give,nm:'Give',make:()=>({t:'Partner with the Ellenwoods',d:'Stand side by side with us this summer.'}),html:d=>`<div class="pad"><div class="m-give"><div class="t" data-ed="t">${d.t}</div><div class="d" data-ed="d">${d.d}</div><span class="b">Give</span></div></div>`},
+  sign:{ic:I.sign,nm:'Sign-off',make:()=>({n:'With love, the Ellenwoods',s:'Thank you for standing with us.'}),html:d=>`<div class="pad"><div class="m-sign"><div class="av">E</div><div><b data-ed="n">${d.n}</b><br><span data-ed="s">${d.s}</span></div></div></div>`},
+  divider:{ic:I.divider,nm:'Divider',make:()=>({}),html:()=>`<div class="pad" style="padding:5px 6px"><div class="m-div"></div></div>`}
+};
+const ORDER=['hero','text','photo','prayer','praise','nums','give','sign','divider'];
+let blocks=[{id:'b1',t:'hero',d:CAT.hero.make()},{id:'b2',t:'text',d:{t:'Though life and ministry has returned to a version of normal after COVID, the war in Ukraine continues. And yet, ministry continues — our team will serve in 100 evangelistic camps across Central and Eastern Europe over these next three months.'}}];
+let sel=null,uid=3;
+const bcanvas=document.getElementById('bcanvas');
+function brender(){let h='<div class="bch"><div class="lg">JV</div><div><b>The Ellenwood Family</b><span>Josiah Venture · Frýdek-Místek, Czechia</span></div></div><div class="dropline" data-i="0"></div>';blocks.forEach((b,i)=>{h+=bblock(b);h+=`<div class="dropline" data-i="${i+1}"></div>`;});bcanvas.innerHTML=h;bbind();}
+function bblock(b){return `<div class="blk${b.id===sel?' sel':''}" data-id="${b.id}"><div class="grip"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div><div class="tools"><button data-act="up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button><button data-act="down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><button data-act="del"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div><div class="inner">${CAT[b.t].html(b.d)}</div></div>`;}
+function bbind(){bcanvas.querySelectorAll('.blk').forEach(el=>{const id=el.dataset.id;el.addEventListener('click',e=>{if(e.target.closest('.tools')||e.target.closest('.grip'))return;sel=id;bmark();});el.querySelectorAll('.tools button').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();bact(btn.dataset.act,id);}));el.querySelectorAll('[data-ed]').forEach(n=>{n.setAttribute('contenteditable','true');n.addEventListener('blur',()=>{const b=blocks.find(x=>x.id===id);if(b)b.d[n.dataset.ed]=n.textContent;});});el.querySelector('.grip').addEventListener('pointerdown',e=>startDrag(e,{mode:'move',id}));});}
+function bmark(){bcanvas.querySelectorAll('.blk').forEach(el=>el.classList.toggle('sel',el.dataset.id===sel));}
+function bact(a,id){const i=blocks.findIndex(x=>x.id===id);if(i<0)return;if(a==='up'&&i>0)[blocks[i-1],blocks[i]]=[blocks[i],blocks[i-1]];else if(a==='down'&&i<blocks.length-1)[blocks[i+1],blocks[i]]=[blocks[i],blocks[i+1]];else if(a==='del'){blocks.splice(i,1);if(sel===id)sel=null;}brender();}
+function addBlock(t,index){const b={id:'b'+(uid++),t,d:CAT[t].make()};if(index==null||index>=blocks.length)blocks.push(b);else blocks.splice(index,0,b);sel=b.id;return b;}
+const bpal=document.getElementById('bpal');
+bpal.innerHTML=ORDER.map(k=>`<div class="chip" data-key="${k}">${CAT[k].ic}<span class="nm">${CAT[k].nm}</span></div>`).join('');
+bpal.querySelectorAll('.chip').forEach(c=>c.addEventListener('pointerdown',e=>startDrag(e,{mode:'new',key:c.dataset.key})));
+const ghost=document.getElementById('ghost');let drag=null;
+function startDrag(e,info){e.preventDefault();drag={...info,sx:e.clientX,sy:e.clientY,moved:false,idx:null};if(info.mode==='move'){const el=bcanvas.querySelector('.blk[data-id="'+info.id+'"]');if(el)el.classList.add('dragging');}window.addEventListener('pointermove',onMove);window.addEventListener('pointerup',onUp,{once:true});}
+function onMove(e){if(!drag)return;if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<8)return;if(!drag.moved){drag.moved=true;ghost.textContent=drag.mode==='new'?('Add '+CAT[drag.key].nm):'Moving…';ghost.style.display='block';}ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';const els=[...bcanvas.querySelectorAll('.blk')];let idx=els.length;for(let i=0;i<els.length;i++){const r=els[i].getBoundingClientRect();if(e.clientY<r.top+r.height/2){idx=i;break;}}drag.idx=idx;bcanvas.querySelectorAll('.dropline').forEach(l=>l.classList.remove('show'));const line=bcanvas.querySelector('.dropline[data-i="'+idx+'"]');if(line)line.classList.add('show');}
+function onUp(){window.removeEventListener('pointermove',onMove);ghost.style.display='none';bcanvas.querySelectorAll('.dropline').forEach(l=>l.classList.remove('show'));if(!drag)return;const d=drag;drag=null;if(!d.moved){if(d.mode==='new'){addBlock(d.key);brender();}else{bcanvas.querySelector('.blk.dragging')?.classList.remove('dragging');}return;}const idx=d.idx==null?blocks.length:d.idx;if(d.mode==='new'){addBlock(d.key,idx);brender();}else{const from=blocks.findIndex(x=>x.id===d.id);if(from<0){brender();return;}let to=idx;const[m]=blocks.splice(from,1);if(from<to)to--;blocks.splice(to,0,m);sel=d.id;brender();}}
+brender();
+</script>
+</body>
+</html>

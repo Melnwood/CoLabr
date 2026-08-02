@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoLabr — Mission Update Platform (Prototype)</title>
+<style>
+  :root{
+    /* tenant-driven variables (overwritten by JS) */
+    --brand:#141414;
+    --brand-ink:#000000;
+    --brand-soft:#f4f4f5;
+    --accent:#FF6600;
+    --logo-bg:#141414;
+    /* fixed system */
+    --bg:#f5f6f8;
+    --card:#ffffff;
+    --ink:#1a1d21;
+    --muted:#6b7280;
+    --line:#e7e9ee;
+    --radius:18px;
+    --shadow:0 8px 30px rgba(15,23,42,.08);
+    --shadow-sm:0 2px 10px rgba(15,23,42,.06);
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(160deg,#eef1f6,#e5e9f0);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  img{display:block;max-width:100%}
+
+  /* ---------- App chrome / control bar ---------- */
+  .stage{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+  .topbar{
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    background:#fff;border:1px solid var(--line);border-radius:16px;
+    padding:12px 16px;box-shadow:var(--shadow-sm);margin-bottom:22px;
+  }
+  .topbar .title{font-weight:800;letter-spacing:-.02em;font-size:15px;display:flex;align-items:center;gap:9px}
+  .dot{width:22px;height:22px;border-radius:7px;background:var(--brand);display:grid;place-items:center;color:#fff;font-size:12px;font-weight:800}
+  .seg{display:flex;background:#f0f2f6;border-radius:11px;padding:4px;gap:3px}
+  .seg button{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:650;color:var(--muted)}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+  .spacer{flex:1}
+  .brandpick{display:flex;align-items:center;gap:8px}
+  .brandpick label{font-size:12px;color:var(--muted);font-weight:600}
+  .brandpick select{
+    font-size:13px;font-weight:650;border:1px solid var(--line);border-radius:10px;
+    padding:8px 10px;background:#fff;color:var(--ink)
+  }
+  .hint{font-size:12px;color:var(--muted);margin:0 0 18px;text-align:center}
+
+  /* ---------- Phone frame ---------- */
+  .wrap{display:flex;justify-content:center;gap:34px;align-items:flex-start;flex-wrap:wrap}
+  .phone{
+    width:390px;max-width:94vw;background:var(--bg);border-radius:40px;
+    box-shadow:0 30px 70px rgba(15,23,42,.22), 0 0 0 11px #10131a, 0 0 0 13px #23272f;
+    overflow:hidden;position:relative;height:812px;display:flex;flex-direction:column;
+  }
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;background:#10131a;border-radius:0 0 16px 16px;z-index:40}
+  .statusbar{height:44px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 6px;font-size:12px;font-weight:700;color:var(--ink)}
+  .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative}
+  .screen::-webkit-scrollbar{width:0}
+
+  /* ---------- App header ---------- */
+  .apphead{
+    background:linear-gradient(160deg,var(--brand),var(--brand-ink));
+    color:#fff;padding:16px 18px 20px;position:relative;
+  }
+  .apphead .row{display:flex;align-items:center;gap:12px}
+  .logo{
+    width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.16);
+    display:grid;place-items:center;font-weight:800;font-size:18px;backdrop-filter:blur(4px);
+    border:1px solid rgba(255,255,255,.25);overflow:hidden;flex:none
+  }
+  .apphead h1{margin:0;font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .apphead .sub{font-size:12.5px;opacity:.85;margin-top:1px}
+  .follow{margin-left:auto;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.3);padding:8px 14px;border-radius:20px;font-weight:700;font-size:12.5px}
+  .searchbar{
+    margin-top:15px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);
+    border-radius:12px;display:flex;align-items:center;gap:9px;padding:10px 12px;color:#fff
+  }
+  .searchbar input{background:none;border:none;outline:none;color:#fff;font-size:13.5px;flex:1}
+  .searchbar input::placeholder{color:rgba(255,255,255,.75)}
+  .chips{display:flex;gap:7px;margin-top:12px;overflow-x:auto;padding-bottom:2px}
+  .chips::-webkit-scrollbar{height:0}
+  .chip{white-space:nowrap;font-size:12px;font-weight:650;padding:6px 12px;border-radius:16px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.2)}
+  .chip.on{background:#fff;color:var(--brand-ink)}
+
+  /* ---------- Feed ---------- */
+  .feed{padding:14px 14px 26px}
+  .post{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-sm);margin-bottom:16px;overflow:hidden;border:1px solid var(--line)}
+  .post .phead{display:flex;align-items:center;gap:10px;padding:13px 14px 10px}
+  .avatar{width:38px;height:38px;border-radius:50%;flex:none;background:var(--brand);display:grid;place-items:center;font-weight:800;color:var(--accent);font-size:14px;overflow:hidden;border:1.5px solid var(--accent)}
+  .phead .who{font-weight:750;font-size:13.5px}
+  .phead .when{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .tag{margin-left:auto;font-size:10.5px;font-weight:750;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:var(--accent);padding:4px 9px;border-radius:8px}
+  .ptitle{font-size:16px;font-weight:800;letter-spacing:-.01em;padding:2px 14px 6px}
+  .pbody{font-size:13.7px;line-height:1.5;color:#33383f;padding:0 14px 12px}
+  .media{position:relative;background:#0d1117}
+  .media img{width:100%;height:220px;object-fit:cover;display:block}
+  .media.video::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.18)}
+  .playbtn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:var(--accent);display:grid;place-items:center;z-index:2;box-shadow:0 6px 20px rgba(255,102,0,.5)}
+  .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .mgrid img{height:120px}
+  .duration{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;z-index:2}
+  .pactions{display:flex;align-items:center;gap:4px;padding:9px 8px;border-top:1px solid var(--line)}
+  .act{display:flex;align-items:center;gap:6px;padding:8px 11px;border-radius:10px;font-size:12.5px;font-weight:650;color:var(--muted)}
+  .act:hover{background:var(--bg)}
+  .act.liked{color:var(--accent)}
+  .act .n{font-variant-numeric:tabular-nums}
+  .replybar{display:flex;gap:7px;padding:10px 12px;border-top:1px solid var(--line);background:#fbfcfd}
+  .rb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--muted);padding:7px 4px;border-radius:11px;border:1px solid var(--line);background:#fff}
+  .rb small{font-weight:600;color:#9aa1ab;font-size:9px}
+  .rb.prim{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,white)}
+
+  .comment{display:flex;gap:9px;padding:10px 14px 0}
+  .comment .avatar{width:28px;height:28px;font-size:11px}
+  .cbub{background:var(--bg);border-radius:13px;padding:8px 11px;font-size:12.5px;line-height:1.4}
+  .cbub b{font-size:12px}
+  .cmeta{font-size:10.5px;color:var(--muted);margin:4px 0 0 4px}
+  .addc{display:flex;gap:8px;align-items:center;padding:12px 14px 16px}
+  .addc input{flex:1;border:1px solid var(--line);border-radius:20px;padding:9px 13px;font-size:12.5px;outline:none}
+  .sendc{width:36px;height:36px;border-radius:50%;background:var(--accent);display:grid;place-items:center;flex:none}
+
+  /* ---------- Bottom nav ---------- */
+  .tabbar{flex:none;display:flex;background:#fff;border-top:1px solid var(--line);padding:8px 6px 22px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:650;color:var(--muted);padding:4px}
+  .tab.on{color:var(--brand)}
+  .tab svg{width:22px;height:22px}
+
+  /* ---------- Composer (org side) ---------- */
+  .composer{padding:0 0 20px}
+  .cmphead{background:linear-gradient(160deg,var(--brand),var(--brand-ink));color:#fff;padding:16px 18px}
+  .cmphead .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.8;font-weight:700}
+  .cmphead h2{margin:3px 0 0;font-size:19px;font-weight:800}
+  .field{padding:14px 16px 0}
+  .field label{font-size:11.5px;font-weight:750;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .field input.t,.field textarea{width:100%;margin-top:7px;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px;outline:none;font-family:inherit;resize:none}
+  .field input.t:focus,.field textarea:focus{border-color:var(--brand)}
+  .dropzone{
+    margin:9px 16px 0;border:2px dashed color-mix(in srgb,var(--brand) 45%,#cfd6df);border-radius:16px;
+    background:var(--brand-soft);padding:20px;text-align:center;color:var(--brand-ink)
+  }
+  .dropzone .big{font-weight:800;font-size:14px;margin-top:8px}
+  .dropzone .small{font-size:11.5px;opacity:.8;margin-top:3px}
+  .uprow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px 0}
+  .uptile{position:relative;border-radius:12px;overflow:hidden;height:72px;background:#0d1117}
+  .uptile img{width:100%;height:100%;object-fit:cover}
+  .uptile .vlab{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;font-size:8.5px;font-weight:700;padding:2px 5px;border-radius:5px}
+  .uptile .x{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:12px;display:grid;place-items:center;line-height:1}
+  .uptile.add{background:var(--brand-soft);border:1.5px dashed color-mix(in srgb,var(--brand) 45%,#cfd6df);display:grid;place-items:center;color:var(--brand);font-size:24px;font-weight:400}
+  .chanrow{display:flex;flex-direction:column;gap:9px;padding:10px 16px 0}
+  .chanopt{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:13px;padding:11px 13px}
+  .chanopt .ico{width:34px;height:34px;border-radius:10px;background:var(--brand-soft);display:grid;place-items:center;flex:none;color:var(--brand-ink)}
+  .chanopt .ct{flex:1}
+  .chanopt .ct b{font-size:13.5px;display:block}
+  .chanopt .ct span{font-size:11.5px;color:var(--muted)}
+  .toggle{width:44px;height:26px;border-radius:20px;background:#d5dae1;position:relative;transition:.15s;flex:none}
+  .toggle.on{background:var(--brand)}
+  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .toggle.on::after{left:21px}
+  .reach{margin:14px 16px 0;background:#fbfcfd;border:1px solid var(--line);border-radius:13px;padding:12px 14px;font-size:12.5px;color:var(--muted)}
+  .reach b{color:var(--ink)}
+  .publishbar{padding:16px}
+  .publish{width:100%;background:var(--brand);color:#fff;font-weight:800;font-size:15px;padding:15px;border-radius:14px;box-shadow:var(--shadow)}
+  .publish:disabled{opacity:.5}
+
+  /* ---------- Archive ---------- */
+  .arch{padding:14px 16px 26px}
+  .arch h2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin:6px 2px 4px}
+  .arch .muted{font-size:12.5px;color:var(--muted);margin:0 2px 14px}
+  .tl{position:relative;margin-left:8px;padding-left:20px;border-left:2px solid var(--line)}
+  .tevent{position:relative;margin-bottom:16px}
+  .tevent::before{content:"";position:absolute;left:-27px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--brand);border:2px solid #fff;box-shadow:0 0 0 2px var(--brand-soft)}
+  .tdate{font-size:11px;font-weight:750;color:var(--brand);text-transform:uppercase;letter-spacing:.03em}
+  .tcard{background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow-sm);padding:11px 13px;margin-top:6px;display:flex;gap:11px;align-items:center}
+  .tthumb{width:52px;height:52px;border-radius:11px;object-fit:cover;flex:none;background:#0d1117}
+  .tcard .tt{flex:1;min-width:0}
+  .tcard .tt b{font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tcard .tt span{font-size:11.5px;color:var(--muted);display:flex;gap:10px;margin-top:3px}
+  .tcard .tt span i{font-style:normal;display:flex;align-items:center;gap:3px}
+
+  /* ---------- Connections panel ---------- */
+  .conn{padding:14px 16px 26px}
+  .conn h2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin:6px 2px 2px}
+  .conn .muted{font-size:12.5px;color:var(--muted);margin:0 2px 16px}
+  .intcard{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+  .intcard .ii{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;font-size:19px}
+  .intcard .it{flex:1}
+  .intcard .it b{font-size:13.5px;display:block}
+  .intcard .it span{font-size:11.5px;color:var(--muted)}
+  .pill{font-size:10.5px;font-weight:750;padding:5px 10px;border-radius:20px}
+  .pill.on{background:var(--brand-soft);color:var(--brand-ink)}
+  .pill.off{background:#f0f2f6;color:var(--muted)}
+  .flowbox{background:linear-gradient(160deg,var(--brand-soft),#fff);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:16px}
+  .flowbox .ftitle{font-size:12.5px;font-weight:800;color:var(--brand-ink);margin-bottom:11px}
+  .flow{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .fnode{flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--brand-ink)}
+  .fnode .fico{width:36px;height:36px;border-radius:11px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;margin:0 auto 5px;font-size:16px}
+  .farrow{color:var(--brand);font-size:16px;flex:none}
+
+  /* callout under phones (desktop only) */
+  .aside{width:290px;max-width:94vw}
+  .acard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 17px;box-shadow:var(--shadow-sm);margin-bottom:14px}
+  .acard h3{margin:0 0 8px;font-size:13px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .acard p{margin:0;font-size:12.5px;line-height:1.55;color:#4b5560}
+  .acard ul{margin:8px 0 0;padding-left:17px}
+  .acard li{font-size:12.5px;line-height:1.5;color:#4b5560;margin-bottom:5px}
+  .kbd{display:inline-block;background:var(--brand-soft);color:var(--brand-ink);font-size:11px;font-weight:750;padding:2px 7px;border-radius:6px}
+  @media(max-width:900px){.aside{display:none}}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#12161d;color:#fff;padding:13px 20px;border-radius:14px;font-size:13.5px;font-weight:650;box-shadow:0 12px 40px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:88vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="topbar">
+    <div class="title"><span class="dot" id="dotLogo">S</span> CoLabr <span style="color:var(--muted);font-weight:600">· prototype</span></div>
+    <div class="seg" id="viewSeg">
+      <button data-view="supporter" class="on">Supporter view</button>
+      <button data-view="org">Missionary / Org view</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="brandpick">
+      <label>Branded for</label>
+      <select id="brandSel"></select>
+    </div>
+  </div>
+  <p class="hint">Tap around — like , comment, open the composer, switch the brand, explore Connections. Everything's interactive.</p>
+
+  <div class="wrap">
+    <!-- PHONE -->
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:41</span><span>● ● ● &nbsp;5G&nbsp; 🔋</span></div>
+      <div class="screen" id="screen"><!-- injected --></div>
+      <div class="tabbar" id="tabbar"><!-- injected --></div>
+    </div>
+
+    <!-- ASIDE (desktop) -->
+    <div class="aside">
+      <div class="acard">
+        <h3> What you're looking at</h3>
+        <p>A single platform where every missions org — and every missionary or team inside it — gets a <b>branded update feed</b>. Supporters follow along and reply the way they already communicate.</p>
+      </div>
+      <div class="acard">
+        <h3> Multi-tenant branding</h3>
+        <p>Switch <span class="kbd">Branded for</span> up top. The colors, logo, and name re-skin instantly — the same app, owned by each org.</p>
+      </div>
+      <div class="acard">
+        <h3> Reach supporters where they are</h3>
+        <p>One update goes out over email, text, and in-app at once. Supporters can reply on any channel and it lands back in one thread.</p>
+      </div>
+      <div class="acard">
+        <h3> Built to connect</h3>
+        <p>Open the <b>Connections</b> tab (org view) to see updates flow into your donor CRM, giving, and prayer tools — the bigger ecosystem play.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ TENANTS (multi-tenant branding) ============ */
+const TENANTS = {
+  jv:{
+    name:"Josiah Venture", initial:"JV",
+    brand:"#141414", ink:"#000000", soft:"#f4f4f5", accent:"#FF6600",
+    missionary:"The Ellenwood Family", field:"Frýdek-Místek, Czechia",
+    mAvatar:"L"
+  },
+  grace:{
+    name:"Grace Global", initial:"GG",
+    brand:"#141414", ink:"#000000", soft:"#f4f4f5", accent:"#3b74e0",
+    missionary:"Team Nairobi", field:"Nairobi, Kenya",
+    mAvatar:"N"
+  },
+  harvest:{
+    name:"Harvest Collective", initial:"HC",
+    brand:"#141414", ink:"#000000", soft:"#f4f4f5", accent:"#e0552e",
+    missionary:"Rio Church Plant", field:"Rio de Janeiro, Brazil",
+    mAvatar:"R"
+  }
+};
+
+/* ============ DEMO CONTENT (photos via inline SVG data URIs) ============ */
+function ph(c1,c2,label){
+  // dark charcoal placeholder with a JV-orange accent stripe (colors c1/c2 ignored for a clean mono look)
+  const _t=(typeof state!=='undefined'&&state&&typeof TENANTS!=='undefined'&&TENANTS[state.tenant])?TENANTS[state.tenant]:null;
+  const acc=_t?_t.accent:'#FF6600';
+  const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'>
+   <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+   <stop offset='0' stop-color='#333'/><stop offset='1' stop-color='#0e0e0e'/></linearGradient></defs>
+   <rect width='600' height='400' fill='url(#g)'/>
+   <rect x='0' y='388' width='600' height='12' fill='${acc}'/>
+   <g font-family='sans-serif' text-anchor='middle'>
+   <text x='300' y='215' font-size='34' fill='rgba(255,255,255,.85)'>${label}</text></g></svg>`;
+  return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg);
+}
+let posts=[]; // populated per tenant
+function buildPosts(t){
+  return [
+    { id:1, title:"Camp week: 47 students, 12 first-time decisions",
+      body:"We just wrapped our biggest English camp yet. Please pray for the new believers as local leaders begin follow-up. The video is Marek sharing his story — bring tissues!",
+      when:"2 hours ago", tag:"Camp", kind:"video", dur:"1:24",
+      img:ph("#0f766e","#134e4a"," Camp highlights"),
+      likes:38, liked:false,
+      comments:[{who:"Karen P.",text:"Praising God! Praying for Marek ",when:"1h"},
+                {who:"Dave & Sue",text:"So proud of the team. Sending support this week.",when:"40m"}] },
+    { id:2, title:"Prayer request: visa renewal next Tuesday",
+      body:"Our residency paperwork is up for renewal and last year it took three attempts. Would you pray specifically for a smooth appointment at 9am Tuesday (their time)?",
+      when:"Yesterday", tag:"Prayer", kind:"none", img:null,
+      likes:64, liked:false,
+      comments:[{who:"Grace Chapel",text:"The whole small group is on it. ",when:"20h"}] },
+    { id:3, title:"Photos from the youth retreat",
+      body:"A weekend in the mountains with 30 teenagers. Worship, hiking, hard conversations, and a lot of hot chocolate. Swipe through — full album in the app.",
+      when:"3 days ago", tag:"Ministry", kind:"grid",
+      imgs:[ph("#2563eb","#1e3a8a","Worship night"),ph("#d97706","#92400e","Sunrise hike"),
+            ph("#059669","#065f46","Small groups"),ph("#7c3aed","#4c1d95","Bonfire")],
+      likes:52, liked:false,
+      comments:[] },
+    { id:4, title:"Newsletter: Q3 in review + what's ahead",
+      body:"Our full quarterly letter is here — ministry numbers, a family update (baby is walking!), and how your giving was used. Thank you for standing with us.",
+      when:"1 week ago", tag:"Update", kind:"video", dur:"3:02",
+      img:ph("#be123c","#881337"," Q3 family update"),
+      likes:29, liked:false,
+      comments:[{who:"Uncle Rob",text:"Walking already?! Love you guys.",when:"6d"}] }
+  ];
+}
+
+/* ============ STATE ============ */
+let state={ tenant:"jv", view:"supporter", tab:"feed" };
+const $=s=>document.querySelector(s);
+
+function applyTenant(){
+  const t=TENANTS[state.tenant], r=document.documentElement.style;
+  r.setProperty('--brand',t.brand); r.setProperty('--brand-ink',t.ink);
+  r.setProperty('--brand-soft',t.soft); r.setProperty('--accent',t.accent);
+  $('#dotLogo').textContent=t.initial;
+  posts=buildPosts(t);
+}
+
+/* ============ ICONS ============ */
+const I={
+  search:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>`,
+  heart:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5 6 5c2 0 3.2 1.2 4 2.3C10.8 6.2 12 5 14 5c3.5 0 5 4 3.5 7-2.5 4.5-5.5 9-5.5 9z"/></svg>`,
+  heartF:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5 6 5c2 0 3.2 1.2 4 2.3C10.8 6.2 12 5 14 5c3.5 0 5 4 3.5 7-2.5 4.5-5.5 9-5.5 9z"/></svg>`,
+  chat:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>`,
+  mail:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>`,
+  sms:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6A8 8 0 1 1 21 12z"/></svg>`,
+  bell:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`,
+  play:`<svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>`,
+  send:`<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 12l16-8-5 8 5 8z" opacity=".9"/></svg>`,
+  home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>`,
+  clock:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+  plus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>`,
+  link:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>`,
+  user:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>`
+};
+
+/* ============ RENDER: SUPPORTER FEED ============ */
+function renderFeed(){
+  const t=TENANTS[state.tenant];
+  const chips=["All","Camp","Prayer","Ministry","Updates","Photos","Videos"];
+  let html=`
+  <div class="apphead">
+    <div class="row">
+      <div class="logo">${t.initial}</div>
+      <div>
+        <h1>${t.missionary}</h1>
+        <div class="sub">${t.name} · ${t.field}</div>
+      </div>
+      <button class="follow" onclick="toast('You\\'re following — updates will come by email, text & app ✓')">Following ✓</button>
+    </div>
+    <div class="searchbar">${I.search}<input placeholder="Search updates, prayers, people…" onkeydown="if(event.key==='Enter')toast(' Searching every past update across all channels')"></div>
+    <div class="chips">${chips.map((c,i)=>`<button class="chip ${i===0?'on':''}" onclick="filterChip(this)">${c}</button>`).join('')}</div>
+  </div>
+  <div class="feed">`;
+  posts.forEach(p=>{ html+=postCard(p,t); });
+  html+=`</div>`;
+  return html;
+}
+function postCard(p,t){
+  let media="";
+  if(p.kind==="video"){
+    media=`<div class="media video" onclick="toast(' Playing video — streamed in-app, no download needed')">
+      <img src="${p.img}"><div class="playbtn">${I.play}</div><span class="duration">${p.dur}</span></div>`;
+  }else if(p.kind==="grid"){
+    media=`<div class="mgrid">${p.imgs.map(s=>`<img src="${s}" onclick="toast(' Opening full album')">`).join('')}</div>`;
+  }
+  const commentsHtml=p.comments.map(c=>`
+    <div class="comment"><div class="avatar">${c.who[0]}</div>
+      <div><div class="cbub"><b>${c.who}</b><br>${c.text}</div><div class="cmeta">${c.when} · ${I2('like')}</div></div>
+    </div>`).join('');
+  return `
+  <div class="post" data-id="${p.id}">
+    <div class="phead">
+      <div class="avatar">${t.mAvatar}</div>
+      <div><div class="who">${t.missionary}</div><div class="when">${p.when}</div></div>
+      <span class="tag">${p.tag}</span>
+    </div>
+    <div class="ptitle">${p.title}</div>
+    <div class="pbody">${p.body}</div>
+    ${media}
+    <div class="pactions">
+      <button class="act ${p.liked?'liked':''}" onclick="like(${p.id},this)">
+        <span class="hicon">${p.liked?I.heartF:I.heart}</span><span class="n">${p.likes}</span></button>
+      <button class="act" onclick="focusComment(${p.id})">${I.chat}<span class="n">${p.comments.length}</span></button>
+      <button class="act" style="margin-left:auto" onclick="toast('Shared — supporters can forward to their own circles')">Share</button>
+    </div>
+    <div class="replybar">
+      <button class="rb prim" onclick="toast(' Reply lands in one thread no matter the channel')">${I.chat}<span>Reply</span><small>in-app</small></button>
+      <button class="rb" onclick="toast(' Supporters can just hit reply on the email — it shows up here')">${I.mail}<span>Email</span><small>reply-to</small></button>
+      <button class="rb" onclick="toast(' Text back a number & it threads into this update')">${I.sms}<span>Text</span><small>SMS</small></button>
+    </div>
+    ${commentsHtml}
+    <div class="addc">
+      <div class="avatar" style="background:var(--accent);color:#fff">M</div>
+      <input id="ci-${p.id}" placeholder="Write an encouragement…" onkeydown="if(event.key==='Enter')addComment(${p.id})">
+      <button class="sendc" onclick="addComment(${p.id})">${I.send}</button>
+    </div>
+  </div>`;
+}
+function I2(){return `<span style="color:var(--brand);font-weight:700">Reply</span>`;}
+
+/* ============ RENDER: ORG COMPOSER ============ */
+let media=[
+  {img:ph("#0f766e","#134e4a","IMG"),video:false},
+  {img:ph("#2563eb","#1e3a8a","IMG"),video:false},
+  {img:ph("#be123c","#881337","VID"),video:true}
+];
+let channels={email:true,sms:true,app:true};
+function renderComposer(){
+  const t=TENANTS[state.tenant];
+  const reachBase=842;
+  const reach=(channels.email?reachBase:0);
+  return `
+  <div class="composer">
+    <div class="cmphead">
+      <div class="k">${t.name} · New update</div>
+      <h2>Share what God's doing</h2>
+    </div>
+    <div class="field">
+      <label>Title</label>
+      <input class="t" id="cTitle" placeholder="e.g. Camp week: 47 students, 12 decisions">
+    </div>
+    <div class="field">
+      <label>Your update</label>
+      <textarea id="cBody" rows="4" placeholder="Tell the story. Supporters see this in the app, in their inbox, and as a text."></textarea>
+    </div>
+    <label style="display:block;padding:14px 16px 0;font-size:11.5px;font-weight:750;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Photos &amp; video</label>
+    <div class="dropzone" onclick="addMedia()">
+      <div style="font-size:26px">📸</div>
+      <div class="big">Tap to add — or drag photos &amp; videos here</div>
+      <div class="small">Upload straight from your phone. We resize &amp; transcode automatically.</div>
+    </div>
+    <div class="uprow" id="uprow">${mediaTiles()}</div>
+    <label style="display:block;padding:18px 16px 0;font-size:11.5px;font-weight:750;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Send it out on</label>
+    <div class="chanrow">
+      ${chanOpt('app','In-app feed','Followers see it instantly',I.bell)}
+      ${chanOpt('email','Email','Full update with photos to inboxes',I.mail)}
+      ${chanOpt('sms','Text / SMS','Short note + link to the full update',I.sms)}
+    </div>
+    <div class="reach">Estimated reach: <b id="reachN">${liveReach()}</b> supporters across selected channels. They can reply on <b>any</b> channel and it threads back to you.</div>
+    <div class="publishbar">
+      <button class="publish" onclick="publish()">Publish update →</button>
+    </div>
+  </div>`;
+}
+function mediaTiles(){
+  let h=media.map((m,i)=>`
+    <div class="uptile">
+      <img src="${m.img}">
+      ${m.video?'<span class="vlab"> VIDEO</span>':''}
+      <div class="x" onclick="rmMedia(${i})">×</div>
+    </div>`).join('');
+  h+=`<div class="uptile add" onclick="addMedia()">+</div>`;
+  return h;
+}
+function chanOpt(key,title,desc,ico){
+  return `<div class="chanopt">
+    <div class="ico">${ico}</div>
+    <div class="ct"><b>${title}</b><span>${desc}</span></div>
+    <div class="toggle ${channels[key]?'on':''}" onclick="toggleChan('${key}',this)"></div>
+  </div>`;
+}
+function liveReach(){
+  let r=0; if(channels.app)r=Math.max(r,842); if(channels.email)r=Math.max(r,806); if(channels.sms)r=Math.max(r,ctSms());
+  return r||0;
+}
+function ctSms(){return 511;}
+
+/* ============ RENDER: ARCHIVE ============ */
+function renderArchive(){
+  const t=TENANTS[state.tenant];
+  const items=[
+    {d:"This week",title:"Camp week: 47 students, 12 decisions",thumb:ph("#0f766e","#134e4a",""),ch:[" 806"," 38"," 5"]},
+    {d:"Yesterday",title:"Prayer request: visa renewal",thumb:ph("#334155","#0f172a",""),ch:[" 806"," 64"]},
+    {d:"3 days ago",title:"Photos from the youth retreat",thumb:ph("#2563eb","#1e3a8a",""),ch:[" 52"," 9"]},
+    {d:"Last week",title:"Newsletter: Q3 in review",thumb:ph("#be123c","#881337",""),ch:[" 806"," 29"]},
+    {d:"June 28",title:"New believers baptized at the river",thumb:ph("#059669","#065f46","💧"),ch:[" 792"," 71"]},
+    {d:"June 14",title:"Team retreat + vision for the fall",thumb:ph("#7c3aed","#4c1d95","🏔"),ch:[" 780"," 33"]}
+  ];
+  return `<div class="arch">
+    <h2>Update history</h2>
+    <p class="muted">Every update you've ever sent — searchable by supporters, forever. Nothing lost in an inbox.</p>
+    <div class="searchbar" style="background:#fff;border:1px solid var(--line);color:var(--ink);margin-bottom:16px">
+      <span style="color:var(--muted)">${I.search}</span>
+      <input placeholder="Search 3 years of updates…" style="color:var(--ink)" onkeydown="if(event.key==='Enter')toast(' Full-text search across every past update')">
+    </div>
+    <div class="tl">
+      ${items.map(it=>`
+        <div class="tevent">
+          <div class="tdate">${it.d}</div>
+          <div class="tcard" onclick="toast('Opening: ${it.title.replace(/'/g,'')}')">
+            <img class="tthumb" src="${it.thumb}">
+            <div class="tt"><b>${it.title}</b>
+              <span>${it.ch.map(c=>`<i>${c}</i>`).join('')}</span>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ============ RENDER: CONNECTIONS ============ */
+function renderConnections(){
+  const ints=[
+    {ico:"",bg:"#fff7e6",name:"Donor CRM",desc:"Log every update against supporter records",on:true},
+    {ico:"",bg:"#e8f5ee",name:"Online giving",desc:"Add a Give button to any update",on:true},
+    {ico:"",bg:"#eef",name:"Prayer app",desc:"Prayer-tagged posts flow to prayer teams",on:true},
+    {ico:"",bg:"#fbe9e3",name:"Annual report",desc:"Auto-compile a year of updates",on:false},
+    {ico:"",bg:"#e8eafc",name:"Calendar / trips",desc:"Sync camp & trip dates to updates",on:false},
+    {ico:"",bg:"#e6f4ee",name:"Mailchimp import",desc:"Bring your existing supporter list",on:true}
+  ];
+  return `<div class="conn">
+    <h2>Connections</h2>
+    <p class="muted">The bigger play: updates aren't a dead-end email — they're structured data that flows across your whole toolset.</p>
+    <div class="flowbox">
+      <div class="ftitle">How one update travels</div>
+      <div class="flow">
+        <div class="fnode"><div class="fico">✍️</div>You post</div>
+        <div class="farrow">→</div>
+        <div class="fnode"><div class="fico"></div>3 channels</div>
+        <div class="farrow">→</div>
+        <div class="fnode"><div class="fico"></div>CRM logs it</div>
+        <div class="farrow">→</div>
+        <div class="fnode"><div class="fico"></div>Report</div>
+      </div>
+    </div>
+    ${ints.map(x=>`
+      <div class="intcard">
+        <div class="ii" style="background:${x.bg}">${x.ico}</div>
+        <div class="it"><b>${x.name}</b><span>${x.desc}</span></div>
+        <div class="pill ${x.on?'on':'off'}" onclick="toast('${x.on?'Connected ✓':'Connect '+x.name+' — coming soon'}')">${x.on?'Connected':'Connect'}</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+/* ============ TAB BAR ============ */
+function renderTabs(){
+  const tb=$('#tabbar');
+  let tabs;
+  if(state.view==="supporter"){
+    tabs=[["feed","Feed",I.home],["archive","History",I.clock],["notif","Alerts",I.bell],["me","Me",I.user]];
+  }else{
+    tabs=[["compose","Post",I.plus],["archive","Sent",I.clock],["connections","Connect",I.link],["me","Team",I.user]];
+  }
+  tb.innerHTML=tabs.map(([k,l,ic])=>`
+    <button class="tab ${state.tab===k?'on':''}" onclick="go('${k}')">${ic}<span>${l}</span></button>`).join('');
+}
+
+/* ============ ROUTER ============ */
+function render(){
+  const s=$('#screen');
+  if(state.view==="supporter"){
+    if(state.tab==="feed") s.innerHTML=renderFeed();
+    else if(state.tab==="archive") s.innerHTML=renderArchive();
+    else s.innerHTML=simple(state.tab==="notif"?"🔔 Alerts":"👤 Your profile",
+        state.tab==="notif"?"Every reply, new update, and prayer answered — in one place.":"Manage how you hear from the families you support: email, text, app, or all three.");
+  }else{
+    if(state.tab==="compose") s.innerHTML=renderComposer();
+    else if(state.tab==="archive") s.innerHTML=renderArchive();
+    else if(state.tab==="connections") s.innerHTML=renderConnections();
+    else s.innerHTML=simple("👥 Your team","Invite co-workers, manage who can post, and set your org's brand kit — logo, colors, and reply-to address.");
+  }
+  renderTabs();
+  s.scrollTop=0;
+}
+function simple(title,body){
+  return `<div style="padding:60px 26px;text-align:center">
+    <div style="font-size:44px;margin-bottom:14px">${title.split(' ')[0]}</div>
+    <div style="font-size:19px;font-weight:800;margin-bottom:10px">${title.substring(title.indexOf(' ')+1)}</div>
+    <div style="font-size:13.5px;color:var(--muted);line-height:1.6;max-width:260px;margin:0 auto">${body}</div>
+  </div>`;
+}
+
+/* ============ INTERACTIONS ============ */
+function go(tab){ state.tab=tab; render(); }
+function like(id,el){
+  const p=posts.find(x=>x.id===id);
+  p.liked=!p.liked; p.likes+=p.liked?1:-1;
+  el.classList.toggle('liked',p.liked);
+  el.querySelector('.hicon').innerHTML=p.liked?I.heartF:I.heart;
+  el.querySelector('.n').textContent=p.likes;
+}
+function addComment(id){
+  const inp=document.getElementById('ci-'+id); const v=inp.value.trim();
+  if(!v)return;
+  const p=posts.find(x=>x.id===id); p.comments.push({who:"You",text:v,when:"now"});
+  render(); toast('Sent ✓ The family gets it by app + email');
+}
+function focusComment(id){ const el=document.getElementById('ci-'+id); if(el){el.scrollIntoView({block:'center'});el.focus();} }
+function filterChip(el){ el.parentNode.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); toast('Filtered: '+el.textContent); }
+function addMedia(){
+  const pool=[["#0f766e","#134e4a","IMG"],["#d97706","#92400e","IMG"],["#7c3aed","#4c1d95","VID"],["#059669","#065f46","IMG"],["#2563eb","#1e3a8a","VID"]];
+  const pick=pool[media.length%pool.length];
+  media.push({img:ph(pick[0],pick[1],pick[2]),video:pick[2]==="VID"});
+  $('#uprow').innerHTML=mediaTiles(); toast('📎 Added — auto-resized & ready');
+}
+function rmMedia(i){ media.splice(i,1); $('#uprow').innerHTML=mediaTiles(); }
+function toggleChan(k,el){ channels[k]=!channels[k]; el.classList.toggle('on',channels[k]); $('#reachN').textContent=liveReach(); }
+function publish(){
+  const title=document.getElementById('cTitle').value.trim()||"Your update";
+  const chs=Object.keys(channels).filter(k=>channels[k]).map(k=>k==="app"?"in-app":k);
+  toast('🚀 Published “'+title.substring(0,28)+'” to '+chs.join(', ')+' · '+liveReach()+' supporters');
+}
+
+/* ============ TOP CONTROLS ============ */
+$('#viewSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  $('#viewSeg').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); state.view=b.dataset.view;
+  state.tab=state.view==="supporter"?"feed":"compose";
+  render();
+});
+function buildBrandSel(){
+  const sel=$('#brandSel');
+  sel.innerHTML=Object.entries(TENANTS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('');
+  sel.value=state.tenant;
+  sel.addEventListener('change',()=>{ state.tenant=sel.value; applyTenant(); render(); toast(' Re-branded for '+TENANTS[state.tenant].name); });
+}
+let toastT;
+function toast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2400); }
+
+/* ============ INIT ============ */
+applyTenant(); buildBrandSel(); render();
+</script>
+</body>
+</html>
