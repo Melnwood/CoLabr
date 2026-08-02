@@ -20,19 +20,26 @@ exports.handler = async function (event) {
   if (!session && !(editKey && b.key === editKey)) return resp(401, { error: 'Please sign in.' });
   if (!b.title || !b.title.trim()) return resp(400, { error: 'A title is required.' });
 
+  const blocks = Array.isArray(b.blocks) ? b.blocks : [];
+  const bodyText = blocks.filter(x => ['text','quote','prayer'].includes(x.type))
+    .map(x => x.text || '').filter(Boolean).join('\n\n').trim();
+  const firstPhoto = (blocks.find(x => x.type === 'photo' && x.url) || {}).url || '';
+  const firstVideo = (blocks.find(x => x.type === 'video' && x.url) || {}).url || '';
+
   const fields = {
     'Title': b.title.trim(),
-    'Body': b.body || '',
-    'Excerpt': (b.body || '').replace(/\s+/g, ' ').trim().slice(0, 240),
+    'Body': bodyText || (b.body || ''),
+    'Excerpt': (bodyText || b.body || '').replace(/\s+/g, ' ').trim().slice(0, 240),
     'Type': b.type || 'Newsletter',
     'Status': b.publish ? 'Published' : 'Draft',
     'Source': 'CoLabr',
     'Missionary': ['The Ellenwood Family'],
     'Date': b.date || new Date().toISOString().slice(0, 10)
   };
+  if (blocks.length) fields['Blocks'] = JSON.stringify(blocks);
   if (b.audiences && b.audiences.length) fields['Audiences'] = b.audiences;
-  if (b.cover) fields['Cover Image URL'] = b.cover;
-  if (b.video) fields['Video URL'] = b.video;
+  const cover = b.cover || firstPhoto; if (cover) fields['Cover Image URL'] = cover;
+  const video = b.video || firstVideo; if (video) fields['Video URL'] = video;
 
   try {
     const r = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, {

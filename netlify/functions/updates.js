@@ -12,7 +12,8 @@ const F = {
   video:  'fldzK9sIREqMYJU5e',
   excerpt:'fld9PBqSvmd4vNiyh',
   arc:    'fldGKATli4f8Kk8d7',
-  aud:    'fld6ZpC94Aq43d5ZY'
+  aud:    'fld6ZpC94Aq43d5ZY',
+  blocks: 'fldN9B0v6YU0xptFu'
 };
 
 exports.handler = async function () {
@@ -36,7 +37,8 @@ exports.handler = async function () {
         video:   c[F.video] || '',
         excerpt: c[F.excerpt] || '',
         arc:     c[F.arc] || '',
-        aud:     (c[F.aud] || []).map(a => (a && a.name) ? a.name : a)
+        aud:     (c[F.aud] || []).map(a => (a && a.name) ? a.name : a),
+        blocks:  parseBlocks(c[F.blocks])
       };
     }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate));
     return json(200, updates, 'public, max-age=300');
@@ -44,6 +46,11 @@ exports.handler = async function () {
     return json(502, { error: 'Could not reach Airtable.' });
   }
 };
+
+function parseBlocks(v) {
+  if (!v) return [];
+  try { const a = JSON.parse(v); return Array.isArray(a) ? a : []; } catch { return []; }
+}
 
 function json(statusCode, body, cache) {
   const headers = { 'Content-Type': 'application/json' };

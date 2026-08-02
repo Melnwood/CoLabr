@@ -75,6 +75,14 @@
   .sheet .rmeta{font-size:12.5px;color:var(--muted);display:flex;gap:16px;margin-bottom:16px}
   .sheet .rmeta span{display:inline-flex;align-items:center;gap:5px}
   .sheet .rtext{font-size:15px;line-height:1.65;color:#3c3733;margin:0 0 18px}
+  .sheet .rimg{width:100%;border-radius:12px;margin:4px 0 14px}
+  .sheet .rcap{font-size:12px;color:var(--muted);margin:-8px 0 16px}
+  .sheet .rvid{position:relative;aspect-ratio:16/9;margin:4px 0 16px}
+  .sheet .rvid iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px}
+  .sheet .rquote{border-left:3px solid var(--acc);margin:0 0 16px;padding:2px 0 2px 16px;font-size:16px;font-style:italic;color:#241f1b;line-height:1.5}
+  .sheet .rquote span{display:block;font-style:normal;font-size:12.5px;color:var(--acc);font-weight:700;margin-top:6px}
+  .sheet .rprayer{background:#eef3fe;border-left:3px solid #2f6df0;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;color:#3c3733;line-height:1.55}
+  .sheet .rprayer b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#2f6df0;margin-bottom:4px}
   .sheet .rorig{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--acc);border:1px solid var(--line);border-radius:10px;padding:11px 16px}
   .sheet .rorig svg{width:15px;height:15px;fill:none;stroke:var(--acc);stroke-width:2.2}
   .sheet .give{display:block;margin-top:20px;background:var(--ink);border-radius:13px;padding:18px;text-align:center;color:#fff}
@@ -157,6 +165,19 @@ function render(){
 }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function embedURL(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/)))return 'https://www.youtube.com/embed/'+m[1];if((m=v.match(/vimeo\.com\/(\d+)/)))return 'https://player.vimeo.com/video/'+m[1];return '';}
+function bodyHtml(u){
+  if(u.blocks && u.blocks.length){
+    return u.blocks.map(bk=>{
+      if(bk.type==='text') return `<p class="rtext">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
+      if(bk.type==='photo'){ if(!bk.url) return ''; let h=`<img class="rimg" src="${esc(bk.url)}" alt="" onerror="this.style.display='none'">`; if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`; return h; }
+      if(bk.type==='video'){ const e=embedURL(bk.url||''); return e?`<div class="rvid"><iframe src="${e}" allow="fullscreen" allowfullscreen></iframe></div>`:''; }
+      if(bk.type==='quote') return `<blockquote class="rquote">${esc(bk.text||'')}${bk.by?`<span>${esc(bk.by)}</span>`:''}</blockquote>`;
+      if(bk.type==='prayer') return `<div class="rprayer"><b>Prayer</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
+      return '';
+    }).join('');
+  }
+  return `<p class="rtext">${esc(u.excerpt||'')}</p>`;
+}
 function openReader(i){
   const u=U[i];const sheet=document.getElementById('sheet');
   const emb=u.video?embedURL(u.video):'';
@@ -164,7 +185,7 @@ function openReader(i){
   sheet.innerHTML=`<div class="rcov">${media}<button class="x" id="rx">×</button></div>
     <div class="rbody"><div class="rk">Update</div><h2>${esc(u.title)}</h2>
     <div class="rmeta"><span>${u.date}, ${u.y}</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#7a756f" stroke-width="1.9"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>${(u.opens||0).toLocaleString()} opens</span></div>
-    <p class="rtext">${esc(u.excerpt||'')}</p>
+    ${bodyHtml(u)}
     ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
     <div class="give"><div class="t">Partner with the Ellenwoods</div><div class="d">Stand with us in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';

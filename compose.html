@@ -3,37 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CoLabr — New update</title>
+<title>CoLabr — Build an update</title>
 <style>
   :root{--acc:#FF6600;--bg:#0d0d0d;--card:#161616;--card2:#1c1c1c;--line:#2a2a2a;--muted:#8b9096;--text:#f2f3f4;--green:#3ecf8e;--red:#e0524e;}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
   svg{display:block}
-  .wrap{max-width:640px;margin:0 auto;padding:0 18px 80px}
-  .top{display:flex;align-items:center;gap:12px;padding:18px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:24px}
+  .wrap{max-width:680px;margin:0 auto;padding:0 18px 90px}
+  .top{display:flex;align-items:center;gap:12px;padding:18px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:22px}
   .lg{width:34px;height:34px;border-radius:9px;background:var(--acc);display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff}
   .top b{font-size:15px;font-weight:700}.top span{font-size:11.5px;color:var(--muted);display:block}
   .top .nav{margin-left:auto;display:flex;gap:8px;align-items:center}
   .top a{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);padding:7px 12px;border-radius:8px}
-  .who{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
-  .who img{width:26px;height:26px;border-radius:50%}
-  h1{font-size:24px;font-weight:750;letter-spacing:-.02em;margin:6px 0 4px}
-  .sub{font-size:13.5px;color:var(--muted);margin:0 0 22px;line-height:1.5}
+  .who{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}.who img{width:26px;height:26px;border-radius:50%}
+  h1{font-size:23px;font-weight:750;letter-spacing:-.02em;margin:6px 0 4px}
+  .sub{font-size:13.5px;color:var(--muted);margin:0 0 20px;line-height:1.5}
   label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 7px}
-  input,textarea,select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 14px;color:var(--text);font-size:14.5px;font-family:inherit;outline:none}
+  input,textarea,select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 13px;color:var(--text);font-size:14.5px;font-family:inherit;outline:none}
   input:focus,textarea:focus,select:focus{border-color:var(--acc)}
-  textarea{min-height:180px;resize:vertical;line-height:1.6}
+  textarea{resize:vertical;line-height:1.55}
   .rowg{display:flex;gap:12px}.rowg>div{flex:1}
   .chips{display:flex;gap:8px;flex-wrap:wrap}
   .chip{font-size:13px;font-weight:600;padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
   .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  .suggest{margin-top:9px;display:inline-flex;align-items:center;gap:7px;background:var(--card2);border:1px solid var(--line);color:var(--acc);font-size:12.5px;font-weight:650;padding:8px 13px;border-radius:9px;cursor:pointer}
+  .suggest:disabled{opacity:.55}.suggest svg{width:14px;height:14px;fill:var(--acc);stroke:none}
+  .ideas{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+  .ideas .idea{text-align:left;background:var(--card);border:1px solid var(--line);color:var(--text);font-size:14px;padding:11px 13px;border-radius:10px;cursor:pointer;line-height:1.35}
+  .ideas .idea:hover{border-color:var(--acc)}.ideas .lbl{font-size:11px;color:var(--muted);margin-bottom:1px}
+
+  /* builder */
+  .palette{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 6px}
+  .pbtn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:650;padding:9px 13px;border-radius:10px;border:1px dashed var(--line);background:var(--card);color:var(--text);cursor:pointer}
+  .pbtn:hover{border-color:var(--acc);color:var(--acc)}
+  .pbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9}
+  .canvas{margin-top:12px;min-height:60px}
+  .canvas .empty{border:1px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--muted);font-size:13px}
+  .blk{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 13px 14px;margin-bottom:11px;position:relative}
+  .blk.drag{opacity:.4}
+  .blk.dragsrc{opacity:.3}
+  .ghost{position:fixed;z-index:100;transform:translate(-50%,-150%);background:var(--acc);color:#fff;font-size:12px;font-weight:750;padding:7px 12px;border-radius:9px;pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.45);white-space:nowrap}
+  .ind{height:0;border-top:2px solid var(--acc);margin:7px 2px;border-radius:2px;box-shadow:0 0 8px rgba(255,102,0,.5)}
+  .palette .pbtn{touch-action:none;user-select:none}
+  .canvas.over .empty{border-color:var(--acc);color:var(--acc)}
+  .blk .bh{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .blk .grip{cursor:grab;color:var(--muted);touch-action:none;padding:2px;display:flex}
+  .blk .grip svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}
+  .blk .bt{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--acc)}
+  .blk .bctl{margin-left:auto;display:flex;gap:4px}
+  .blk .bctl button{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--card2);color:var(--muted);cursor:pointer;font-size:13px;display:grid;place-items:center}
+  .blk .bctl button.del{color:var(--red)}
+  .blk textarea{min-height:74px}
+  .blk .two{display:flex;gap:9px;margin-top:9px}.blk .two>*{flex:1}
   .hint{font-size:11.5px;color:#6a6f75;margin-top:6px}
-  .actions{display:flex;gap:12px;margin-top:26px}
+  .actions{display:flex;gap:12px;margin-top:26px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 26%);padding:16px 0 6px}
   .btn{flex:1;font-weight:700;font-size:15px;padding:15px;border-radius:12px;border:none;cursor:pointer}
-  .btn.pub{background:var(--acc);color:#fff}
-  .btn.draft{background:transparent;color:var(--text);border:1px solid var(--line)}
-  .btn:disabled{opacity:.55;cursor:default}
-  .msg{margin-top:18px;padding:14px 16px;border-radius:11px;font-size:13.5px;line-height:1.5;display:none}
+  .btn.pub{background:var(--acc);color:#fff}.btn.draft{background:var(--card);color:var(--text);border:1px solid var(--line)}
+  .btn:disabled{opacity:.55}
+  .msg{margin-top:14px;padding:14px 16px;border-radius:11px;font-size:13.5px;line-height:1.5;display:none}
   .msg.ok{display:block;background:#123021;color:var(--green);border:1px solid #1c4a34}
   .msg.err{display:block;background:#2a1513;color:#f0a19d;border:1px solid #4a201d}
   .msg a{color:var(--acc);font-weight:700;text-decoration:none}
@@ -42,15 +69,17 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="top"><div class="lg">JV</div><div><b>CoLabr</b><span>New update</span></div>
+    <div class="top"><div class="lg">JV</div><div><b>CoLabr</b><span>Build an update</span></div>
       <div class="nav"><span class="who" id="who"></span><a href="manage.html">Manage</a><a href="index.html">View site</a></div></div>
 
     <div id="form">
-      <h1>Write an update</h1>
-      <p class="sub">Publish and it goes live on your archive right away. Save as draft to finish later.</p>
+      <h1>Build your update</h1>
+      <p class="sub">Add blocks, drag to reorder, and it saves as a real update — text, photos, and video in the order you choose.</p>
 
       <label>Title</label>
       <input id="title" placeholder="e.g. God is on the move — 100 camps this summer">
+      <button type="button" class="suggest" id="suggest"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5 10.1 10.9 5.5 9l4.6-1.4z"/><path d="M18 15l.9 2.2L21 18l-2.1.8L18 21l-.9-2.2L15 18l2.1-.8z"/></svg> Suggest a title</button>
+      <div class="ideas" id="ideas"></div>
 
       <div class="rowg">
         <div><label>Date</label><input id="date" type="date"></div>
@@ -63,14 +92,16 @@
         <div class="chip" data-a="In-country (national)">In-country (KAM · Czech)</div>
       </div>
 
-      <label>Your update</label>
-      <textarea id="body" placeholder="Dear friends and family,&#10;&#10;Write your update here…"></textarea>
-
-      <div class="rowg">
-        <div><label>Cover photo link (optional)</label><input id="cover" placeholder="https://…"></div>
-        <div><label>Video link (optional)</label><input id="video" placeholder="YouTube or Vimeo URL"></div>
+      <label>Build the update</label>
+      <div class="palette" id="palette">
+        <button type="button" class="pbtn" data-t="text"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg> Text</button>
+        <button type="button" class="pbtn" data-t="photo"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5-4 4"/></svg> Photo</button>
+        <button type="button" class="pbtn" data-t="video"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Video</button>
+        <button type="button" class="pbtn" data-t="quote"><svg viewBox="0 0 24 24"><path d="M7 7h4v6H7zM13 7h4v6h-4z"/><path d="M7 13c0 3-2 4-2 4M13 13c0 3-2 4-2 4"/></svg> Quote</button>
+        <button type="button" class="pbtn" data-t="prayer"><svg viewBox="0 0 24 24"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4C9 6.4 10.4 5 12 3z"/><path d="M8.5 21h7"/></svg> Prayer</button>
       </div>
-      <div class="hint">Paste an image URL or a YouTube/Vimeo link. (Uploads come in a later version.)</div>
+      <div class="canvas" id="canvas"></div>
+      <div class="hint">Photos &amp; videos: paste an image URL or a YouTube/Vimeo link. (Direct uploads come later.) The first photo becomes the cover.</div>
 
       <div class="actions">
         <button class="btn draft" id="saveDraft">Save draft</button>
@@ -88,25 +119,138 @@ async function guard(){
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
     document.getElementById('form').style.display='block';
     document.getElementById('date').value=new Date().toISOString().slice(0,10);
+    if(!blocks.length){ add('text'); }
   }catch{ location.replace('login.html'); }
 }
 const aud=document.getElementById('aud');
 aud.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on')));
+
+// ---- block builder ----
+let blocks=[], seq=1;
+const DEF={ text:{text:''}, photo:{url:'',caption:''}, video:{url:''}, quote:{text:'',by:''}, prayer:{text:''} };
+const NAME={text:'Text',photo:'Photo',video:'Video',quote:'Quote',prayer:'Prayer request'};
+document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
+  b.addEventListener('pointerdown',e=>beginDrag(e,'new',{type:b.dataset.t,label:NAME[b.dataset.t]})));
+function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.stringify(DEF[t]))}; if(at==null||at>blocks.length)blocks.push(nb); else blocks.splice(at,0,nb); render(); }
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fieldHtml(b){
+  if(b.type==='text') return `<textarea data-id="${b.id}" data-f="text" placeholder="Write this section…">${esc(b.text)}</textarea>`;
+  if(b.type==='prayer') return `<textarea data-id="${b.id}" data-f="text" placeholder="A prayer request…">${esc(b.text)}</textarea>`;
+  if(b.type==='photo') return `<input data-id="${b.id}" data-f="url" placeholder="Image URL (https://…)" value="${esc(b.url)}"><div class="two"><input data-id="${b.id}" data-f="caption" placeholder="Caption (optional)" value="${esc(b.caption)}"></div>`;
+  if(b.type==='video') return `<input data-id="${b.id}" data-f="url" placeholder="YouTube or Vimeo URL" value="${esc(b.url)}">`;
+  if(b.type==='quote') return `<textarea data-id="${b.id}" data-f="text" placeholder="“A quote from someone…”">${esc(b.text)}</textarea><div class="two"><input data-id="${b.id}" data-f="by" placeholder="— who said it" value="${esc(b.by)}"></div>`;
+  return '';
+}
+function render(){
+  const c=document.getElementById('canvas');
+  if(!blocks.length){c.innerHTML='<div class="empty">Add your first block above — Text, Photo, Video, Quote, or Prayer.</div>';return;}
+  c.innerHTML=blocks.map((b,i)=>`<div class="blk" data-i="${i}">
+    <div class="bh"><span class="grip" data-grip="${i}"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+      <span class="bt">${NAME[b.type]}</span>
+      <span class="bctl"><button type="button" data-up="${i}" title="Move up">↑</button><button type="button" data-down="${i}" title="Move down">↓</button><button type="button" class="del" data-del="${i}" title="Remove">✕</button></span></div>
+    ${fieldHtml(b)}</div>`).join('');
+  c.querySelectorAll('[data-up]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();move(+el.dataset.up,-1);}));
+  c.querySelectorAll('[data-down]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();move(+el.dataset.down,1);}));
+  c.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();blocks.splice(+el.dataset.del,1);render();}));
+  c.querySelectorAll('[data-grip]').forEach(el=>el.addEventListener('pointerdown',e=>beginDrag(e,'move',{from:+el.dataset.grip,label:NAME[blocks[+el.dataset.grip].type]})));
+}
+function syncFromDOM(){
+  document.querySelectorAll('#canvas [data-id]').forEach(inp=>{
+    const b=blocks.find(x=>x.id==inp.dataset.id); if(b) b[inp.dataset.f]=inp.value;
+  });
+}
+function move(i,dir){ const j=i+dir; if(j<0||j>=blocks.length)return; const t=blocks[i];blocks[i]=blocks[j];blocks[j]=t; render(); }
+
+// ---- true drag & drop: drag from palette to place, or drag a block to reorder ----
+let drag=null;
+function beginDrag(e, kind, opts){
+  e.preventDefault(); syncFromDOM();
+  drag={kind, type:opts.type, from:(opts.from==null?-1:opts.from), moved:false, sx:e.clientX, sy:e.clientY};
+  drag.ghost=document.createElement('div'); drag.ghost.className='ghost'; drag.ghost.textContent=opts.label;
+  document.body.appendChild(drag.ghost); moveGhost(e.clientX,e.clientY);
+  if(kind==='move'){ const c=document.querySelectorAll('#canvas .blk')[opts.from]; if(c)c.classList.add('dragsrc'); }
+  window.addEventListener('pointermove',onDrag,{passive:false});
+  window.addEventListener('pointerup',endDrag,{once:true});
+}
+function moveGhost(x,y){ if(drag&&drag.ghost){drag.ghost.style.left=x+'px';drag.ghost.style.top=y+'px';} }
+function insertionIndex(y){
+  const cs=[...document.querySelectorAll('#canvas .blk')];
+  for(let k=0;k<cs.length;k++){ const r=cs[k].getBoundingClientRect(); if(y < r.top + r.height/2) return k; }
+  return cs.length;
+}
+function showIndicator(idx){
+  clearIndicator();
+  const c=document.getElementById('canvas'); const cs=[...c.querySelectorAll('.blk')];
+  const ind=document.createElement('div'); ind.className='ind'; ind.id='dropind';
+  if(idx>=cs.length) c.appendChild(ind); else c.insertBefore(ind, cs[idx]);
+}
+function clearIndicator(){ const el=document.getElementById('dropind'); if(el)el.remove(); }
+function onDrag(e){
+  if(!drag)return; e.preventDefault();
+  if(Math.abs(e.clientY-drag.sy)>6||Math.abs(e.clientX-drag.sx)>6) drag.moved=true;
+  moveGhost(e.clientX,e.clientY);
+  const canvas=document.getElementById('canvas');
+  const r=canvas.getBoundingClientRect();
+  const inside = e.clientX>r.left-40 && e.clientX<r.right+40 && e.clientY>r.top-40 && e.clientY<r.bottom+60;
+  canvas.classList.toggle('over', inside && drag.kind==='new');
+  if(drag.moved && inside) showIndicator(insertionIndex(e.clientY)); else clearIndicator();
+}
+function endDrag(e){
+  window.removeEventListener('pointermove',onDrag);
+  if(!drag){return;}
+  const g=drag.ghost; if(g)g.remove();
+  const canvas=document.getElementById('canvas');
+  const r=canvas.getBoundingClientRect();
+  const inside = e.clientX>r.left-40 && e.clientX<r.right+40 && e.clientY>r.top-40 && e.clientY<r.bottom+60;
+  let idx = insertionIndex(e.clientY);
+  const d=drag; drag=null; clearIndicator(); canvas.classList.remove('over');
+
+  if(d.kind==='new'){
+    if(!d.moved){ add(d.type); }                 // tap = add at end
+    else if(inside){ add(d.type, idx); }         // drag = place at position
+    else { render(); }
+  } else { // move
+    if(d.moved && inside){ let to=idx; if(to>d.from)to--; if(to!==d.from){ const t=blocks.splice(d.from,1)[0]; blocks.splice(Math.max(0,Math.min(to,blocks.length)),0,t);} }
+    render();
+  }
+}
+
+// ---- suggest title ----
+const sg=document.getElementById('suggest'), ideas=document.getElementById('ideas');
+sg.addEventListener('click',async()=>{
+  syncFromDOM();
+  const bodyText=blocks.filter(b=>['text','quote','prayer'].includes(b.type)).map(b=>b.text).join('\n\n').trim();
+  if(bodyText.length<20){ideas.innerHTML='<div class="lbl">Write a little of your update first, then I can suggest titles.</div>';return;}
+  sg.disabled=true; const orig=sg.innerHTML; sg.innerHTML='Thinking…'; ideas.innerHTML='';
+  try{
+    const r=await fetch('/.netlify/functions/suggest-title',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body:bodyText,type:document.getElementById('type').value})});
+    if(r.status===401){location.replace('login.html');return;}
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not suggest titles.');
+    ideas.innerHTML='<div class="lbl">Tap one to use it — these fit what your supporters actually open:</div>'+
+      d.titles.map(t=>`<button type="button" class="idea">${esc(t)}</button>`).join('');
+    ideas.querySelectorAll('.idea').forEach(el=>el.addEventListener('click',()=>{document.getElementById('title').value=el.textContent;document.getElementById('title').focus();}));
+  }catch(e){ ideas.innerHTML='<div class="lbl">'+e.message+'</div>'; }
+  sg.disabled=false; sg.innerHTML=orig;
+});
+
+// ---- save ----
 async function submit(publish){
+  syncFromDOM();
   const msg=document.getElementById('msg'); msg.className='msg';
   const title=document.getElementById('title').value.trim();
   if(!title){show('err','Please add a title.');return;}
+  const clean=blocks.map(b=>{const o={type:b.type};for(const k in b){if(k!=='id'&&k!=='type')o[k]=(b[k]||'').trim();}return o;})
+    .filter(b=>(b.text&&b.text.length)||(b.url&&b.url.length));
   const audiences=[...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a);
-  const payload={publish,title,date:document.getElementById('date').value,type:document.getElementById('type').value,audiences,body:document.getElementById('body').value,cover:document.getElementById('cover').value.trim(),video:document.getElementById('video').value.trim()};
-  const bp=document.getElementById('publish'), bd=document.getElementById('saveDraft');
+  const payload={publish,title,date:document.getElementById('date').value,type:document.getElementById('type').value,audiences,blocks:clean};
+  const bp=document.getElementById('publish'),bd=document.getElementById('saveDraft');
   bp.disabled=bd.disabled=true; bp.textContent=publish?'Publishing…':'Publish now';
   try{
     const r=await fetch('/.netlify/functions/create-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     if(r.status===401){location.replace('login.html');return;}
-    const d=await r.json();
-    if(!r.ok) throw new Error(d.error||'Something went wrong.');
-    show('ok', publish?'Published! It’s live now — <a href="index.html">view it on your site →</a>':'Saved as a draft. It won’t show on the site until you publish it.');
-    document.getElementById('title').value='';document.getElementById('body').value='';document.getElementById('cover').value='';document.getElementById('video').value='';
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.');
+    show('ok', publish?'Published! It’s live now — <a href="index.html">view it on your site →</a>':'Saved as a draft. Publish it from Manage when you’re ready.');
+    document.getElementById('title').value=''; blocks=[]; add('text');
   }catch(e){ show('err', e.message); }
   bp.disabled=bd.disabled=false; bp.textContent='Publish now';
 }
