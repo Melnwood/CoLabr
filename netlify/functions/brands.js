@@ -31,9 +31,9 @@ exports.handler = async function (event) {
 
   try {
     if (b.action === 'list') {
-      const r = await fetch(`${api}?pageSize=200&returnFieldsByFieldId=true`, { headers: auth });
+      const r = await fetch(`${api}?pageSize=100&returnFieldsByFieldId=true`, { headers: auth });
       const data = await r.json();
-      if (!r.ok) return resp(r.status, { error: 'Airtable read failed.' });
+      if (!r.ok) return resp(r.status, { error: (data.error && (data.error.message || data.error)) || 'Airtable read failed.' });
       const orgs = (data.records || []).map(rec => {
         const c = rec.fields || {};
         const sel = c[F.textOn]; const textOn = (sel && sel.name) ? sel.name : (sel || 'Light');
