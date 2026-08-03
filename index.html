@@ -16,7 +16,7 @@
   body:not(.ready) .paper{visibility:hidden}
   body.ready .boot{display:none}
   .paper{max-width:820px;margin:0 auto;min-height:100vh;position:relative;padding:0 26px 60px}
-  .top{display:flex;align-items:center;gap:11px;padding:20px 2px 8px}
+  .top{display:flex;align-items:center;gap:12px;padding:18px 2px 15px;border-bottom:1px solid var(--line)}
   .top .jvlogo{height:22px;width:auto;display:block}
   .top .famsep{width:1px;height:26px;background:#d8cdb6;margin:0 3px;flex:none}
   .top b{font-size:14px;font-weight:700;color:var(--text)}
@@ -211,8 +211,17 @@
   .ewall .wc p{margin:3px 0 0;font-size:13.5px;color:#463a28;line-height:1.5}
   /* follow + subscribe */
   .topcta{margin-left:auto;display:flex;gap:8px;align-items:center}
-  .langsel{font-size:12.5px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff;color:var(--ink,#241f1b);cursor:pointer}
+  .langsel{font-size:12px;color:#6f6047;cursor:pointer;border:1px solid var(--line);border-radius:20px;padding:6px 10px 6px 30px;background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="%237a756f" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.6 3 14.4 0 18M12 3c-3 3.6-3 14.4 0 18"/></svg>') 9px center/15px no-repeat}
   .trnote{font-size:12px;color:#7a756f;background:#f4f1ec;border-radius:8px;padding:6px 10px;display:inline-block;margin:0 0 12px}
+  .vm{display:flex;gap:16px;max-width:680px;margin:22px auto 4px;padding:0 4px}
+  .vm .vmcol{flex:1;text-align:center;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:14px}
+  .vm .vmlabel{display:block;font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--acc);margin-bottom:7px}
+  .vm p{font-size:13.5px;line-height:1.55;color:#4a4030;margin:0;font-style:italic}
+  @media(max-width:600px){
+    .vm{flex-direction:column;gap:10px;margin-top:16px}
+    .top{flex-wrap:wrap;gap:8px 10px;padding:14px 2px 12px}
+    .top .topcta{margin-left:0;width:100%;justify-content:flex-start;flex-wrap:wrap;gap:8px}
+  }
   .top .topcta .give{margin-left:0}
   .follow{background:#fff;color:var(--acc);border:1px solid var(--acc);font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:-apple-system,Arial,sans-serif}
   .subcta{max-width:600px;margin:6px auto 26px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;text-align:center;font-family:-apple-system,Arial,sans-serif}
@@ -247,6 +256,10 @@
       <h1 id="mtitle">Field Notes</h1>
       <div class="who" id="msub">Letters from the mission field · since 2012</div>
       <div class="meta" id="meta"></div>
+    </div>
+    <div class="vm">
+      <div class="vmcol"><span class="vmlabel">Our Vision</span><p>A movement of God among the youth of Central and Eastern Europe that finds its home in the local church and transforms society.</p></div>
+      <div class="vmcol"><span class="vmlabel">Our Mission</span><p>Equipping young leaders to fulfill Christ’s commission in Central and Eastern Europe through the local church.</p></div>
     </div>
     <hr class="rule">
     <div class="tools">
