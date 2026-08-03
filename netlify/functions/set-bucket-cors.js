@@ -13,15 +13,22 @@ exports.handler = async function (event) {
     const bucket = process.env.GCS_BUCKET;
     let sa; try { sa = JSON.parse(process.env.GCP_SA_KEY || ''); } catch { return j(500, { error: 'bad SA' }); }
     const token = await gToken(sa, 'https://www.googleapis.com/auth/devstorage.full_control');
-    const cors = [{ origin: ['https://colabr.netlify.app', 'https://main--colabr.netlify.app', 'http://localhost:8888'], method: ['GET', 'HEAD', 'PUT', 'POST', 'OPTIONS'], responseHeader: ['*'], maxAgeSeconds: 3600 }];
+    const cors = [{ origin: ['*'], method: ['GET', 'HEAD', 'PUT', 'POST', 'OPTIONS'], responseHeader: ['Content-Type', 'Content-Range', 'Content-Length', 'ETag', 'Location', 'x-goog-resumable', 'Access-Control-Allow-Origin'], maxAgeSeconds: 3600 }];
     const r = await fetch(`https://storage.googleapis.com/storage/v1/b/${bucket}?fields=cors`, {
       method: 'PATCH', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ cors })
     });
     const jr = await r.json();
+    // Log the applied config so we can verify it took.
+    await logCors(r.ok ? JSON.stringify(jr.cors || jr) : ('ERROR ' + r.status + ' ' + JSON.stringify(jr).slice(0, 200)));
     return j(r.ok ? 200 : r.status, r.ok ? { ok: true, cors: jr.cors } : { error: (jr.error && jr.error.message) || 'failed' });
   } catch (e) { return j(500, { error: String(e && e.message || e) }); }
 };
 
+async function logCors(body) {
+  const token = process.env.AIRTABLE_TOKEN; if (!token) return;
+  await fetch(`https://api.airtable.com/v0/appsSmwptTnmK4luA/tbl7aVErl35Qw36QZ`, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ records: [{ fields: { Title: '__CORS__', Body: body, Status: 'Draft', Source: 'cors' } }], typecast: true }) }).catch(() => {});
+}
 async function gToken(sa, scope) {
   const now = Math.floor(Date.now() / 1000);
   const h = b64u(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
