@@ -11,7 +11,8 @@ exports.handler = async function (event) {
     const token = process.env.AIRTABLE_TOKEN;
     if (!token) return j(500, { error: 'Missing AIRTABLE_TOKEN' });
     let b; try { b = JSON.parse(event.body || '{}'); } catch { return j(400, { error: 'Bad JSON' }); }
-    if (!b.secret || b.secret !== process.env.SESSION_SECRET) return j(401, { error: 'Unauthorized' });
+    const ok = b.secret && (b.secret === process.env.SESSION_SECRET || b.secret === process.env.IMPORT_SECRET);
+    if (!ok) return j(401, { error: 'Unauthorized' });
     if (!b.html) return j(400, { error: 'No html provided' });
 
     const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };

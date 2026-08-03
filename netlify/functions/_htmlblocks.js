@@ -24,9 +24,19 @@ function htmlTextToPlain(frag) {
   t = t.replace(/<li[^>]*>/gi, '• ');
   t = t.replace(/<[^>]+>/g, '');
   t = decodeEntities(t);
+  t = t.replace(/\*\|[^|]*\|\*/g, '');
   t = t.replace(/ /g, ' ').replace(/\r/g, '');
   t = t.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
   return t;
+}
+
+const FOOTER_RE = /(copyright ©|our mailing address is|want to change how you receive these emails|unsubscribe from this list|you can update your preferences|this email was sent to|add us to your address book|view this email in your browser)/i;
+function stripFooter(text) {
+  if (!text) return '';
+  const m = text.match(FOOTER_RE);
+  let t = m ? text.slice(0, m.index) : text;
+  t = t.replace(/^\s*view this email in your browser\s*/i, '');
+  return t.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function attr(tag, name) {
@@ -112,9 +122,17 @@ function htmlToBlocks(html, opts) {
     if (tail) blocks.push({ type: 'text', text: tail });
   }
 
+  // Strip footer boilerplate from text blocks; drop any that become empty.
+  const cleaned = [];
+  for (const b of blocks) {
+    if (b.type === 'text') {
+      const t = stripFooter(b.text);
+      if (t) cleaned.push({ type: 'text', text: t });
+    } else cleaned.push(b);
+  }
   // Merge adjacent text blocks (Mailchimp often splits one paragraph across cells).
   const merged = [];
-  for (const b of blocks) {
+  for (const b of cleaned) {
     const prev = merged[merged.length - 1];
     if (b.type === 'text' && prev && prev.type === 'text') prev.text += '\n\n' + b.text;
     else merged.push(b);
