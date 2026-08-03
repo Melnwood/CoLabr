@@ -14,7 +14,7 @@ exports.handler = async function (event) {
     const ct = (event.headers && (event.headers['content-type'] || event.headers['Content-Type'])) || '';
     let b = {};
     if (/application\/json/i.test(ct)) { try { b = JSON.parse(raw || '{}'); } catch { return j(400, {}); } }
-    else { const p = new URLSearchParams(raw); b = { secret: p.get('secret'), gsUri: p.get('gsUri'), lang: p.get('lang'), title: p.get('title') }; }
+    else { const p = new URLSearchParams(raw); b = { secret: p.get('secret'), gsUri: p.get('gsUri'), lang: p.get('lang'), title: p.get('title'), recordId: p.get('recordId'), blockIndex: p.get('blockIndex') }; }
     if (!b.secret || (b.secret !== process.env.SESSION_SECRET && b.secret !== process.env.IMPORT_SECRET)) return j(401, {});
     if (!b.gsUri) return j(400, {});
 
@@ -63,12 +63,17 @@ exports.handler = async function (event) {
 
     // 6) Attach to a published update so it plays captioned on the page.
     const httpUrl = b.gsUri.replace(/^gs:\/\//, 'https://storage.googleapis.com/');
-    const blocks = [
-      { type: 'video', url: httpUrl, lang: (srcLang.split('-')[0]), captions: [{ lang: 'en', label: 'English', vtt }] },
-      { type: 'text', text: 'Captions were generated automatically (Google transcription + Claude translation) and may contain small errors.' }
-    ];
-    const title = b.title || '🎬 Video caption test (safe to delete)';
-    await createUpdate(title, blocks);
+    const track = { lang: 'en', label: 'English', vtt };
+    if (b.recordId) {
+      // Attach captions onto an existing update's video block, in place.
+      await attachToRecord(b.recordId, parseInt(b.blockIndex || '0', 10), srcLang.split('-')[0], track);
+    } else {
+      const blocks = [
+        { type: 'video', url: httpUrl, lang: (srcLang.split('-')[0]), captions: [track] },
+        { type: 'text', text: 'Captions were generated automatically (Google transcription + Claude translation) and may contain small errors.' }
+      ];
+      await createUpdate(b.title || '🎬 Video caption test (safe to delete)', blocks);
+    }
     await log(JSON.stringify({ ok: true, cues: cues.length, srcLang, sample: enTexts.slice(0, 3) }));
     return j(200, { ok: true });
   } catch (e) {
@@ -111,6 +116,25 @@ async function createUpdate(title, blocks) {
     method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ records: [{ fields: { Title: title, Status: 'Published', Blocks: JSON.stringify(blocks), Source: 'video-caption', Missionary: ['The Ellenwood Family'], Date: new Date().toISOString().slice(0, 10) } }], typecast: true })
   }).catch(() => {});
+}
+
+async function attachToRecord(recordId, blockIndex, srcLangShort, track) {
+  const token = process.env.AIRTABLE_TOKEN; if (!token) return;
+  const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  const gr = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}/${recordId}`, { headers: auth });
+  if (!gr.ok) return;
+  const c = (await gr.json()).fields || {};
+  let blocks = []; try { blocks = JSON.parse(c['Blocks'] || '[]'); } catch {}
+  // Prefer the given index; if it isn't a video block, find the first video block missing captions.
+  let idx = blockIndex;
+  if (!(blocks[idx] && blocks[idx].type === 'video')) idx = blocks.findIndex(x => x && x.type === 'video');
+  if (idx < 0 || !blocks[idx]) return;
+  blocks[idx].lang = blocks[idx].lang || srcLangShort;
+  const caps = Array.isArray(blocks[idx].captions) ? blocks[idx].captions.filter(x => x && x.lang !== track.lang) : [];
+  caps.push(track);
+  blocks[idx].captions = caps;
+  await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
+    body: JSON.stringify({ records: [{ id: recordId, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) }).catch(() => {});
 }
 
 async function log(body) {

@@ -189,7 +189,7 @@ aud.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c.classL
 
 // ---- block builder ----
 let blocks=[], seq=1;
-const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, photo:{url:'',caption:''}, video:{url:''}, numbers:{a:'',al:'',b:'',bl:'',c:'',cl:''}, quote:{text:'',by:''}, prayer:{text:''}, praise:{text:''}, give:{label:'Give',url:'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969'}, signoff:{text:'With love,\nthe Ellenwoods'}, divider:{} };
+const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, photo:{url:'',caption:''}, video:{url:'',lang:''}, numbers:{a:'',al:'',b:'',bl:'',c:'',cl:''}, quote:{text:'',by:''}, prayer:{text:''}, praise:{text:''}, give:{label:'Give',url:'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969'}, signoff:{text:'With love,\nthe Ellenwoods'}, divider:{} };
 const NAME={hero:'Banner',heading:'Heading',text:'Text',photo:'Photo',video:'Video',numbers:'Numbers',quote:'Quote',prayer:'Prayer request',praise:'Praise',give:'Give button',signoff:'Sign-off',divider:'Divider'};
 document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
   b.addEventListener('pointerdown',e=>beginDrag(e,'new',{type:b.dataset.t,label:NAME[b.dataset.t]})));
@@ -206,7 +206,7 @@ function fieldHtml(b){
   if(b.type==='text') return `<textarea data-id="${b.id}" data-f="text" placeholder="Write this section…">${esc(b.text)}</textarea>`;
   if(b.type==='prayer') return `<textarea data-id="${b.id}" data-f="text" placeholder="A prayer request…">${esc(b.text)}</textarea>`;
   if(b.type==='photo') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a photo here, or tap to choose from Photos / desktop</div><input type="file" accept="image/*" hidden></div><input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><div class="two"><input data-id="${b.id}" data-f="caption" placeholder="Caption (optional)" value="${esc(b.caption)}"></div>`;
-  if(b.type==='video') return `<input data-id="${b.id}" data-f="url" placeholder="YouTube or Vimeo URL" value="${esc(b.url)}">`;
+  if(b.type==='video'){ const done=b.url&&/storage\.googleapis\.com/.test(b.url); return `<div class="drop" data-vdrop="${b.id}"><div class="dinner">${done?'✓ Video uploaded — English subtitles are generated automatically when you publish':'Tap to upload a video file — it gets subtitled automatically'}</div><input type="file" accept="video/*" hidden><div class="vprog" style="display:none;height:6px;background:#eae7e2;border-radius:5px;margin-top:9px;overflow:hidden"><div class="vbar" style="height:100%;width:0;background:var(--acc,#FF6600);transition:width .2s"></div></div></div><select class="urlin" data-id="${b.id}" data-f="lang">${langOpts(b.lang)}</select><input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste a YouTube/Vimeo link (no auto‑captions)" value="${esc(b.url)}">`; }
   if(b.type==='quote') return `<textarea data-id="${b.id}" data-f="text" placeholder="“A quote from someone…”">${esc(b.text)}</textarea><div class="two"><input data-id="${b.id}" data-f="by" placeholder="— who said it" value="${esc(b.by)}"></div>`;
   return '';
 }
@@ -223,6 +223,35 @@ function render(){
   c.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();blocks.splice(+el.dataset.del,1);render();}));
   c.querySelectorAll('[data-grip]').forEach(el=>el.addEventListener('pointerdown',e=>beginDrag(e,'move',{from:+el.dataset.grip,label:NAME[blocks[+el.dataset.grip].type]})));
   c.querySelectorAll('[data-drop]').forEach(setupDrop);
+  c.querySelectorAll('[data-vdrop]').forEach(setupVideoDrop);
+}
+const VLANGS=[['','Spoken language (pick one for subtitles)'],['cs-CZ','Czech'],['pl-PL','Polish'],['uk-UA','Ukrainian'],['sk-SK','Slovak'],['ro-RO','Romanian'],['bg-BG','Bulgarian'],['sl-SI','Slovenian'],['lv-LV','Latvian'],['et-EE','Estonian'],['hu-HU','Hungarian'],['ru-RU','Russian'],['de-DE','German'],['es-ES','Spanish'],['fr-FR','French'],['en-US','English']];
+function langOpts(sel){ return VLANGS.map(([v,n])=>`<option value="${v}"${v===(sel||'')?' selected':''}>${n}</option>`).join(''); }
+function setupVideoDrop(zone){
+  const file=zone.querySelector('input[type=file]');
+  const blk=zone.closest('.blk'); const id=zone.dataset.vdrop;
+  zone.addEventListener('click',e=>{ if(e.target.tagName!=='SELECT'&&e.target.tagName!=='INPUT') file.click(); });
+  file.addEventListener('change',()=>{ if(file.files[0]){ uploadVideo(file.files[0],zone,id); file.value=''; } });
+}
+function uploadVideo(f,zone,id){
+  if(!f.type||!f.type.startsWith('video/')){ alert('Please choose a video file.'); return; }
+  const inner=zone.querySelector('.dinner'), prog=zone.querySelector('.vprog'), bar=zone.querySelector('.vbar');
+  inner.textContent='Preparing upload…'; prog.style.display='block'; bar.style.width='0%';
+  fetch('/.netlify/functions/video-upload-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:f.type})})
+    .then(r=>r.json().then(d=>({ok:r.ok,d})))
+    .then(({ok,d})=>{
+      if(!ok||!d.uploadUrl) throw new Error(d.error||'Could not start the upload.');
+      return new Promise((res,rej)=>{
+        const xhr=new XMLHttpRequest(); xhr.open('PUT',d.uploadUrl,true); xhr.setRequestHeader('Content-Type',f.type);
+        xhr.upload.onprogress=e=>{ if(e.lengthComputable){ bar.style.width=Math.round(e.loaded/e.total*100)+'%'; inner.textContent='Uploading… '+Math.round(e.loaded/e.total*100)+'%'; } };
+        xhr.onload=()=>{ (xhr.status>=200&&xhr.status<300)?res(d):rej(new Error('Upload failed ('+xhr.status+'). If this keeps happening, the browser‑upload permission may still be turning on.')); };
+        xhr.onerror=()=>rej(new Error('Upload failed — network or permissions.'));
+        xhr.send(f);
+      });
+    })
+    .then(d=>{ const b=blocks.find(x=>x.id==id); if(b){ b.url=d.publicUrl; } inner.textContent='✓ Video uploaded — subtitles generate on publish'; bar.style.width='100%';
+      const sel=zone.parentElement.querySelector('select[data-f="lang"]'); if(sel && !sel.value){ inner.textContent='✓ Uploaded — now pick the spoken language below'; } })
+    .catch(e=>{ inner.textContent='Tap to upload a video file — it gets subtitled automatically'; prog.style.display='none'; alert(e.message); });
 }
 let UPLOAD_READY=false;
 function setupDrop(zone){
@@ -425,8 +454,8 @@ async function submit(publish){
   const msg=document.getElementById('msg'); msg.className='msg';
   const title=document.getElementById('title').value.trim();
   if(!title){show('err','Please add a title.');return;}
-  const clean=blocks.map(b=>{const o={type:b.type};for(const k in b){if(k!=='id'&&k!=='type')o[k]=(b[k]||'').trim();}return o;})
-    .filter(b=> b.type==='divider' || b.type==='give' || Object.keys(b).some(k=>k!=='type' && b[k] && String(b[k]).length));
+  const clean=blocks.map(b=>{const o={type:b.type};for(const k in b){if(k!=='id'&&k!=='type')o[k]=(typeof b[k]==='string')?b[k].trim():b[k];}return o;})
+    .filter(b=> b.type==='divider' || b.type==='give' || Object.keys(b).some(k=>k!=='type' && b[k] && (Array.isArray(b[k])?b[k].length:String(b[k]).length)));
   const audiences=[...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a);
   const payload={publish,title,date:document.getElementById('date').value,type:document.getElementById('type').value,audiences,blocks:clean};
   if(editId) payload.id=editId;

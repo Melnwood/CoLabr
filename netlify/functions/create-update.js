@@ -56,6 +56,8 @@ exports.handler = async function (event) {
     const data = await r.json();
     if (!r.ok) return resp(r.status, { error: (data.error && data.error.message) || 'Airtable rejected the write.' });
     const recId = b.id ? (data.records && data.records[0] && data.records[0].id) : data.id;
+    // Auto-caption any newly-uploaded (GCS-hosted) videos that don't have captions yet.
+    if (recId) { try { await fireCaptions(recId, blocks); } catch (e) {} }
     // If this update just went out as Published, notify subscribers (best-effort, async).
     if (fields.Status === 'Published' && recId) { try { await fireNotify(recId); } catch (e) {} }
     return resp(200, { ok: true, id: recId, status: fields.Status });
@@ -63,6 +65,26 @@ exports.handler = async function (event) {
     return resp(502, { error: 'Could not reach Airtable.' });
   }
 };
+
+// Fire the heart-language caption job for each uploaded video block missing captions.
+async function fireCaptions(recId, blocks) {
+  const secret = process.env.SESSION_SECRET, site = process.env.SITE_BASE;
+  if (!secret || !site) return;
+  for (let i = 0; i < blocks.length; i++) {
+    const bk = blocks[i];
+    if (!bk || bk.type !== 'video' || !bk.url) continue;
+    if (!/storage\.googleapis\.com\/.+\/videos\//.test(bk.url)) continue;      // only our own uploads
+    if (Array.isArray(bk.captions) && bk.captions.length) continue;            // already captioned
+    if (!bk.lang) continue;                                                    // need a spoken language
+    const gsUri = bk.url.replace(/^https:\/\/storage\.googleapis\.com\//, 'gs://');
+    try {
+      await fetch(`${site}/.netlify/functions/caption-video-background`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret, gsUri, lang: bk.lang, recordId: recId, blockIndex: i })
+      });
+    } catch (e) {}
+  }
+}
 
 function resp(statusCode, body) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
