@@ -65,6 +65,8 @@ exports.handler = async function (event) {
     const recId = b.id ? (data.records && data.records[0] && data.records[0].id) : data.id;
     // Auto-caption any newly-uploaded (GCS-hosted) videos that don't have captions yet.
     if (recId) { try { await fireCaptions(recId, blocks); } catch (e) {} }
+    // Translate the written update into every field language (best-effort, async).
+    if (recId && fields.Status === 'Published') { try { await fireTranslate(recId); } catch (e) {} }
     // If this update just went out as Published, notify subscribers (best-effort, async).
     if (fields.Status === 'Published' && recId) { try { await fireNotify(recId); } catch (e) {} }
     return resp(200, { ok: true, id: recId, status: fields.Status });
@@ -91,6 +93,17 @@ async function fireCaptions(recId, blocks) {
       });
     } catch (e) {}
   }
+}
+
+// Fire the written-update translation job (into every field language + English).
+async function fireTranslate(recId) {
+  const secret = process.env.SESSION_SECRET, site = process.env.SITE_BASE;
+  if (!secret || !site) return;
+  try {
+    await fetch(`${site}/.netlify/functions/translate-update-background`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret, recordId: recId })
+    });
+  } catch (e) {}
 }
 
 function resp(statusCode, body) {
