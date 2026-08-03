@@ -1,4 +1,4 @@
-// CoLabr — shared email sender. Prefers Google Workspace / Gmail (impersonation via a
+// Co-Labr — shared email sender. Prefers Google Workspace / Gmail (impersonation via a
 // domain-wide-delegated service account); falls back to Resend. Returns {ok, via, error}.
 const crypto = require('crypto');
 
@@ -7,11 +7,11 @@ async function sendMail({ to, subject, html, replyTo, fromName }) {
   const saKey = process.env.GWS_SA_KEY || process.env.GCP_SA_KEY; // reuse the storage service account
   const sender = process.env.GMAIL_SENDER;
   if (saKey && sender) {
-    try { await gmailSend(JSON.parse(saKey), sender, fromName || 'CoLabr', { to, subject, html, replyTo }); return { ok: true, via: 'gmail' }; }
+    try { await gmailSend(JSON.parse(saKey), sender, fromName || 'Co-Labr', { to, subject, html, replyTo }); return { ok: true, via: 'gmail' }; }
     catch (e) { if (!process.env.RESEND_API_KEY) return { ok: false, error: e.message }; }
   }
   if (process.env.RESEND_API_KEY) {
-    const from = process.env.NOTIFY_FROM || 'CoLabr <onboarding@resend.dev>';
+    const from = process.env.NOTIFY_FROM || 'Co-Labr <onboarding@resend.dev>';
     const payload = { from, to: [to], subject, html }; if (replyTo) payload.reply_to = replyTo;
     const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!r.ok) { const t = await r.text(); return { ok: false, error: 'resend ' + r.status + ' ' + t.slice(0, 140) }; }

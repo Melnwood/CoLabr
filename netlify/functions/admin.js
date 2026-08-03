@@ -1,4 +1,4 @@
-// CoLabr — staff admin actions (list / publish-unpublish / delete).
+// Co-Labr — staff admin actions (list / publish-unpublish / delete).
 // Passcode-gated with EDIT_KEY. Uses AIRTABLE_TOKEN (read+write scope).
 
 const { sessionFromEvent } = require('./_auth');
@@ -161,7 +161,7 @@ exports.handler = async function (event) {
           <div style="font-size:15px;line-height:1.55;white-space:pre-wrap">${escH(b.message.trim())}</div>
           ${title ? `<p style="font-size:12px;color:#7a756f;margin-top:18px">In reply to your message on “${escH(title)}”.</p>` : ''}
         </div>`;
-      const mail = await sendMail({ to: toEmail, subject: (title ? `Re: ${title}` : 'A note back from us'), html, replyTo, fromName: (missionary ? `${missionary} via CoLabr` : 'CoLabr') });
+      const mail = await sendMail({ to: toEmail, subject: (title ? `Re: ${title}` : 'A note back from us'), html, replyTo, fromName: (missionary ? `${missionary} via Co-Labr` : 'Co-Labr') });
       if (!mail.ok) return resp(502, { error: 'Could not send the reply: ' + (mail.error || 'email not set up') });
       // Record the reply and mark handled.
       await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}`, { method: 'PATCH', headers: auth,

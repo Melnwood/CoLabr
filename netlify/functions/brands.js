@@ -1,4 +1,4 @@
-// CoLabr — National Org branding (logos + colors). Signed-in staff only.
+// Co-Labr — National Org branding (logos + colors). Signed-in staff only.
 // Uses AIRTABLE_TOKEN (read for list; read+write for save/delete).
 const { sessionFromEvent } = require('./_auth');
 const BASE = 'appsSmwptTnmK4luA';

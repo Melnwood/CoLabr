@@ -1,4 +1,4 @@
-// Handles Google's redirect back: verifies the user, then sets a CoLabr session.
+// Handles Google's redirect back: verifies the user, then sets a Co-Labr session.
 const { CLIENT_ID, ALLOWED_DOMAIN, parseCookies, makeSessionCookie, siteBase } = require('./_auth');
 
 exports.handler = async function (event) {

@@ -1,4 +1,4 @@
-// CoLabr — fire the background subscriber-send for a freshly published update.
+// Co-Labr — fire the background subscriber-send for a freshly published update.
 // Best-effort: we POST to the -background function and return immediately (it runs async,
 // up to 15 min, and is idempotent via the update's "Sent" flag). Never throws to the caller.
 async function fireNotify(updateId) {

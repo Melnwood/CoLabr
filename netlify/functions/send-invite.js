@@ -1,4 +1,4 @@
-// CoLabr — send the personalized invite letter to supporters. Signed-in staff only.
+// Co-Labr — send the personalized invite letter to supporters. Signed-in staff only.
 // Sends in small batches (the browser loops) so we never hit the function timeout.
 // Uses the shared mailer (Gmail preferred). Reply-To = the sender's JV inbox.
 const { sessionFromEvent } = require('./_auth');
@@ -14,7 +14,7 @@ exports.handler = async function (event) {
   const subject = (b.subject || '').toString().trim().slice(0, 160) || 'Come follow our journey';
   const bodyText = (b.body || '').toString();
   if (!bodyText.trim()) return r(400, { error: 'The letter is empty.' });
-  const fromName = (b.fromName || '').toString().trim().slice(0, 80) || 'CoLabr';
+  const fromName = (b.fromName || '').toString().trim().slice(0, 80) || 'Co-Labr';
   const recipients = Array.isArray(b.recipients) ? b.recipients.slice(0, MAX) : [];
   if (!recipients.length) return r(400, { error: 'No recipients in this batch.' });
   const site = process.env.SITE_BASE || '';

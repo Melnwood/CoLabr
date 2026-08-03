@@ -1,4 +1,4 @@
-// CoLabr — live updates feed. Reads published updates from Airtable.
+// Co-Labr — live updates feed. Reads published updates from Airtable.
 // The Airtable token lives ONLY here (server-side), set as a Netlify environment
 // variable named AIRTABLE_TOKEN. It is never sent to the browser.
 

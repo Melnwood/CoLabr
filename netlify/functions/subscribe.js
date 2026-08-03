@@ -1,4 +1,4 @@
-// CoLabr — supporter subscribe (public, no login). Creates/updates a Subscriber and
+// Co-Labr — supporter subscribe (public, no login). Creates/updates a Subscriber and
 // how they want updates. Uses AIRTABLE_TOKEN (write). Returns a manage-preferences token.
 const crypto = require('crypto');
 const BASE = 'appsSmwptTnmK4luA';

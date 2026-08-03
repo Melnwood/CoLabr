@@ -1,4 +1,4 @@
-// CoLabr — lightweight event tracking (public). Currently logs Give-button clicks
+// Co-Labr — lightweight event tracking (public). Currently logs Give-button clicks
 // (interest, not gifts). Uses AIRTABLE_TOKEN (write).
 const BASE = 'appsSmwptTnmK4luA';
 const TABLE = 'tbl2Dm5W07cAMrJgs';

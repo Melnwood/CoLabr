@@ -1,4 +1,4 @@
-// Turn a Mailchimp campaign's HTML into ordered CoLabr blocks (text + inline photos),
+// Turn a Mailchimp campaign's HTML into ordered Co-Labr blocks (text + inline photos),
 // preserving the order things appeared in the newsletter. Also returns a suggested cover
 // (the first real content image). Dependency-free — tuned to Mailchimp's table markup.
 

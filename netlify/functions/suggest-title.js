@@ -1,4 +1,4 @@
-// CoLabr — AI title suggestions, grounded in what actually earns opens for this ministry.
+// Co-Labr — AI title suggestions, grounded in what actually earns opens for this ministry.
 // Requires a signed-in staff session. Uses ANTHROPIC_API_KEY (set in Netlify).
 const { sessionFromEvent } = require('./_auth');
 

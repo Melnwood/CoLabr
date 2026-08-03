@@ -1,4 +1,4 @@
-// CoLabr — AI insights on the update history. Signed-in staff only. Uses ANTHROPIC_API_KEY.
+// Co-Labr — AI insights on the update history. Signed-in staff only. Uses ANTHROPIC_API_KEY.
 const { sessionFromEvent } = require('./_auth');
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
 

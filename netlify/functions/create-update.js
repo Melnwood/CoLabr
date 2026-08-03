@@ -1,4 +1,4 @@
-// CoLabr — create an update. Writes a new record into Airtable.
+// Co-Labr — create an update. Writes a new record into Airtable.
 // Security: requires a private passcode (Netlify env var EDIT_KEY) sent by the composer.
 // Uses AIRTABLE_TOKEN (must have data.records:write scope on the base).
 
@@ -35,7 +35,7 @@ exports.handler = async function (event) {
     'Excerpt': (bodyText || b.body || '').replace(/\s+/g, ' ').trim().slice(0, 240),
     'Type': b.type || 'Newsletter',
     'Status': b.publish ? 'Published' : 'Draft',
-    'Source': 'CoLabr',
+    'Source': 'Co-Labr',
     'Missionary': ['The Ellenwood Family'],
     'Date': b.date || new Date().toISOString().slice(0, 10)
   };

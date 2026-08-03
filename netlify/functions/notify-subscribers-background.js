@@ -1,4 +1,4 @@
-// CoLabr — background sender. When an update is published, email each active subscriber
+// Co-Labr — background sender. When an update is published, email each active subscriber
 // the way they chose (Full email = whole update; Link email = heads-up + link). Runs async
 // (Netlify "-background" function, up to 15 min) so large lists never time out.
 // Triggered internally by create-update / admin with a shared secret. Idempotent via the Update "Sent" flag.
@@ -88,7 +88,7 @@ function wrap(inner, site, manage) {
     <p style="font-size:11.5px;color:#7a756f;line-height:1.5">You're receiving this because you chose to follow the Ellenwoods.${manage ? ` <a href="${manage}" style="color:#FF6600">Change how you hear from us or unsubscribe</a>.` : ''}</p>
   </div>`;
 }
-// Render CoLabr blocks to simple, email-safe HTML.
+// Render Co-Labr blocks to simple, email-safe HTML.
 function renderBlocks(blocks, site) {
   const GIVE = 'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969';
   const em = s => esc(s || '').replace(/\n/g, '<br>');

@@ -1,4 +1,4 @@
-// CoLabr — supporter response intake (public, no login).
+// Co-Labr — supporter response intake (public, no login).
 // A supporter prays, sends a private note, or leaves public encouragement on an update.
 // Writes to the Responses table. Uses AIRTABLE_TOKEN (needs write scope).
 // Notifies the missionary by email — via Google Workspace/Gmail (preferred) or Resend (fallback).
@@ -76,11 +76,11 @@ async function notify(token, x) {
     `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px">
       <p style="font-size:15px;color:#241f1b"><b>${esc(x.name)}</b> ${label}${x.updateTitle ? ` on <b>${esc(x.updateTitle)}</b>` : ''}.</p>
       ${x.message ? `<blockquote style="border-left:3px solid #FF6600;margin:0 0 14px;padding:6px 0 6px 14px;color:#3c3733;font-size:15px;line-height:1.5">${esc(x.message)}</blockquote>` : ''}
-      ${x.email ? `<p style="font-size:13px;color:#7a756f">Reply to this email (or reply inside CoLabr) to write ${esc(x.name)} back.</p>` : ''}
-      ${site ? `<p><a href="${site}/manage.html" style="color:#FF6600;font-weight:700">Open your CoLabr inbox \u2192</a></p>` : ''}
+      ${x.email ? `<p style="font-size:13px;color:#7a756f">Reply to this email (or reply inside Co-Labr) to write ${esc(x.name)} back.</p>` : ''}
+      ${site ? `<p><a href="${site}/manage.html" style="color:#FF6600;font-weight:700">Open your Co-Labr inbox \u2192</a></p>` : ''}
     </div>`;
 
-  const fromName = x.missionary ? `${x.missionary} via CoLabr` : 'CoLabr';
+  const fromName = x.missionary ? `${x.missionary} via Co-Labr` : 'Co-Labr';
   await sendMail({ to, subject, html, replyTo: x.email, fromName });
 }
 
