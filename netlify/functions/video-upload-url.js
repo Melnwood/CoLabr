@@ -17,8 +17,11 @@ exports.handler = async function (event) {
     const ext = (type.split('/')[1] || 'mp4').replace('quicktime', 'mov').replace('x-m4v', 'm4v').replace(/[^a-z0-9]/g, '') || 'mp4';
     const name = `videos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const token = await gToken(sa, 'https://www.googleapis.com/auth/devstorage.read_write');
+    // The session must be initiated WITH the browser's Origin, or GCS rejects the later
+    // cross-origin PUT even with bucket CORS set.
+    const origin = (event.headers && (event.headers.origin || event.headers.Origin)) || process.env.SITE_BASE || 'https://colabr.netlify.app';
     const start = await fetch(`https://storage.googleapis.com/upload/storage/v1/b/${bucket}/o?uploadType=resumable&name=${encodeURIComponent(name)}`, {
-      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': type }, body: JSON.stringify({})
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': type, 'Origin': origin }, body: JSON.stringify({})
     });
     if (!start.ok) { const t = await start.text(); return j(start.status, { error: 'Could not start upload. ' + t.slice(0, 140) }); }
     const uploadUrl = start.headers.get('location');
