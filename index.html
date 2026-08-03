@@ -161,6 +161,10 @@
   .sheet .rcap{font-size:12px;color:var(--muted);margin:-8px 0 16px}
   .sheet .rvid{position:relative;aspect-ratio:16/9;margin:4px 0 16px}
   .sheet .rvid iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px}
+  .sheet .rvidf{background:#000;border-radius:12px;overflow:hidden}
+  .sheet .rvidf video{position:absolute;inset:0;width:100%;height:100%;border-radius:12px;background:#000}
+  .sheet .rvidcc{position:absolute;left:10px;bottom:10px;z-index:2;background:rgba(20,16,14,.72);color:#fff;font-size:11px;font-weight:600;letter-spacing:.02em;padding:4px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;backdrop-filter:blur(3px)}
+  .sheet .rvidcc b{color:#FFB37A;font-weight:800}
   .sheet .rquote{border-left:3px solid var(--acc);margin:0 0 16px;padding:2px 0 2px 16px;font-size:16px;font-style:italic;color:#241f1b;line-height:1.5}
   .sheet .rquote span{display:block;font-style:normal;font-size:12.5px;color:var(--acc);font-weight:700;margin-top:6px}
   .sheet .rprayer{background:#eef3fe;border-left:3px solid #2f6df0;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;color:#3c3733;line-height:1.55}
@@ -430,6 +434,19 @@ function render(){
 }
 
 function embedURL(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/)))return 'https://www.youtube.com/embed/'+m[1];if((m=v.match(/vimeo\.com\/(\d+)/)))return 'https://player.vimeo.com/video/'+m[1];return '';}
+var LANGNAMES={en:'English',pl:'Polish',uk:'Ukrainian',cs:'Czech',sk:'Slovak',ro:'Romanian',bg:'Bulgarian',sl:'Slovenian',lv:'Latvian',et:'Estonian',hu:'Hungarian',ru:'Russian',de:'German',es:'Spanish',fr:'French'};
+function langName(c){return LANGNAMES[(c||'').toLowerCase()]||(c||'').toUpperCase();}
+function renderVideo(bk){
+  const url=bk.url||''; if(!url) return '';
+  const caps=Array.isArray(bk.captions)?bk.captions.filter(c=>c&&c.url):[];
+  const isFile=/\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(url)||caps.length>0;
+  if(isFile){
+    const tracks=caps.map((c,i)=>`<track kind="subtitles" src="${esc(c.url)}" srclang="${esc(c.lang||'en')}" label="${esc(c.label||langName(c.lang))}"${i===0?' default':''}>`).join('');
+    const badge=caps.length?`<div class="rvidcc"><b>CC</b> AI‑translated${bk.lang?' from '+esc(langName(bk.lang)):''}</div>`:'';
+    return `<div class="rvid rvidf"><video controls playsinline preload="metadata" crossorigin="anonymous"><source src="${esc(url)}">${tracks}</video>${badge}</div>`;
+  }
+  const e=embedURL(url); return e?`<div class="rvid"><iframe src="${e}" allow="fullscreen" allowfullscreen></iframe></div>`:'';
+}
 function bodyHtml(u){
   if(u.blocks && u.blocks.length){
     return u.blocks.map(bk=>{
@@ -442,7 +459,7 @@ function bodyHtml(u){
       if(bk.type==='numbers'){ const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]); if(!it.length)return ''; return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`; }
       if(bk.type==='text') return `<p class="rtext">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
       if(bk.type==='photo'){ if(!bk.url) return ''; let h=`<img class="rimg" src="${esc(bk.url)}" alt="" onerror="this.style.display='none'">`; if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`; return h; }
-      if(bk.type==='video'){ const e=embedURL(bk.url||''); return e?`<div class="rvid"><iframe src="${e}" allow="fullscreen" allowfullscreen></iframe></div>`:''; }
+      if(bk.type==='video'){ return renderVideo(bk); }
       if(bk.type==='quote') return `<blockquote class="rquote">${esc(bk.text||'')}${bk.by?`<span>${esc(bk.by)}</span>`:''}</blockquote>`;
       if(bk.type==='prayer') return `<div class="rprayer"><b>Prayer</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
       return '';
