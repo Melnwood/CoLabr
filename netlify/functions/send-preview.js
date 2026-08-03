@@ -2,7 +2,7 @@
 // email" preview). Secret-gated (SESSION_SECRET or IMPORT_SECRET). Reuses the exact email
 // renderer the live subscriber-send uses, so what lands is what supporters would get.
 const { sendMail, esc } = require('./_mail');
-const { wrap, renderBlocks } = require('./notify-subscribers-background');
+const { wrap, renderBlocks } = require('./_emailrender');
 const BASE = 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
