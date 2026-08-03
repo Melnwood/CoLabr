@@ -10,7 +10,17 @@ exports.handler = async function (event) {
     if (event.httpMethod !== 'POST') return j(405, { error: 'Method not allowed' });
     const token = process.env.AIRTABLE_TOKEN;
     if (!token) return j(500, { error: 'Missing AIRTABLE_TOKEN' });
-    let b; try { b = JSON.parse(event.body || '{}'); } catch { return j(400, { error: 'Bad JSON' }); }
+    let raw = event.body || '';
+    if (event.isBase64Encoded) { try { raw = Buffer.from(raw, 'base64').toString('utf8'); } catch {} }
+    const ctype = (event.headers && (event.headers['content-type'] || event.headers['Content-Type'])) || '';
+    let b = {};
+    if (/application\/json/i.test(ctype)) {
+      try { b = JSON.parse(raw || '{}'); } catch { return j(400, { error: 'Bad JSON' }); }
+    } else {
+      // form-urlencoded (Make sends the large HTML this way)
+      const p = new URLSearchParams(raw);
+      b = { secret: p.get('secret'), recordId: p.get('recordId'), mailchimpId: p.get('mailchimpId'), html: p.get('html') };
+    }
     const ok = b.secret && (b.secret === process.env.SESSION_SECRET || b.secret === process.env.IMPORT_SECRET);
     if (!ok) return j(401, { error: 'Unauthorized' });
     if (!b.html) return j(400, { error: 'No html provided' });
