@@ -2,7 +2,7 @@
 // Requires a signed-in staff session. Uses ANTHROPIC_API_KEY (set in Netlify).
 const { sessionFromEvent } = require('./_auth');
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
 
 const SYSTEM = `You write email subject lines / titles for a Christian missionary's supporter update.
 You have studied this ministry's real open-rate history. The clear pattern:

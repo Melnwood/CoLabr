@@ -19,12 +19,24 @@
   .who{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}.who img{width:26px;height:26px;border-radius:50%}
   h1{font-size:24px;font-weight:750;letter-spacing:-.02em;margin:4px 0 18px}
 
-  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-  @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+  @media(max-width:560px){.kpis{grid-template-columns:1fr}}
   .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
   .kpi b{font-size:26px;font-weight:780;display:block;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
   .kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
   .kpi.acc b{color:var(--acc)}
+  .yearstrip{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:12px}
+  .yearstrip .lab{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px}
+  .months{display:grid;grid-template-columns:repeat(12,1fr);gap:6px}
+  .mcell{text-align:center;font-size:10.5px;font-weight:700;color:var(--muted);padding:7px 0;border-radius:7px;background:var(--card2);border:1px solid var(--line)}
+  .mcell.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  @media(max-width:560px){.mcell{font-size:9px;padding:6px 0}}
+  .moredetails{font-size:12.5px;color:var(--muted);margin:0 0 20px;cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:6px}
+  .moredetails .chev{transition:transform .15s;display:inline-block}.moredetails.open .chev{transform:rotate(90deg)}
+  .detailrow{display:none;gap:12px;margin:-8px 0 20px;flex-wrap:wrap}
+  .detailrow.open{display:flex}
+  .detailrow .d{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px}
+  .detailrow .d b{color:var(--text)}
 
   .insights{margin-bottom:14px}
   .insights h2{display:flex;align-items:center;gap:8px}
@@ -95,6 +107,17 @@
   .ract{display:flex;flex-direction:column;gap:6px;flex:none}
   .ract a,.ract button{font-size:11.5px;font-weight:650;padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:var(--card2);cursor:pointer;text-decoration:none;color:var(--text);text-align:center}
   .ract .reply{color:var(--acc);border-color:#f3d3b6}
+  .rcompose{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:none}
+  .rcompose.open{display:block}
+  .rcompose textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13.5px;font-family:inherit;min-height:70px;resize:vertical;outline:none}
+  .rcompose .send{background:var(--acc);color:#fff;font-weight:700;font-size:12.5px;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;margin-top:6px}
+  .rcompose .cmsg{font-size:12px;margin-left:10px}.rcompose .cmsg.err{color:var(--red)}.rcompose .cmsg.ok{color:var(--green)}
+  .rdone{font-size:11.5px;color:var(--green);font-weight:700;margin-top:6px}
+  .allcaught{color:var(--muted);padding:14px 2px;font-size:13.5px}
+  .acc-h{cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:8px}
+  .acc-h .chev{font-size:13px;color:var(--muted);transition:transform .15s;display:inline-block}
+  .acc-h.open .chev{transform:rotate(90deg)}
+  .acc-h .cnt{font-size:12.5px;color:var(--muted);font-weight:600}
 </style>
 </head>
 <body>
@@ -103,8 +126,11 @@
       <div class="nav"><span class="who" id="who"></span><a href="onboard.html">Get set up</a><a href="branding.html">Branding</a><a href="index.html">View site</a><a class="acc" href="compose.html">New update</a><a href="/.netlify/functions/logout">Sign out</a></div></div>
     <h1>Your dashboard</h1>
     <div class="kpis" id="kpis"></div>
+    <div class="yearstrip" id="yearstrip" style="display:none"><div class="lab" id="yearlab">Months with an update</div><div class="months" id="months"></div></div>
+    <div class="moredetails" id="moredetails">More numbers <span class="chev">▸</span></div>
+    <div class="detailrow" id="detailrow"></div>
     <div class="panel inbox" id="inboxPanel">
-      <h2>Responses <span class="ib zero" id="unread">0 new</span><a id="refreshresp">Refresh</a></h2>
+      <h2>Responses <span class="ib zero" id="unread">0 new</span><a id="refreshresp">Refresh</a><a href="inbox.html" style="margin-left:2px">View all &rarr;</a></h2>
       <div id="inbox"><div class="state">Loading…</div></div>
     </div>
     <div class="panel insights" id="insightsPanel">
@@ -120,10 +146,10 @@
       <div class="panel"><h2>Opens by year</h2><div class="chart" id="chart"></div></div>
       <div class="panel"><h2>Most opened</h2><div class="tl" id="topu"></div></div>
     </div>
-    <div class="listhead"><h2>All updates</h2>
-      <div class="seg" id="statusfilter"><button data-s="all" class="on">All</button><button data-s="Published">Published</button><button data-s="Draft">Drafts</button></div>
+    <div class="listhead"><h2 id="listtoggle" class="acc-h">All updates <span class="chev" id="chev">▸</span> <span class="cnt" id="listcnt"></span></h2>
+      <div class="seg" id="statusfilter" style="display:none"><button data-s="all" class="on">All</button><button data-s="Published">Published</button><button data-s="Draft">Drafts</button></div>
     </div>
-    <div id="list"><div class="state">Loading…</div></div>
+    <div id="list" style="display:none"><div class="state">Loading…</div></div>
   </div>
 
 <script>
@@ -155,16 +181,35 @@ document.getElementById('refreshins').addEventListener('click',loadInsights);
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function renderAll(){
+  let yr; try{ yr=new Date().getFullYear(); }catch(e){ yr=Math.max(0,...ROWS.map(r=>+(r.date||'').slice(0,4)||0)); }
+  const thisYear=ROWS.filter(r=>(r.date||'').slice(0,4)===String(yr));
   const pub=ROWS.filter(r=>r.status==='Published').length;
   const dr=ROWS.filter(r=>r.status==='Draft').length;
   const opens=ROWS.reduce((s,r)=>s+(r.opens||0),0);
   const withOpens=ROWS.filter(r=>r.opens>0);
   const avg=withOpens.length?Math.round(opens/withOpens.length):0;
+  // The three stats that matter, up top
   document.getElementById('kpis').innerHTML=
-    kpi(ROWS.length,'Updates')+kpi(pub,'Published')+kpi(dr,'Drafts')+kpi(opens.toLocaleString(),'Total opens',true)+kpi(avg.toLocaleString(),'Avg / update');
+    kpi(thisYear.length,'Updates in '+yr)+kpi(opens.toLocaleString(),'Total opens',true)+kpi(avg.toLocaleString(),'Avg opens / update');
+  // Which months this year had an update
+  const MON=['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const active=new Set(thisYear.map(r=>+((r.date||'').slice(5,7))-1).filter(m=>m>=0&&m<12));
+  const ys=document.getElementById('yearstrip');
+  if(thisYear.length){ ys.style.display='block';
+    document.getElementById('yearlab').textContent=`${thisYear.length} update${thisYear.length===1?'':'s'} in ${yr} — ${active.size} month${active.size===1?'':'s'}`;
+    document.getElementById('months').innerHTML=MON.map((m,i)=>`<div class="mcell ${active.has(i)?'on':''}" title="${['January','February','March','April','May','June','July','August','September','October','November','December'][i]}">${m}</div>`).join('');
+  } else ys.style.display='none';
+  // Everything-else numbers, tucked away
+  document.getElementById('detailrow').innerHTML=
+    `<span class="d"><b>${ROWS.length}</b> updates all-time</span><span class="d"><b>${pub}</b> published</span><span class="d"><b>${dr}</b> drafts</span>`;
+  const lc=document.getElementById('listcnt'); if(lc) lc.textContent=ROWS.length?('('+ROWS.length+')'):'';
   renderChart(); renderTop(); renderList();
 }
 function kpi(v,l,acc){ return `<div class="kpi${acc?' acc':''}"><b>${v}</b><span>${l}</span></div>`; }
+document.getElementById('moredetails').addEventListener('click',()=>{
+  const el=document.getElementById('moredetails'); const open=el.classList.toggle('open');
+  document.getElementById('detailrow').classList.toggle('open',open);
+});
 
 function renderChart(){
   const byOpen={}, byCount={};
@@ -186,7 +231,7 @@ function renderChart(){
     else bars+=`<text class="barcountd" x="${x+bw/2}" y="${base-h-14}" text-anchor="middle">${cnt}</text>`;
     bars+=`<text class="axis" x="${x+bw/2}" y="${H-6}" text-anchor="middle">'${y.slice(2)}</text>`;
   });
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMid meet" height="${H}">${bars}</svg>`
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;max-width:${W}px;display:block">${bars}</svg>`
     +`<div class="chartkey">Bar height = opens · number = updates sent that year</div>`;
 }
 function renderTop(){
@@ -209,6 +254,11 @@ function renderList(){
   list.querySelectorAll('button[data-act]').forEach(btn=>btn.addEventListener('click',()=>act(btn.dataset.act,btn.dataset.id)));
 }
 document.getElementById('statusfilter').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{statusF=b.dataset.s;document.getElementById('statusfilter').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));renderList();}));
+document.getElementById('listtoggle').addEventListener('click',()=>{
+  const h=document.getElementById('listtoggle'); const open=h.classList.toggle('open');
+  document.getElementById('list').style.display=open?'':'none';
+  document.getElementById('statusfilter').style.display=open?'':'none';
+});
 async function act(a,id){
   try{
     if(a==='pub') await api('setStatus',{id,status:'Published'});
@@ -264,22 +314,40 @@ async function loadResponses(){
   catch(e){ box.innerHTML='<div class="state" style="padding:10px 0">'+esc(e.message)+'</div>'; }
 }
 function renderResponses(){
-  const unread=RESP.filter(r=>!r.read).length;
-  const ub=document.getElementById('unread'); ub.textContent=unread?(unread+' new'):'0 new'; ub.classList.toggle('zero',!unread);
+  // Dashboard shows only what still needs you: unread (unreplied). Everything lives in inbox.html.
+  const pending=RESP.filter(r=>!r.read);
+  const ub=document.getElementById('unread'); ub.textContent=pending.length?(pending.length+' new'):'0 new'; ub.classList.toggle('zero',!pending.length);
   const box=document.getElementById('inbox');
-  if(!RESP.length){ box.innerHTML='<div class="state" style="padding:10px 0">No responses yet. When a supporter prays or writes, it lands here.</div>'; return; }
-  box.innerHTML=RESP.map(r=>{
+  if(!RESP.length){ box.innerHTML='<div class="allcaught">No responses yet. When a supporter prays or writes, it lands here.</div>'; return; }
+  if(!pending.length){ box.innerHTML='<div class="allcaught">✓ You\'re all caught up. <a href="inbox.html" style="color:var(--acc);font-weight:700">See all responses →</a></div>'; return; }
+  box.innerHTML=pending.map(r=>{
     let when=''; try{ when=r.created?new Date(r.created).toLocaleDateString():''; }catch(e){}
-    const reply = r.email ? `<a class="reply" href="mailto:${esc(r.email)}?subject=${encodeURIComponent('Re: your message')}">Reply</a>` : '';
-    const mark = r.read ? '' : `<button class="markbtn" data-id="${r.id}">Mark read</button>`;
+    const canReply = !!r.email;
+    const reply = canReply ? `<button class="reply replybtn" data-id="${r.id}">Reply</button>` : '';
+    const mark = `<button class="markbtn" data-id="${r.id}">Mark done</button>`;
     const msg = (r.type==='Prayer' && !r.message) ? '<i>is praying for you</i>' : esc(r.message);
-    return `<div class="ritem ${r.read?'':'unread'}"><span class="rtype ${r.type}">${r.type}</span>
+    const composer = canReply ? `<div class="rcompose" id="comp-${r.id}">
+        <textarea id="txt-${r.id}" placeholder="Write ${esc(r.name)} back…"></textarea>
+        <button class="send" data-id="${r.id}">Send reply</button><span class="cmsg" id="cmsg-${r.id}"></span>
+      </div>` : '';
+    return `<div class="ritem unread"><span class="rtype ${r.type}">${r.type}</span>
       <div class="rtx"><b>${esc(r.name)}</b><div class="rm">${msg}</div>
-        <div class="rmeta">${r.updateTitle?esc(r.updateTitle)+' · ':''}${when}${r.isPublic?' · public':''}${r.email?(' · '+esc(r.email)):''}</div></div>
+        <div class="rmeta">${r.updateTitle?esc(r.updateTitle)+' · ':''}${when}${r.isPublic?' · public':''}${r.email?(' · '+esc(r.email)):' · no email · can’t reply'}</div>
+        ${composer}</div>
       <div class="ract">${reply}${mark}</div></div>`;
   }).join('');
   box.querySelectorAll('.markbtn').forEach(b=>b.addEventListener('click',async()=>{
     try{ await api('markRead',{id:b.dataset.id,read:true}); const rr=RESP.find(x=>x.id===b.dataset.id); if(rr)rr.read=true; renderResponses(); }catch(e){ alert(e.message); }
+  }));
+  box.querySelectorAll('.replybtn').forEach(b=>b.addEventListener('click',()=>{
+    const c=document.getElementById('comp-'+b.dataset.id); if(c){ c.classList.toggle('open'); const t=document.getElementById('txt-'+b.dataset.id); if(c.classList.contains('open')&&t)t.focus(); }
+  }));
+  box.querySelectorAll('.rcompose .send').forEach(b=>b.addEventListener('click',async()=>{
+    const id=b.dataset.id; const t=document.getElementById('txt-'+id); const m=document.getElementById('cmsg-'+id);
+    const message=(t.value||'').trim(); if(!message){ m.className='cmsg err'; m.textContent='Write something first.'; return; }
+    b.disabled=true; m.className='cmsg'; m.textContent='Sending…';
+    try{ await api('reply',{id,message}); const rr=RESP.find(x=>x.id===id); if(rr){rr.read=true;rr.replied=true;rr.reply=message;} renderResponses(); }
+    catch(e){ b.disabled=false; m.className='cmsg err'; m.textContent=e.message; }
   }));
 }
 document.getElementById('refreshresp').addEventListener('click',loadResponses);

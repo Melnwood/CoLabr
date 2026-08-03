@@ -1,6 +1,6 @@
 // CoLabr — AI insights on the update history. Signed-in staff only. Uses ANTHROPIC_API_KEY.
 const { sessionFromEvent } = require('./_auth');
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
 
 const SYSTEM = `You are a sharp, encouraging analyst helping a Christian missionary understand their supporter-update history so they can make better decisions and connect with supporters.
 You are given a JSON list of their updates: title, year (y), opens (o), type, status.

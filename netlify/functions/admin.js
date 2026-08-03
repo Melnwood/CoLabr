@@ -2,8 +2,10 @@
 // Passcode-gated with EDIT_KEY. Uses AIRTABLE_TOKEN (read+write scope).
 
 const { sessionFromEvent } = require('./_auth');
+const { sendMail } = require('./_mail');
 const BASE = 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
+const RTABLE = 'tblVNMG5VnOnFFeto'; // Responses
 const MIS_TABLE = 'tbli1L8AO0JUDL7Wl';          // Missionaries
 const MIS_STYLE = 'fldvLZXckaQVUbD7F';           // Style (single select)
 const STYLES = ['Field Notes', 'Cover Grid', 'Timeline', 'Gallery Wall'];
@@ -93,7 +95,6 @@ exports.handler = async function (event) {
     }
 
     if (b.action === 'responses') {
-      const RTABLE = 'tblVNMG5VnOnFFeto';
       const r = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}?pageSize=100`, { headers: auth });
       const data = await r.json();
       if (!r.ok) return resp(r.status, { error: 'Could not load responses.' });
@@ -107,6 +108,8 @@ exports.handler = async function (event) {
           email: c['Email'] || '',
           isPublic: !!c['Public'],
           read: !!c['Read'],
+          replied: !!c['Replied'],
+          reply: c['Reply'] || '',
           updateTitle: c['Update Title'] || '',
           updateId: c['Update ID'] || '',
           created: rec.createdTime
@@ -117,11 +120,40 @@ exports.handler = async function (event) {
 
     if (b.action === 'markRead') {
       if (!b.id) return resp(400, { error: 'Missing id.' });
-      const RTABLE = 'tblVNMG5VnOnFFeto';
       const r = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}`, { method: 'PATCH', headers: auth,
         body: JSON.stringify({ records: [{ id: b.id, fields: { Read: b.read !== false } }], typecast: true }) });
       if (!r.ok) return resp(r.status, { error: 'Update failed.' });
       return resp(200, { ok: true });
+    }
+
+    if (b.action === 'reply') {
+      if (!b.id || !b.message || !b.message.trim()) return resp(400, { error: 'Write a reply first.' });
+      // Load the response to get the supporter's email + context.
+      const gr = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}/${b.id}`, { headers: auth });
+      const rec = await gr.json();
+      if (!gr.ok) return resp(gr.status, { error: 'Could not find that message.' });
+      const c = rec.fields || {};
+      const toEmail = c['Email'];
+      if (!toEmail) return resp(400, { error: "This person didn't leave an email, so there's no way to reply to them." });
+      const supporter = c['Name'] || 'friend';
+      const title = c['Update Title'] || '';
+      const missionary = c['Missionary'] || '';
+      // Who is replying (their JV inbox becomes Reply-To so the conversation continues in Gmail).
+      let replyTo = '';
+      const sess = sessionFromEvent(event); if (sess && sess.email) replyTo = sess.email;
+      const site = process.env.SITE_BASE || '';
+      const html =
+        `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px;color:#241f1b">
+          <p style="font-size:15px">Hi ${escH(supporter)},</p>
+          <div style="font-size:15px;line-height:1.55;white-space:pre-wrap">${escH(b.message.trim())}</div>
+          ${title ? `<p style="font-size:12px;color:#7a756f;margin-top:18px">In reply to your message on “${escH(title)}”.</p>` : ''}
+        </div>`;
+      const mail = await sendMail({ to: toEmail, subject: (title ? `Re: ${title}` : 'A note back from us'), html, replyTo, fromName: (missionary ? `${missionary} via CoLabr` : 'CoLabr') });
+      if (!mail.ok) return resp(502, { error: 'Could not send the reply: ' + (mail.error || 'email not set up') });
+      // Record the reply and mark handled.
+      await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: b.id, fields: { Reply: b.message.trim(), Replied: true, Read: true } }], typecast: true }) });
+      return resp(200, { ok: true, via: mail.via });
     }
 
     return resp(400, { error: 'Unknown action.' });
@@ -142,3 +174,4 @@ exports.handler = async function (event) {
 function resp(statusCode, body) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
 }
+function escH(s) { return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
