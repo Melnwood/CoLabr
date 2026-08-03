@@ -19,8 +19,8 @@
   .who{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}.who img{width:26px;height:26px;border-radius:50%}
   h1{font-size:24px;font-weight:750;letter-spacing:-.02em;margin:4px 0 18px}
 
-  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
-  @media(max-width:560px){.kpis{grid-template-columns:1fr}}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+  @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
   .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
   .kpi b{font-size:26px;font-weight:780;display:block;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
   .kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
@@ -190,7 +190,8 @@ function renderAll(){
   const avg=withOpens.length?Math.round(opens/withOpens.length):0;
   // The three stats that matter, up top
   document.getElementById('kpis').innerHTML=
-    kpi(thisYear.length,'Updates in '+yr)+kpi(opens.toLocaleString(),'Total opens',true)+kpi(avg.toLocaleString(),'Avg opens / update');
+    kpi(thisYear.length,'Updates in '+yr)+kpi(opens.toLocaleString(),'Total opens',true)+kpi(avg.toLocaleString(),'Avg opens / update')
+    +`<div class="kpi acc"><b id="givekpi">—</b><span>Give clicks</span></div>`;
   // Which months this year had an update
   const MON=['J','F','M','A','M','J','J','A','S','O','N','D'];
   const active=new Set(thisYear.map(r=>+((r.date||'').slice(5,7))-1).filter(m=>m>=0&&m<12));
@@ -351,7 +352,13 @@ function renderResponses(){
   }));
 }
 document.getElementById('refreshresp').addEventListener('click',loadResponses);
-(async()=>{ if(await guard()){ load(); loadStyle(); loadResponses(); } })();
+async function loadMetrics(){
+  try{ const d=await api('metrics');
+    const g=document.getElementById('givekpi'); if(g) g.textContent=(d.giveClicks||0).toLocaleString();
+    const dr=document.getElementById('detailrow'); if(dr && !dr.querySelector('.subd')) dr.insertAdjacentHTML('beforeend',`<span class="d subd"><b>${(d.subscribers||0).toLocaleString()}</b> subscribers</span>`);
+  }catch(e){}
+}
+(async()=>{ if(await guard()){ load(); loadStyle(); loadResponses(); loadMetrics(); } })();
 </script>
 </body>
 </html>

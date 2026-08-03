@@ -94,6 +94,16 @@ exports.handler = async function (event) {
       return resp(200, { ok: true, style: b.style });
     }
 
+    if (b.action === 'metrics') {
+      // Give-button clicks + active subscribers, for the dashboard.
+      const ev = await fetch(`https://api.airtable.com/v0/${BASE}/tbl2Dm5W07cAMrJgs?pageSize=100&filterByFormula=${encodeURIComponent("{Kind}='Give'")}`, { headers: auth });
+      const subs = await fetch(`https://api.airtable.com/v0/${BASE}/tbl21LyWOBxln6bOy?pageSize=100&filterByFormula=${encodeURIComponent('{Active}=1')}`, { headers: auth });
+      let giveClicks = 0, subscribers = 0;
+      if (ev.ok) { const d = await ev.json(); giveClicks = (d.records || []).length; }
+      if (subs.ok) { const d = await subs.json(); subscribers = (d.records || []).length; }
+      return resp(200, { ok: true, giveClicks, subscribers });
+    }
+
     if (b.action === 'responses') {
       const r = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}?pageSize=100`, { headers: auth });
       const data = await r.json();
