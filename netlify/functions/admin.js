@@ -3,6 +3,7 @@
 
 const { sessionFromEvent } = require('./_auth');
 const { sendMail } = require('./_mail');
+const { fireNotify } = require('./_notify');
 const BASE = 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 const RTABLE = 'tblVNMG5VnOnFFeto'; // Responses
@@ -66,6 +67,8 @@ exports.handler = async function (event) {
       const r = await fetch(api, { method: 'PATCH', headers: auth,
         body: JSON.stringify({ records: [{ id: b.id, fields: { Status: b.status } }], typecast: true }) });
       if (!r.ok) return resp(r.status, { error: 'Update failed.' });
+      // Publishing from the dashboard? Notify subscribers (best-effort, async, idempotent).
+      if (b.status === 'Published') { try { await fireNotify(b.id); } catch (e) {} }
       return resp(200, { ok: true });
     }
 

@@ -3,6 +3,7 @@
 // Uses AIRTABLE_TOKEN (must have data.records:write scope on the base).
 
 const { sessionFromEvent } = require('./_auth');
+const { fireNotify } = require('./_notify');
 const BASE = 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
@@ -55,6 +56,8 @@ exports.handler = async function (event) {
     const data = await r.json();
     if (!r.ok) return resp(r.status, { error: (data.error && data.error.message) || 'Airtable rejected the write.' });
     const recId = b.id ? (data.records && data.records[0] && data.records[0].id) : data.id;
+    // If this update just went out as Published, notify subscribers (best-effort, async).
+    if (fields.Status === 'Published' && recId) { try { await fireNotify(recId); } catch (e) {} }
     return resp(200, { ok: true, id: recId, status: fields.Status });
   } catch (e) {
     return resp(502, { error: 'Could not reach Airtable.' });
