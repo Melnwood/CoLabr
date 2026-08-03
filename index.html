@@ -448,7 +448,9 @@ function renderVideo(bk,recId,idx){
       else src=esc(c.url);
       return `<track kind="subtitles" src="${src}" srclang="${esc(c.lang||'en')}" label="${esc(c.label||langName(c.lang))}"${i===0?' default':''}>`;
     }).join('');
-    const badge=caps.length?`<div class="rvidcc"><b>CC</b> AI‑translated${bk.lang?' from '+esc(langName(bk.lang)):''}</div>`:'';
+    let badge='';
+    if(caps.length) badge=`<div class="rvidcc"><b>CC</b> AI‑translated${bk.lang?' from '+esc(langName(bk.lang)):''}</div>`;
+    else if(bk.captionStatus==='processing') badge=`<div class="rvidcc"><b>CC</b> English subtitles are being prepared — check back in a minute</div>`;
     return `<div class="rvid rvidf"><video controls playsinline preload="metadata" data-cap="1"><source src="${esc(url)}">${tracks}</video></div>${badge}`;
   }
   const e=embedURL(url); return e?`<div class="rvid"><iframe src="${e}" allow="fullscreen" allowfullscreen></iframe></div>`:'';

@@ -29,7 +29,7 @@ exports.handler = async function (event) {
         videoContext: { speechTranscriptionConfig: { languageCode: srcLang, enableAutomaticPunctuation: true, maxAlternatives: 1 } } })
     });
     const annJson = await annotate.json();
-    if (!annotate.ok || !annJson.name) { await log('ERROR annotate ' + JSON.stringify(annJson).slice(0, 300)); return j(200, {}); }
+    if (!annotate.ok || !annJson.name) { await log('ERROR annotate ' + JSON.stringify(annJson).slice(0, 300)); if (b.recordId) await setStatus(b.recordId, b.blockIndex, 'failed'); return j(200, {}); }
     const opName = annJson.name;
 
     // 2) Poll the long-running operation (up to ~13 min).
@@ -38,10 +38,10 @@ exports.handler = async function (event) {
       await sleep(8000);
       const pr = await fetch('https://videointelligence.googleapis.com/v1/' + opName, { headers: { Authorization: 'Bearer ' + token } });
       const pj = await pr.json();
-      if (pj.error) { await log('ERROR op ' + JSON.stringify(pj.error).slice(0, 300)); return j(200, {}); }
+      if (pj.error) { await log('ERROR op ' + JSON.stringify(pj.error).slice(0, 300)); if (b.recordId) await setStatus(b.recordId, b.blockIndex, 'failed'); return j(200, {}); }
       if (pj.done) { done = pj; break; }
     }
-    if (!done) { await log('ERROR transcription timed out'); return j(200, {}); }
+    if (!done) { await log('ERROR transcription timed out'); if (b.recordId) await setStatus(b.recordId, b.blockIndex, 'failed'); return j(200, {}); }
 
     // 3) Pull word-level results → cues in the source language.
     const results = (((done.response || {}).annotationResults || [])[0] || {});
@@ -51,7 +51,7 @@ exports.handler = async function (event) {
       const alt = (tsc.alternatives || [])[0]; if (!alt || !alt.words) continue;
       for (const w of alt.words) words.push({ w: w.word, s: dur(w.startTime), e: dur(w.endTime) });
     }
-    if (!words.length) { await log('ERROR no speech recognized (lang ' + srcLang + ')'); return j(200, {}); }
+    if (!words.length) { await log('ERROR no speech recognized (lang ' + srcLang + ')'); if (b.recordId) await setStatus(b.recordId, b.blockIndex, 'failed'); return j(200, {}); }
     const cues = groupCues(words);
 
     // 4) Translate the cue texts to English with Claude (fallback: keep source).
@@ -133,8 +133,25 @@ async function attachToRecord(recordId, blockIndex, srcLangShort, track) {
   const caps = Array.isArray(blocks[idx].captions) ? blocks[idx].captions.filter(x => x && x.lang !== track.lang) : [];
   caps.push(track);
   blocks[idx].captions = caps;
+  blocks[idx].captionStatus = 'ready';
   await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
     body: JSON.stringify({ records: [{ id: recordId, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) }).catch(() => {});
+}
+
+async function setStatus(recordId, blockIndex, status) {
+  const token = process.env.AIRTABLE_TOKEN; if (!token || !recordId) return;
+  const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  try {
+    const gr = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}/${recordId}`, { headers: auth });
+    if (!gr.ok) return;
+    const c = (await gr.json()).fields || {};
+    let blocks = []; try { blocks = JSON.parse(c['Blocks'] || '[]'); } catch {}
+    let idx = parseInt(blockIndex || '0', 10);
+    if (!(blocks[idx] && blocks[idx].type === 'video')) idx = blocks.findIndex(x => x && x.type === 'video');
+    if (idx < 0 || !blocks[idx]) return;
+    blocks[idx].captionStatus = status;
+    await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: [{ id: recordId, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) });
+  } catch (e) {}
 }
 
 async function log(body) {

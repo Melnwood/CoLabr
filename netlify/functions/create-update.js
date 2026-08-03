@@ -29,6 +29,13 @@ exports.handler = async function (event) {
   const firstPhoto = (blocks.find(x => (x.type === 'hero' || x.type === 'photo') && x.url) || {}).url || '';
   const firstVideo = (blocks.find(x => x.type === 'video' && x.url) || {}).url || '';
 
+  // Mark freshly-uploaded videos as "captions processing" so the page can show status.
+  for (const bk of blocks) {
+    if (bk && bk.type === 'video' && bk.url && /storage\.googleapis\.com\/.+\/videos\//.test(bk.url) && bk.lang && !(Array.isArray(bk.captions) && bk.captions.length)) {
+      bk.captionStatus = 'processing';
+    }
+  }
+
   const fields = {
     'Title': b.title.trim(),
     'Body': bodyText || (b.body || ''),

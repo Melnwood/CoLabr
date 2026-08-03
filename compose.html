@@ -67,6 +67,8 @@
   .drop{border:1.5px dashed var(--line);border-radius:11px;padding:16px;text-align:center;cursor:pointer;transition:.12s;background:var(--card2)}
   .drop.over{border-color:var(--acc);background:#fff4e8}
   .drop.busy{opacity:.7;pointer-events:none}
+  .drop.vdone{border-style:solid;border-color:#2f9e63;background:#eafaf1}
+  .drop.vdone .dinner{color:#227a49;font-weight:700}
   .drop .dinner{font-size:12.5px;color:var(--muted);line-height:1.5}
   .drop .dprev{max-width:100%;border-radius:9px;margin:0 auto 8px;display:block}
   .urlin{margin-top:9px}
@@ -259,8 +261,9 @@ function uploadVideo(f,zone,id){
     })
     .then(d=>{ const b=blocks.find(x=>x.id==id); if(b){ b.url=d.publicUrl; }
       const urlIn=zone.parentElement.querySelector('input[data-f="url"]'); if(urlIn) urlIn.value=d.publicUrl; // keep the field in sync so publish doesn't wipe it
-      inner.textContent='✓ Video uploaded — subtitles generate on publish'; bar.style.width='100%';
-      const sel=zone.parentElement.querySelector('select[data-f="lang"]'); if(sel && !sel.value){ inner.textContent='✓ Uploaded — now choose the spoken language below'; } })
+      zone.classList.add('vdone'); prog.style.display='none';
+      inner.textContent='✓ Video uploaded and saved — subtitles generate when you publish';
+      const sel=zone.parentElement.querySelector('select[data-f="lang"]'); if(sel && !sel.value){ inner.textContent='✓ Video uploaded — now choose the spoken language below'; } })
     .catch(e=>{ inner.textContent='Tap to upload a video file — it gets subtitled automatically'; prog.style.display='none'; alert(e.message); });
 }
 let UPLOAD_READY=false;
@@ -475,10 +478,12 @@ async function submit(publish){
     const r=await fetch('/.netlify/functions/create-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     if(r.status===401){location.replace('login.html');return;}
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.');
+    const hasVid=clean.some(b=>b.type==='video'&&/storage\.googleapis\.com\/.+\/videos\//.test(b.url||'')&&b.lang);
+    const subNote=hasVid?' Your video’s English subtitles are generating now and will appear on it within a minute or two — nothing more for you to do.':'';
     if(editId){
-      show('ok', publish?'Changes published — <a href="index.html">view on your site →</a>':'Changes saved as a draft.');
+      show('ok', (publish?'Changes published — <a href="index.html">view on your site →</a>':'Changes saved as a draft.')+subNote);
     } else {
-      show('ok', publish?'Published! It’s live now — <a href="index.html">view it on your site →</a>':'Saved as a draft. Publish it from Manage when you’re ready.');
+      show('ok', (publish?'Published! It’s live now — <a href="index.html">view it on your site →</a>':'Saved as a draft. Publish it from Manage when you’re ready.')+subNote);
       document.getElementById('title').value=''; blocks=[]; add('text');
     }
   }catch(e){ show('err', e.message); }
