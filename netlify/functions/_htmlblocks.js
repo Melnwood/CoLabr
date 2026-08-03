@@ -13,10 +13,35 @@ function decodeEntities(s) {
 }
 function cp(n) { try { return String.fromCodePoint(n); } catch { return ''; } }
 
+// Repair "mojibake": UTF-8 bytes that were mis-decoded as Windows-1252 (â€™, Â©, Ã©, …).
+// Older Mailchimp campaigns are full of it. We only touch strings that show the tell-tale
+// markers, and only when every char maps cleanly back to a byte — so correct text is untouched.
+const CP1252 = { 0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,0x02C6:0x88,0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x0152:0x8C,0x017D:0x8E,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,0x2022:0x95,0x2013:0x96,0x2014:0x97,0x02DC:0x98,0x2122:0x99,0x0161:0x9A,0x203A:0x9B,0x0153:0x9C,0x017E:0x9E,0x0178:0x9F };
+function fixMojibake(s) {
+  if (!s || !/â€|Ã.|Â./.test(s)) return s;
+  // Primary: reverse the cp1252-misdecode of UTF-8, byte-exact (also fixes accents).
+  let ok = true; const bytes = [];
+  for (const ch of s) {
+    const c = ch.codePointAt(0);
+    if (c <= 0xFF) bytes.push(c);
+    else if (CP1252[c] !== undefined) bytes.push(CP1252[c]);
+    else { ok = false; break; }
+  }
+  if (ok) { try { const dec = Buffer.from(bytes).toString('utf8'); if (!dec.includes('�')) return dec; } catch {} }
+  // Fallback: targeted fixes for the common sequences (used only if the clean decode bails).
+  return s
+    .replace(/â€™/g, '’').replace(/â€˜/g, '‘')
+    .replace(/â€œ/g, '“').replace(/â€/g, '”')
+    .replace(/â€¦/g, '…').replace(/â€¢/g, '•').replace(/â€/g, '”')
+    .replace(/Â©/g, '©').replace(/Â®/g, '®').replace(/Â /g, ' ').replace(/Â/g, '')
+    .replace(/Ã©/g, 'é').replace(/Ã¨/g, 'è').replace(/Ã¡/g, 'á').replace(/Ã­/g, 'í')
+    .replace(/Ã³/g, 'ó').replace(/Ãº/g, 'ú').replace(/Ã±/g, 'ñ').replace(/Ã¼/g, 'ü');
+}
+
 // Fragment of inner HTML → clean plain text with paragraph breaks preserved.
 function htmlTextToPlain(frag) {
   if (!frag) return '';
-  let t = frag;
+  let t = fixMojibake(frag);
   t = t.replace(/<!--[\s\S]*?-->/g, '');
   t = t.replace(/<(script|style)[\s\S]*?<\/\1>/gi, '');
   t = t.replace(/<br\s*\/?>/gi, '\n');
@@ -36,6 +61,9 @@ function stripFooter(text) {
   const m = text.match(FOOTER_RE);
   let t = m ? text.slice(0, m.index) : text;
   t = t.replace(/^\s*view this email in your browser\s*/i, '');
+  // Mailchimp's default preview-text placeholder (and empty copyright remnants).
+  t = t.replace(/Use this area to offer a short preview of your email['’]?s content\.?/gi, '');
+  t = t.replace(/Copyright ©\s*,?\s*All rights reserved\.?/gi, '');
   return t.replace(/\n{3,}/g, '\n\n').trim();
 }
 
