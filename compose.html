@@ -131,6 +131,8 @@
       <h1>Build your update</h1>
       <p class="sub">Add blocks, drag to reorder, and it saves as a real update — text, photos, and video in the order you choose.</p>
 
+      <button type="button" class="tplstart" id="tplStart"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> Start from a template</button>
+
       <label>Title</label>
       <input id="title" placeholder="e.g. God is on the move — 100 camps this summer">
       <button type="button" class="suggest" id="suggest"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5 10.1 10.9 5.5 9l4.6-1.4z"/><path d="M18 15l.9 2.2L21 18l-2.1.8L18 21l-.9-2.2L15 18l2.1-.8z"/></svg> Suggest a title</button>
@@ -168,16 +170,77 @@
       <div class="actions">
         <button class="btn draft" id="saveDraft">Save draft</button>
         <button class="btn pub" id="publish">Publish now</button>
+        <button class="btn tpl" id="saveTpl" type="button">Save as template</button>
       </div>
       <div class="msg" id="msg"></div>
     </div>
   </div>
+
+  <style>
+    .tplstart{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);color:var(--text);font-family:inherit;font-size:13.5px;font-weight:700;padding:9px 15px;border-radius:22px;cursor:pointer;margin:2px 0 6px}
+    .tplstart:hover{border-color:var(--acc);color:var(--acc)}
+    .tplstart svg{color:var(--acc)}
+    .btn.tpl{background:var(--card,#fff);color:var(--text);border:1px solid var(--line)}
+    .tov{position:fixed;inset:0;background:rgba(20,15,10,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+    .tov.open{display:flex}
+    .tcard{background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:86vh;overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(30,20,10,.3)}
+    .tcard h3{margin:0 0 3px;font-size:19px}
+    .tcard .tsub{margin:0 0 16px;font-size:13.5px;color:var(--muted)}
+    .tgrouplab{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 9px}
+    .tgrouplab:first-of-type{margin-top:4px}
+    .titem{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:9px}
+    .titem .tthumb{width:52px;height:52px;border-radius:9px;background:#eee7db center/cover no-repeat;flex:none;display:flex;align-items:center;justify-content:center;color:#b7ad99}
+    .titem .tinfo{flex:1;min-width:0}
+    .titem .tname{font-weight:700;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .titem .tmeta{font-size:12px;color:var(--muted);margin-top:2px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+    .tbadge{font-size:10.5px;font-weight:800;letter-spacing:.03em;padding:2px 7px;border-radius:20px;background:#f0ece4;color:#6b6357}
+    .tbadge.skel{background:#e7f0fb;color:#2f6df0}
+    .tbadge.shared{background:#fff1e6;color:#d9660f}
+    .tuse{background:var(--acc);color:#fff;border:none;font-family:inherit;font-weight:700;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer;flex:none}
+    .tdel{background:none;border:none;color:#c0392b;font-size:12.5px;font-weight:700;cursor:pointer;padding:6px 4px;flex:none}
+    .tempty{color:var(--muted);font-size:13.5px;padding:6px 0 4px}
+    .tclose{margin-top:14px;display:flex;justify-content:flex-end}
+    .tclose button{background:none;border:none;color:var(--muted);font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:9px 12px}
+    .tfield{margin:14px 0}
+    .tfield label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+    .tfield input[type=text]{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-family:inherit;font-size:15px}
+    .topt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:11px 12px;cursor:pointer;margin-bottom:8px}
+    .topt input{margin-top:3px;flex:none;accent-color:var(--acc)}
+    .topt b{font-size:14px}.topt span{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
+    .topt.disabled{opacity:.5;cursor:not-allowed}
+    .trow{display:flex;gap:10px;margin-top:8px}
+    .trow .btn{flex:1;justify-content:center;display:flex;align-items:center}
+  </style>
+
+  <div class="tov" id="tplpick"><div class="tcard">
+    <h3>Start from a template</h3>
+    <p class="tsub">Pick a saved layout to begin from. You can edit everything after.</p>
+    <div id="tpllist"><div class="tempty">Loading…</div></div>
+    <div class="tclose"><button type="button" id="tplpickX">Close</button></div>
+  </div></div>
+
+  <div class="tov" id="tplsave"><div class="tcard">
+    <h3>Save as template</h3>
+    <p class="tsub">Reuse this layout for future updates.</p>
+    <div class="tfield"><label>Template name</label><input type="text" id="tplName" placeholder="e.g. Summer camp series banner"></div>
+    <div class="tfield"><label>What carries over when it's used?</label>
+      <label class="topt"><input type="radio" name="tplmode" value="Full copy" checked><span><b>Everything as-is</b><span>Banner, sections, and the words all copy in — edit from a full duplicate.</span></span></label>
+      <label class="topt"><input type="radio" name="tplmode" value="Structure only"><span><b>Structure only</b><span>Keeps the banner, section order, and headings; body text starts blank to fill fresh.</span></span></label>
+    </div>
+    <div class="tfield" id="tplScopeWrap"><label>Who can use it?</label>
+      <label class="topt"><input type="radio" name="tplscope" value="Personal" checked><span><b>Just me</b><span>A personal template only you see.</span></span></label>
+      <label class="topt" id="tplScopeShared"><input type="radio" name="tplscope" value="Shared"><span><b>Everyone (shared)</b><span>Publish to the whole team's template library.</span></span></label>
+    </div>
+    <div class="trow"><button type="button" class="btn draft" id="tplsaveX">Cancel</button><button type="button" class="btn pub" id="tplsaveGo">Save template</button></div>
+    <div class="msg" id="tplmsg"></div>
+  </div></div>
 
 <script>
 async function guard(){
   try{
     const r=await fetch('/.netlify/functions/me'); if(!r.ok) throw 0;
     const me=await r.json();
+    ME_ADMIN=!!me.admin;
     if(me.upload) UPLOAD_READY=me.upload.ready;
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
     document.getElementById('form').style.display='block';
@@ -502,6 +565,100 @@ async function submit(publish){
 function show(kind,html){const m=document.getElementById('msg');m.className='msg '+kind;m.innerHTML=html;m.scrollIntoView({behavior:'smooth',block:'nearest'});}
 document.getElementById('publish').addEventListener('click',()=>submit(true));
 document.getElementById('saveDraft').addEventListener('click',()=>submit(false));
+
+/* ---------- Templates ---------- */
+let ME_ADMIN=false, TPLS={personal:[],shared:[]};
+async function tapi(action,payload){
+  const r=await fetch('/.netlify/functions/templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
+  if(r.status===401){location.replace('login.html');throw new Error('Signed out');}
+  const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.'); return d;
+}
+function selectedAud(){ return [...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a); }
+function tov(id,open){ document.getElementById(id).classList.toggle('open',open); document.body.style.overflow=open?'hidden':''; }
+
+// ---- picker ----
+async function openPicker(){
+  tov('tplpick',true);
+  const box=document.getElementById('tpllist'); box.innerHTML='<div class="tempty">Loading…</div>';
+  try{ const d=await tapi('list'); TPLS={personal:d.personal||[],shared:d.shared||[]}; renderTpls(); }
+  catch(e){ box.innerHTML='<div class="tempty">'+esc(e.message)+'</div>'; }
+}
+function tItem(t,scope,i){
+  const badge=t.mode==='Structure only'?'<span class="tbadge skel">Structure</span>':'<span class="tbadge">Full copy</span>';
+  const who=scope==='shared'?`<span class="tbadge shared">Shared</span>${t.ownerName?'· '+esc(t.ownerName):''}`:'';
+  const n=(t.blocks||[]).length;
+  const thumb=t.banner?`<div class="tthumb" style="background-image:url('${esc(t.banner)}')"></div>`:`<div class="tthumb"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15l5-4 4 3 3-2 6 4"/></svg></div>`;
+  const del=(scope==='personal'||t.mine||ME_ADMIN)?`<button class="tdel" data-scope="${scope}" data-i="${i}">Delete</button>`:'';
+  return `<div class="titem">${thumb}<div class="tinfo"><div class="tname">${esc(t.name)}</div><div class="tmeta">${badge}${who}<span>${n} block${n===1?'':'s'}</span></div></div>${del}<button class="tuse" data-scope="${scope}" data-i="${i}">Use</button></div>`;
+}
+function renderTpls(){
+  const box=document.getElementById('tpllist'); let h='';
+  h+='<div class="tgrouplab">Your templates</div>';
+  h+=TPLS.personal.length?TPLS.personal.map((t,i)=>tItem(t,'personal',i)).join(''):'<div class="tempty">No personal templates yet — build an update and tap “Save as template”.</div>';
+  h+='<div class="tgrouplab">Shared by Josiah Venture</div>';
+  h+=TPLS.shared.length?TPLS.shared.map((t,i)=>tItem(t,'shared',i)).join(''):'<div class="tempty">No shared templates yet.</div>';
+  box.innerHTML=h;
+  box.querySelectorAll('.tuse').forEach(b=>b.addEventListener('click',()=>{ const t=TPLS[b.dataset.scope][+b.dataset.i]; useTemplate(t); }));
+  box.querySelectorAll('.tdel').forEach(b=>b.addEventListener('click',async()=>{ const t=TPLS[b.dataset.scope][+b.dataset.i]; if(!confirm('Delete “'+t.name+'”?'))return; b.disabled=true;b.textContent='…'; try{ await tapi('delete',{id:t.id}); openPicker(); }catch(e){ b.disabled=false;b.textContent='Delete'; alert(e.message);} }));
+}
+function useTemplate(t){
+  if(t.type){ const ts=document.getElementById('type'); if([...ts.options].some(o=>o.value===t.type)) ts.value=t.type; }
+  if(t.aud&&t.aud.length){ aud.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',t.aud.includes(c.dataset.a))); }
+  blocks=(t.blocks||[]).map(b=>{ const {id,...rest}=b; return {id:seq++,...rest}; });
+  if(!blocks.length) add('text'); else render();
+  tov('tplpick',false);
+  show('ok','Loaded template “'+esc(t.name)+'”. Add your title, edit the sections, then publish.');
+}
+
+// ---- save ----
+function blankBlock(b){
+  const t=b.type;
+  if(t==='text'||t==='prayer'||t==='praise'||t==='signoff') return {...b,text:''};
+  if(t==='quote') return {...b,text:'',by:''};
+  if(t==='photo') return {...b,url:'',caption:''};
+  if(t==='video') return {...b,url:''};
+  if(t==='numbers') return {...b,a:'',b:'',c:''};   // keep the labels (al/bl/cl), clear the values
+  return b;                                          // hero banner, heading, give, divider kept
+}
+function openSave(){
+  syncFromDOM();
+  if(!blocks.length){ show('err','Add a block or two before saving a template.'); return; }
+  document.getElementById('tplName').value=(document.getElementById('title').value||'').trim();
+  document.querySelector('input[name=tplmode][value="Full copy"]').checked=true;
+  document.querySelector('input[name=tplscope][value="Personal"]').checked=true;
+  const sh=document.getElementById('tplScopeShared'); const shIn=sh.querySelector('input');
+  shIn.disabled=!ME_ADMIN; sh.classList.toggle('disabled',!ME_ADMIN);
+  sh.title=ME_ADMIN?'':'Only admins can publish shared templates';
+  document.getElementById('tplScopeWrap').style.display=ME_ADMIN?'':'none';  // hide sharing entirely for non-admins
+  document.getElementById('tplmsg').className='msg'; document.getElementById('tplmsg').textContent='';
+  tov('tplsave',true);
+}
+async function doSaveTemplate(){
+  const name=(document.getElementById('tplName').value||'').trim();
+  const msg=document.getElementById('tplmsg');
+  if(!name){ msg.className='msg err'; msg.textContent='Please name the template.'; return; }
+  const mode=(document.querySelector('input[name=tplmode]:checked')||{}).value||'Full copy';
+  let scope=(document.querySelector('input[name=tplscope]:checked')||{}).value||'Personal';
+  if(scope==='Shared'&&!ME_ADMIN) scope='Personal';
+  syncFromDOM();
+  let bl=blocks.map(b=>{ const {id,...rest}=JSON.parse(JSON.stringify(b)); return rest; });
+  if(mode==='Structure only') bl=bl.map(blankBlock);
+  const go=document.getElementById('tplsaveGo'); go.disabled=true; msg.className='msg'; msg.textContent='Saving…';
+  try{
+    await tapi('save',{template:{name,blocks:bl,mode,scope,type:document.getElementById('type').value,aud:selectedAud()}});
+    tov('tplsave',false);
+    show('ok','Saved template “'+esc(name)+'”'+(scope==='Shared'?' for the whole team.':'.'));
+  }catch(e){ msg.className='msg err'; msg.textContent=e.message; }
+  finally{ go.disabled=false; }
+}
+document.getElementById('tplStart').addEventListener('click',openPicker);
+document.getElementById('tplpickX').addEventListener('click',()=>tov('tplpick',false));
+document.getElementById('tplpick').addEventListener('click',e=>{ if(e.target.id==='tplpick')tov('tplpick',false); });
+document.getElementById('saveTpl').addEventListener('click',openSave);
+document.getElementById('tplsaveX').addEventListener('click',()=>tov('tplsave',false));
+document.getElementById('tplsaveGo').addEventListener('click',doSaveTemplate);
+document.getElementById('tplsave').addEventListener('click',e=>{ if(e.target.id==='tplsave')tov('tplsave',false); });
+
 guard();
 </script>
 </body>
