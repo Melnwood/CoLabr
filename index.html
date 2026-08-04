@@ -341,6 +341,7 @@
 
 <script>
 const GIVE='https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969';
+const PAGEM=(new URLSearchParams(location.search)).get('m')||'';   // whose page (teammate) — empty = the Ellenwoods
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const ROT=[-2.5,2,-1.5,2.5,-2,1.5];
 const STYLE_MAP={'Field Notes':'fieldnotes','Cover Grid':'grid','Timeline':'timeline','Gallery Wall':'wall'};
@@ -373,6 +374,13 @@ function applyStyle(name){
 var JV_MISSION="Equipping young leaders to fulfill Christ’s commission through the local church.";
 var JV_VISION="A movement of God among the youth of Central and Eastern Europe that finds its home in the local church and transforms society.";
 var ORGVM={}; // { cs:{mission,vision}, pl:{...}, ... } filled from Branding per language
+// When viewing a teammate's page (?m=), swap the masthead to their name + location.
+function applyPageIdentity(page){
+  if(!page) return;
+  const t=document.getElementById('mtitle'); if(t&&page.name) t.textContent=page.name;
+  const l=document.getElementById('mloctext'); if(l&&page.location) l.textContent=page.location;
+  try{ document.title=(page.name||'Updates')+' — Josiah Venture'; }catch(_){}
+}
 function setMasthead(){
   const lang=(typeof READERLANG!=='undefined'&&READERLANG)?READERLANG:'en';
   const vm=(lang!=='en'&&ORGVM[lang])?ORGVM[lang]:{mission:JV_MISSION,vision:JV_VISION};
@@ -381,11 +389,12 @@ function setMasthead(){
 }
 async function load(){
   try{
-    const r=await fetch('/.netlify/functions/updates');
+    const r=await fetch('/.netlify/functions/updates'+(PAGEM?('?m='+encodeURIComponent(PAGEM)):''));
     if(!r.ok) throw new Error(r.status);
     const raw=await r.json();
     const arr=Array.isArray(raw)?raw:(raw.updates||[]);
     const styleName=Array.isArray(raw)?'Field Notes':(raw.style||'Field Notes');
+    if(PAGEM && raw.page) applyPageIdentity(raw.page);
     applyStyle(styleName);
     U=arr.map(u=>{
       const p=(u.rawdate||'').split('-');
@@ -655,10 +664,14 @@ function bodyHtml(u){
 async function openReader(i){
   const u=U[i];curU=u;const sheet=document.getElementById('sheet');
   let title=u.title, blocks=u.blocks, tnote='';
-  if(READERLANG){
-    try{ const r=await fetch(TRBASE+'/translations/'+u.id+'/'+READERLANG+'.json',{cache:'no-store'});
-      if(r.ok){ const d=await r.json(); if(d&&Array.isArray(d.blocks)){ title=d.title||title; blocks=d.blocks; tnote=`<div class="trnote">🌐 Shown in ${langName(READERLANG)} · AI‑translated from the original</div>`; } }
-    }catch(e){}
+  const src=u.src||'en';               // original language of this update
+  const target=READERLANG||'en';       // what the reader wants to read (default English)
+  if(target!==src){
+    let tr=(u.tr&&u.tr[target])?u.tr[target]:null;         // inline translation carried on the update
+    if(!tr){ try{ const r=await fetch(TRBASE+'/translations/'+u.id+'/'+target+'.json',{cache:'no-store'});
+      if(r.ok){ const d=await r.json(); if(d&&Array.isArray(d.blocks)) tr=d; } }catch(e){} }
+    if(tr&&Array.isArray(tr.blocks)){ title=tr.title||title; blocks=tr.blocks;
+      tnote=`<div class="trnote">🌐 Shown in ${langName(target)} · AI‑translated from ${(src&&src!=='en')?langName(src):'the original'}</div>`; }
   }
   const uu={...u,title,blocks};
   const emb=u.video?embedURL(u.video):'';
@@ -685,7 +698,7 @@ async function openReader(i){
   pollCaptions(sheet);
   wireRespond(u);
 }
-const FAMILY='The Ellenwood Family', FAMSHORT='Ellenwoods';
+const FAMILY=PAGEM||'The Ellenwood Family', FAMSHORT=PAGEM||'Ellenwoods';
 function respondHTML(u){
   return `<div class="eng">
     <h4>Respond to the ${FAMSHORT}</h4>
