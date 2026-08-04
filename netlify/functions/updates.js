@@ -13,6 +13,7 @@ const MIS_PHOTO = 'fldiXSCuELTQiiT08';
 const ORGS_TABLE = 'tbl152sVfqGyrqpJQ';        // National Orgs (brand)
 const ORG_CODE = 'fldYMMDdsP2DgNzmZ', ORG_NAME = 'fldsyU3dpzLdkXI7t';
 const ORG_INK = 'fldhe4BdqqpM37Hod', ORG_ACCENT = 'fldqjEmVMB9lVTOzG', ORG_BG = 'fldpgLMC8jv9YHtxm', ORG_TEXTON = 'fldufCKMaSCYUh3xt';
+const ORG_COUNTRY = 'fldsJCCbZgD5wcamY';           // Country (for the "Josiah Venture | <country>" co-brand mark)
 const DEFAULT_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 const F = {
   title:  'fldhkHAXyvqtrx3cu',
@@ -65,8 +66,12 @@ exports.handler = async function (event) {
       };
     }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate));
 
+    // A page is "national" (national-org member writing in their own language) when any of its
+    // updates is natively non-English. That's what makes the language switch + co-brand meaningful.
+    const native = updates.some(u => u.src && u.src !== 'en');
+
     // Page identity + chosen layout for this missionary.
-    let style = 'Field Notes', page = { name: missionary, location: '', org: '', photo: '' };
+    let style = 'Field Notes', page = { name: missionary, location: '', org: '', photo: '', country: '', orgName: '', native };
     try {
       const mf = encodeURIComponent(`{Name}='${nameEsc}'`);
       const mUrl = `https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${mf}`;
@@ -75,7 +80,7 @@ exports.handler = async function (event) {
         const rec = ((await mr.json()).records || [])[0];
         const mfields = (rec && rec.fields) || {};
         const s = mfields[MIS_STYLE]; if (s) style = (s && s.name) ? s.name : s;
-        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '' };
+        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', country: '', orgName: '', native };
       }
     } catch (e) { /* fall back */ }
 
@@ -85,7 +90,7 @@ exports.handler = async function (event) {
     if (page.org) {
       try {
         const oe = page.org.replace(/'/g, "\\'");
-        const of = encodeURIComponent(`OR({Code}='${oe}',{Name}='${oe}')`);
+        const of = encodeURIComponent(`OR({Code}='${oe}',{Name}='${oe}',{Country}='${oe}')`);
         const oUrl = `https://api.airtable.com/v0/${BASE}/${ORGS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${of}`;
         const or = await fetch(oUrl, { headers: auth });
         if (or.ok) {
@@ -94,9 +99,13 @@ exports.handler = async function (event) {
             const of2 = orec.fields || {};
             const t = of2[ORG_TEXTON];
             brand = { ink: of2[ORG_INK] || '', accent: of2[ORG_ACCENT] || '', bg: of2[ORG_BG] || '', textOn: (t && t.name) ? t.name : (t || 'Light') };
+            page.country = of2[ORG_COUNTRY] || '';
+            page.orgName = of2[ORG_NAME] || '';
           }
         }
       } catch (e) { /* no brand → JV defaults */ }
+      // If the org string didn't match an org record, still show it as the co-brand country label.
+      if (!page.country) page.country = page.org;
     }
 
     return json(200, { style, page, brand, updates }, 'no-store');
