@@ -10,6 +10,9 @@ const MIS_NAME = 'fldPYSQwxoQJGb0Zd';
 const MIS_LOC = 'fld0mx3Sp4JnNnIfc';
 const MIS_ORG = 'fldCQ8c1Eu6SXmY98';
 const MIS_PHOTO = 'fldiXSCuELTQiiT08';
+const ORGS_TABLE = 'tbl152sVfqGyrqpJQ';        // National Orgs (brand)
+const ORG_CODE = 'fldYMMDdsP2DgNzmZ', ORG_NAME = 'fldsyU3dpzLdkXI7t';
+const ORG_INK = 'fldhe4BdqqpM37Hod', ORG_ACCENT = 'fldqjEmVMB9lVTOzG', ORG_BG = 'fldpgLMC8jv9YHtxm', ORG_TEXTON = 'fldufCKMaSCYUh3xt';
 const DEFAULT_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 const F = {
   title:  'fldhkHAXyvqtrx3cu',
@@ -76,7 +79,27 @@ exports.handler = async function (event) {
       }
     } catch (e) { /* fall back */ }
 
-    return json(200, { style, page, updates }, 'no-store');
+    // Brand: the org's three-color system (ink / accent / background). The page falls back to JV
+    // defaults if the org has no brand set.
+    let brand = null;
+    if (page.org) {
+      try {
+        const oe = page.org.replace(/'/g, "\\'");
+        const of = encodeURIComponent(`OR({Code}='${oe}',{Name}='${oe}')`);
+        const oUrl = `https://api.airtable.com/v0/${BASE}/${ORGS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${of}`;
+        const or = await fetch(oUrl, { headers: auth });
+        if (or.ok) {
+          const orec = ((await or.json()).records || [])[0];
+          if (orec) {
+            const of2 = orec.fields || {};
+            const t = of2[ORG_TEXTON];
+            brand = { ink: of2[ORG_INK] || '', accent: of2[ORG_ACCENT] || '', bg: of2[ORG_BG] || '', textOn: (t && t.name) ? t.name : (t || 'Light') };
+          }
+        }
+      } catch (e) { /* no brand → JV defaults */ }
+    }
+
+    return json(200, { style, page, brand, updates }, 'no-store');
   } catch (e) {
     return json(502, { error: 'Could not reach Airtable.' });
   }

@@ -3,14 +3,16 @@
 const { sessionFromEvent } = require('./_auth');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl152sVfqGyrqpJQ';            // National Orgs
+// Three-color brand system: ink (text/buttons), accent (the single spark/CTA), bg (page background).
 const F = {
   name:    'fldsyU3dpzLdkXI7t',
   code:    'fldYMMDdsP2DgNzmZ',
   country: 'fldsJCCbZgD5wcamY',
   logo:    'fldBJzji3j5ML7DHd',
-  primary: 'fldqjEmVMB9lVTOzG',
-  accent:  'fldhe4BdqqpM37Hod',
-  textOn:  'fldufCKMaSCYUh3xt',
+  accent:  'fldqjEmVMB9lVTOzG',   // the spark (CTAs, accents) — JV default #FF6600
+  ink:     'fldhe4BdqqpM37Hod',   // near-black for text + buttons
+  bg:      'fldpgLMC8jv9YHtxm',   // page background (white / soft cream)
+  textOn:  'fldufCKMaSCYUh3xt',   // text color over the accent (Light/Dark) for button contrast
   website: 'fldW4oLN6GBcCSNCw',
   give:    'fldxLnwhxtFv88MGn',
   tagline: 'fldpRHgjPEpeeUTsL'
@@ -43,8 +45,9 @@ exports.handler = async function (event) {
           code: c[F.code] || '',
           country: c[F.country] || '',
           logo: c[F.logo] || '',
-          primary: c[F.primary] || '',
+          ink: c[F.ink] || '',
           accent: c[F.accent] || '',
+          bg: c[F.bg] || '',
           textOn,
           website: c[F.website] || '',
           give: c[F.give] || '',
@@ -62,8 +65,9 @@ exports.handler = async function (event) {
         [F.code]: o.code || '',
         [F.country]: o.country || '',
         [F.logo]: o.logo || '',
-        [F.primary]: o.primary || '',
+        [F.ink]: o.ink || '',
         [F.accent]: o.accent || '',
+        [F.bg]: o.bg || '',
         [F.textOn]: o.textOn === 'Dark' ? 'Dark' : 'Light',
         [F.website]: o.website || '',
         [F.give]: o.give || '',

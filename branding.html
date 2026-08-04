@@ -53,6 +53,18 @@
   .colorrow{display:flex;align-items:center;gap:9px}
   .colorrow input[type=color]{width:42px;height:38px;border:1px solid var(--line);border-radius:9px;padding:2px;background:#fff;cursor:pointer}
   .colorrow input[type=text]{flex:1}
+  .brandsys .csys{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .brandsys label .hh{font-weight:500;color:var(--muted);font-size:10.5px;margin-left:3px}
+  @media(max-width:560px){.brandsys .csys{grid-template-columns:1fr}}
+  .sysprev{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px;background:#f4f1ec}
+  .sysprev .sp-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.06)}
+  .sysprev .sp-logo{font-weight:800;font-size:14px;display:inline-flex;align-items:center}
+  .sysprev .sp-give{font-size:12px;font-weight:700;padding:6px 15px;border-radius:20px}
+  .sysprev .sp-body{padding:15px 16px 18px}
+  .sysprev .sp-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:10px}
+  .sysprev .sp-h{font-size:21px;font-weight:800;letter-spacing:-.01em;margin-bottom:6px}
+  .sysprev .sp-p{font-size:12.5px;line-height:1.55;opacity:.72;max-width:46ch}
+  .sysprev .sp-rule{display:block;height:3px;width:38px;border-radius:3px;margin:13px 0 2px}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
   .seg button{border:none;background:#fff;font-size:12.5px;font-weight:700;padding:9px 16px;color:var(--muted);cursor:pointer}
   .seg button.on{background:var(--acc);color:#fff}
@@ -98,7 +110,10 @@
   <div class="ov" id="ov"><div class="sheet">
     <div class="sh-h"><b id="ovtitle">Add national org</b><button class="x" id="ovx">×</button></div>
     <div class="form">
-      <div class="prev"><div class="pv" id="pvBanner"><span id="pvLogoWrap"></span></div><div class="pl">Preview · <span><span class="chip" id="pvPrimChip"></span>primary</span><span><span class="chip" id="pvAccChip"></span>accent</span></div></div>
+      <div class="sysprev" id="sysprev">
+        <div class="sp-top"><span class="sp-logo" id="spLogo">Your logo</span><span class="sp-give" id="spGive">Give</span></div>
+        <div class="sp-body"><span class="sp-tag" id="spTag">Latest</span><div class="sp-h" id="spH">A heading in your ink</div><div class="sp-p">Body text sits calm on the background. The accent shows up only where it counts — a Give button, a small tag, one line — so it pops instead of shouting.</div><span class="sp-rule" id="spRule"></span></div>
+      </div>
       <div class="two">
         <div class="fld"><label>Name</label><input type="text" id="fName" placeholder="KAM (Czech Republic)"></div>
         <div class="fld"><label>Code</label><input type="text" id="fCode" placeholder="KAM"></div>
@@ -115,12 +130,15 @@
         </div>
         <input type="url" id="fLogo" placeholder="…or paste a logo URL" style="margin-top:9px">
       </div>
-      <div class="two">
-        <div class="fld"><label>Primary color</label><div class="colorrow"><input type="color" id="fPrimC" value="#FF6600"><input type="text" id="fPrim" placeholder="#FF6600"></div></div>
-        <div class="fld"><label>Accent color</label><div class="colorrow"><input type="color" id="fAccC" value="#141414"><input type="text" id="fAcc" placeholder="#141414"></div></div>
-      </div>
-      <div class="fld"><label>Text over the primary color</label>
-        <div class="seg" id="fText"><button data-t="Light" class="on">Light</button><button data-t="Dark">Dark</button></div>
+      <div class="brandsys">
+        <div class="csys">
+          <div class="fld"><label>Ink <span class="hh">text &amp; buttons</span></label><div class="colorrow"><input type="color" id="fInkC" value="#241F1B"><input type="text" id="fInk" placeholder="#241F1B"></div></div>
+          <div class="fld"><label>Accent <span class="hh">the spark</span></label><div class="colorrow"><input type="color" id="fAccC" value="#FF6600"><input type="text" id="fAcc" placeholder="#FF6600"></div></div>
+          <div class="fld"><label>Background <span class="hh">the page</span></label><div class="colorrow"><input type="color" id="fBgC" value="#F4F1EC"><input type="text" id="fBg" placeholder="#F4F1EC"></div></div>
+        </div>
+        <div class="fld"><label>Text over the accent button</label>
+          <div class="seg" id="fText"><button data-t="Light" class="on">Light</button><button data-t="Dark">Dark</button></div>
+        </div>
       </div>
       <div class="two">
         <div class="fld"><label>Website</label><input type="url" id="fWeb" placeholder="https://…"></div>
@@ -152,17 +170,17 @@ function renderGrid(){
   const g=document.getElementById('grid');
   if(!ORGS.length){ g.innerHTML='<div class="state">No national orgs yet. Click “Add national org” to add your first.</div>'; return; }
   g.innerHTML=ORGS.map(o=>{
-    const prim=o.primary||'#e7e4e0', txt=(o.textOn==='Dark')?'#141414':'#fff';
-    const logo=o.logo?`<img src="${esc(o.logo)}" alt="" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='inline')"><span class="code" style="display:none;color:${txt}">${esc(o.code||o.name)}</span>`
-      :`<span class="code" style="color:${txt}">${esc(o.code||o.name)}</span>`;
+    const ink=o.ink||'#241f1b';
+    const logo=o.logo?`<img src="${esc(o.logo)}" alt="" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='inline')"><span class="code" style="display:none;color:#fff">${esc(o.code||o.name)}</span>`
+      :`<span class="code" style="color:#fff">${esc(o.code||o.name)}</span>`;
+    const sw=(c,lab)=>c?`<span class="sw"><i style="background:${esc(c)}"></i>${esc(c)}</span>`:`<span class="sw" style="opacity:.55">${lab}</span>`;
     return `<div class="ocard">
-      <div class="banner" style="background:${esc(prim)}">${logo}</div>
+      <div class="banner" style="background:${esc(ink)}">${logo}</div>
       <div class="obody">
         <h3>${esc(o.name)}</h3>
         <div class="sub">${[o.code,o.country].filter(Boolean).map(esc).join(' · ')||'&nbsp;'}</div>
         <div class="swatches">
-          ${o.primary?`<span class="sw"><i style="background:${esc(o.primary)}"></i>${esc(o.primary)}</span>`:'<span class="sw" style="opacity:.6">no primary</span>'}
-          ${o.accent?`<span class="sw"><i style="background:${esc(o.accent)}"></i>${esc(o.accent)}</span>`:''}
+          ${sw(o.ink,'ink')}${sw(o.accent,'accent')}${sw(o.bg,'background')}
         </div>
         <div class="orow"><button class="ed" data-id="${o.id}">Edit</button><button class="del" data-id="${o.id}">Delete</button></div>
       </div></div>`;
@@ -180,8 +198,9 @@ function openEditor(id){
   $('ovtitle').textContent=id?'Edit national org':'Add national org';
   $('fName').value=o.name||''; $('fCode').value=o.code||''; $('fCountry').value=o.country||'';
   $('fLogo').value=o.logo||''; $('fWeb').value=o.website||''; $('fGive').value=o.give||''; $('fTag').value=o.tagline||'';
-  $('fPrim').value=o.primary||''; $('fPrimC').value=hexOk(o.primary)?o.primary:'#FF6600';
-  $('fAcc').value=o.accent||''; $('fAccC').value=hexOk(o.accent)?o.accent:'#141414';
+  $('fInk').value=o.ink||''; $('fInkC').value=hexOk(o.ink)?o.ink:'#241F1B';
+  $('fAcc').value=o.accent||''; $('fAccC').value=hexOk(o.accent)?o.accent:'#FF6600';
+  $('fBg').value=o.bg||''; $('fBgC').value=hexOk(o.bg)?o.bg:'#F4F1EC';
   setText(o.textOn==='Dark'?'Dark':'Light');
   $('msg').textContent=''; $('msg').className='msg';
   syncPreview();
@@ -190,22 +209,30 @@ function openEditor(id){
 function closeEditor(){ $('ov').classList.remove('open'); document.body.style.overflow=''; }
 function hexOk(v){ return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v||''); }
 function syncPreview(){
-  const prim=hexOk($('fPrim').value)?$('fPrim').value:'#e7e4e0';
-  const acc=hexOk($('fAcc').value)?$('fAcc').value:'#cccccc';
-  const txt=curText()==='Dark'?'#141414':'#fff';
+  const ink=hexOk($('fInk').value)?$('fInk').value:'#241f1b';
+  const acc=hexOk($('fAcc').value)?$('fAcc').value:'#FF6600';
+  const bg=hexOk($('fBg').value)?$('fBg').value:'#f4f1ec';
+  const txtOnAcc=curText()==='Dark'?'#241f1b':'#fff';
   const logo=$('fLogo').value.trim();
-  $('pvBanner').style.background=prim;
-  $('pvLogoWrap').innerHTML=logo?`<img src="${esc(logo)}" alt="" onerror="this.replaceWith(document.createTextNode('${esc(($('fCode').value||$('fName').value||'Logo'))}'))">`:`<span class="pcode" style="color:${txt}">${esc($('fCode').value||$('fName').value||'Your logo')}</span>`;
-  const wrap=$('pvLogoWrap'); if(logo){wrap.style.color=txt;} else {wrap.style.color=txt;}
-  $('pvPrimChip').style.background=prim; $('pvAccChip').style.background=acc;
+  // Apply the three colors as a system: ink for words, accent only for the spark, bg for the page.
+  $('sysprev').style.background=bg;
+  $('spLogo').style.color=ink;
+  $('spLogo').innerHTML=logo?`<img src="${esc(logo)}" alt="" style="height:20px;width:auto" onerror="this.replaceWith(document.createTextNode('${esc($('fCode').value||$('fName').value||'Logo')}'))">`:esc($('fCode').value||$('fName').value||'Your logo');
+  $('spH').style.color=ink; $('spH').textContent=($('fName').value.trim()||'A heading in your ink');
+  $('spGive').style.background=acc; $('spGive').style.color=txtOnAcc;
+  $('spTag').style.background=acc; $('spTag').style.color=txtOnAcc;
+  $('spRule').style.background=acc;
+  document.querySelectorAll('.sysprev .sp-p').forEach(p=>p.style.color=ink);
   // logo box preview
   $('logoPrev').innerHTML=logo?`<img src="${esc(logo)}" alt="" onerror="this.parentElement.innerHTML='<span>Bad URL</span>'">`:'<span>No logo</span>';
 }
 // color <-> hex sync
-$('fPrimC').addEventListener('input',e=>{$('fPrim').value=e.target.value.toUpperCase();syncPreview();});
+$('fInkC').addEventListener('input',e=>{$('fInk').value=e.target.value.toUpperCase();syncPreview();});
 $('fAccC').addEventListener('input',e=>{$('fAcc').value=e.target.value.toUpperCase();syncPreview();});
-$('fPrim').addEventListener('input',()=>{if(hexOk($('fPrim').value))$('fPrimC').value=$('fPrim').value;syncPreview();});
+$('fBgC').addEventListener('input',e=>{$('fBg').value=e.target.value.toUpperCase();syncPreview();});
+$('fInk').addEventListener('input',()=>{if(hexOk($('fInk').value))$('fInkC').value=$('fInk').value;syncPreview();});
 $('fAcc').addEventListener('input',()=>{if(hexOk($('fAcc').value))$('fAccC').value=$('fAcc').value;syncPreview();});
+$('fBg').addEventListener('input',()=>{if(hexOk($('fBg').value))$('fBgC').value=$('fBg').value;syncPreview();});
 ['fName','fCode','fLogo'].forEach(id=>$(id).addEventListener('input',syncPreview));
 document.querySelectorAll('#fText button').forEach(b=>b.addEventListener('click',()=>{setText(b.dataset.t);syncPreview();}));
 // logo upload
@@ -226,11 +253,10 @@ $('logoFile').addEventListener('change',async e=>{
 $('save').addEventListener('click',async()=>{
   if(uploading) return;
   const org={ id:editId, name:$('fName').value.trim(), code:$('fCode').value.trim(), country:$('fCountry').value.trim(),
-    logo:$('fLogo').value.trim(), primary:$('fPrim').value.trim(), accent:$('fAcc').value.trim(),
+    logo:$('fLogo').value.trim(), ink:$('fInk').value.trim(), accent:$('fAcc').value.trim(), bg:$('fBg').value.trim(),
     textOn:curText(), website:$('fWeb').value.trim(), give:$('fGive').value.trim(), tagline:$('fTag').value.trim() };
   if(!org.name){ $('msg').className='msg err'; $('msg').textContent='Please enter a name.'; return; }
-  if(org.primary&&!hexOk(org.primary)){ $('msg').className='msg err'; $('msg').textContent='Primary color must be a hex like #FF6600.'; return; }
-  if(org.accent&&!hexOk(org.accent)){ $('msg').className='msg err'; $('msg').textContent='Accent color must be a hex like #141414.'; return; }
+  for(const [k,lab] of [['ink','Ink'],['accent','Accent'],['bg','Background']]){ if(org[k]&&!hexOk(org[k])){ $('msg').className='msg err'; $('msg').textContent=lab+' must be a hex like #FF6600.'; return; } }
   $('save').disabled=true; $('msg').className='msg'; $('msg').textContent='Saving…';
   try{ await api('save',{org}); ORGS=(await api('list')).orgs; renderGrid(); closeEditor(); }
   catch(e){ $('msg').className='msg err'; $('msg').textContent=e.message; }
