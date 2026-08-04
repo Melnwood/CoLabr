@@ -23,9 +23,11 @@
   .colock .colockdiv{width:1px;height:22px;background:#c9c3ba;display:block}
   .colock .colockc{font-size:15px;font-weight:700;letter-spacing:-.01em;color:#241f1b;font-family:var(--font)}
   .top .give{background:var(--acc);color:var(--acc-text,#fff);font-size:13px;font-weight:600;padding:9px 17px;border-radius:22px}
-  .masthead{padding:26px 0 12px;display:grid;grid-template-columns:1.1fr 1fr;gap:44px;align-items:end}
+  .masthead{padding:26px 0 12px;display:grid;grid-template-columns:1.1fr 1fr;gap:44px;align-items:start}
+  .mh-l{display:flex;align-items:center;gap:18px}
+  .mh-lt{min-width:0}
   .stamp{display:none}
-  .mavatar{width:78px;height:78px;border-radius:50%;background-size:cover;background-position:center;background-color:#e9e2d5;border:3px solid #fff;box-shadow:0 5px 16px rgba(60,40,20,.2);margin:0 0 14px}
+  .mavatar{width:78px;height:78px;border-radius:50%;background-size:cover;background-position:center;background-color:#e9e2d5;border:3px solid #fff;box-shadow:0 5px 16px rgba(60,40,20,.2);margin:0;flex:none}
   .mh-l h1{font-size:clamp(38px,6.4vw,56px);font-weight:800;letter-spacing:-.02em;line-height:.98;margin:0;color:var(--text)}
   .mloc{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--muted);margin-top:12px}
   .mloc svg{width:14px;height:14px}
@@ -311,8 +313,10 @@
     <div class="masthead">
       <div class="mh-l">
         <div class="mavatar" id="mavatar" style="display:none"></div>
-        <h1 id="mtitle">The Ellenwoods</h1>
-        <div class="mloc"><svg viewBox="0 0 24 24" fill="none" stroke="#7a756f" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="mloctext">Frýdek-Místek, Czechia</span></div>
+        <div class="mh-lt">
+          <h1 id="mtitle">The Ellenwoods</h1>
+          <div class="mloc"><svg viewBox="0 0 24 24" fill="none" stroke="#7a756f" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="mloctext">Frýdek-Místek, Czechia</span></div>
+        </div>
       </div>
       <div class="mh-r">
         <div class="mmission" id="mkicker"></div>
