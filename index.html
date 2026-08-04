@@ -400,7 +400,21 @@ function applyStyle(name){
 // (set in Branding) override these when a supporter reads in that language.
 var JV_MISSION="Equipping young leaders to fulfill Christ’s commission through the local church.";
 var JV_VISION="A movement of God among the youth of Central and Eastern Europe that finds its home in the local church and transforms society.";
-var ORGVM={}; // { cs:{mission,vision}, pl:{...}, ... } filled from Branding per language
+// JV's mission & vision in each field language, so they translate with the page language switch.
+var JV_I18N={
+  en:{mission:JV_MISSION,vision:JV_VISION},
+  pl:{mission:"Wyposażamy młodych liderów, by wypełniali Chrystusowe posłanie poprzez lokalny kościół.",vision:"Boży ruch wśród młodzieży Europy Środkowej i Wschodniej, który znajduje swój dom w lokalnym kościele i przemienia społeczeństwo."},
+  cs:{mission:"Vybavujeme mladé vedoucí, aby naplňovali Kristovo poslání skrze místní církev.",vision:"Boží hnutí mezi mládeží střední a východní Evropy, které nachází svůj domov v místní církvi a proměňuje společnost."},
+  sk:{mission:"Vystrojujeme mladých vedúcich, aby napĺňali Kristovo poverenie prostredníctvom miestnej cirkvi.",vision:"Božie hnutie medzi mládežou strednej a východnej Európy, ktoré nachádza svoj domov v miestnej cirkvi a premieňa spoločnosť."},
+  uk:{mission:"Споряджаємо молодих лідерів виконувати Христове доручення через помісну церкву.",vision:"Божий рух серед молоді Центральної та Східної Європи, який знаходить свій дім у помісній церкві та перетворює суспільство."},
+  ro:{mission:"Echipăm tineri lideri pentru a împlini misiunea lui Hristos prin biserica locală.",vision:"O mișcare a lui Dumnezeu în rândul tinerilor din Europa Centrală și de Est, care își găsește căminul în biserica locală și transformă societatea."},
+  bg:{mission:"Подготвяме млади лидери да изпълняват Христовото поръчение чрез местната църква.",vision:"Божие движение сред младежта на Централна и Източна Европа, което намира дома си в местната църква и преобразява обществото."},
+  sl:{mission:"Opremljamo mlade voditelje, da izpolnjujejo Kristusovo poslanstvo skozi lokalno cerkev.",vision:"Božje gibanje med mladimi v srednji in vzhodni Evropi, ki najde svoj dom v lokalni cerkvi in preoblikuje družbo."},
+  lv:{mission:"Mēs sagatavojam jaunos līderus, lai viņi piepildītu Kristus pavēli caur vietējo draudzi.",vision:"Dieva kustība jauniešu vidū Centrāl- un Austrumeiropā, kas rod savas mājas vietējā draudzē un pārveido sabiedrību."},
+  et:{mission:"Varustame noori juhte täitma Kristuse käsku kohaliku koguduse kaudu.",vision:"Jumala liikumine Kesk- ja Ida-Euroopa noorte seas, mis leiab oma kodu kohalikus koguduses ja muudab ühiskonda."},
+  hu:{mission:"Fiatal vezetőket készítünk fel, hogy Krisztus küldetését a helyi gyülekezeten keresztül töltsék be.",vision:"Isten mozgalma Közép- és Kelet-Európa fiataljai között, amely otthonra talál a helyi gyülekezetben, és átformálja a társadalmat."}
+};
+var ORGVM={}; // { cs:{mission,vision}, pl:{...}, ... } native-org overrides from Branding per language
 // When viewing a teammate's page (?m=), swap the masthead to their name + location.
 // Apply an org's three-color brand system as CSS variables (ink=text/buttons, accent=the spark,
 // bg=page). Only valid hex values override; otherwise the JV defaults stand.
@@ -424,7 +438,8 @@ function applyPageIdentity(page){
 }
 function setMasthead(){
   const lang=(typeof READERLANG!=='undefined'&&READERLANG)?READERLANG:'en';
-  const vm=(lang!=='en'&&ORGVM[lang])?ORGVM[lang]:{mission:JV_MISSION,vision:JV_VISION};
+  const jv=JV_I18N[lang]||JV_I18N.en;
+  const vm=(lang!=='en'&&ORGVM[lang])?ORGVM[lang]:{mission:jv.mission,vision:jv.vision};
   const k=document.getElementById('mkicker'); if(k)k.textContent=vm.mission;
   const s=document.getElementById('msub'); if(s)s.textContent=vm.vision;
 }
