@@ -28,11 +28,21 @@ exports.handler = async function (event) {
 
   try {
     if (b.action === 'list') {
-      // Page through ALL records (Airtable caps a page at 100). Without this the dashboard silently
-      // dropped real updates once the table grew past 100 rows, understating opens/counts.
+      // Scope to the signed-in person's updates (plus legacy untagged, which are the Ellenwoods').
+      // Without this, one person's dashboard would fold in everyone else's updates + opens.
+      const meRec = await findMissionary(auth);
+      const myName = (meRec && meRec.fields && meRec.fields[MIS_NAME]) || SITE_MISSIONARY;
+      const isDefault = myName === SITE_MISSIONARY;
+      const nameEsc = String(myName).replace(/'/g, "\\'");
+      const formula = isDefault
+        ? `OR(LEN(ARRAYJOIN({Missionary}))=0, FIND('${nameEsc}', ARRAYJOIN({Missionary}))>0)`
+        : `FIND('${nameEsc}', ARRAYJOIN({Missionary}))>0`;
+      const fq = `&filterByFormula=${encodeURIComponent(formula)}`;
+      // Page through ALL matching records (Airtable caps a page at 100). Without pagination the
+      // dashboard silently dropped real updates once the table grew past 100 rows.
       let recs = [], offset = '';
       do {
-        const r = await fetch(`${api}?pageSize=100${offset ? '&offset=' + offset : ''}`, { headers: auth });
+        const r = await fetch(`${api}?pageSize=100${fq}${offset ? '&offset=' + offset : ''}`, { headers: auth });
         const data = await r.json();
         if (!r.ok) return resp(r.status, { error: 'Airtable read failed.' });
         recs = recs.concat(data.records || []);

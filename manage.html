@@ -240,12 +240,14 @@ function renderAll(){
   const thisYear=ROWS.filter(r=>(r.date||'').slice(0,4)===String(yr));
   const pub=ROWS.filter(r=>r.status==='Published').length;
   const dr=ROWS.filter(r=>r.status==='Draft').length;
-  const opens=ROWS.reduce((s,r)=>s+(r.opens||0),0);
-  const withOpens=ROWS.filter(r=>r.opens>0);
+  // Headline opens = opens on the updates you've sent THIS YEAR (not all-time).
+  const opens=thisYear.reduce((s,r)=>s+(r.opens||0),0);
+  const withOpens=thisYear.filter(r=>r.opens>0);
   const avg=withOpens.length?Math.round(opens/withOpens.length):0;
+  const opensAll=ROWS.reduce((s,r)=>s+(r.opens||0),0);
   // The three stats that matter, up top
   document.getElementById('kpis').innerHTML=
-    kpi(thisYear.length,'Updates in '+yr)+kpi(opens.toLocaleString(),'Total opens',true)+kpi(avg.toLocaleString(),'Avg opens / update')
+    kpi(thisYear.length,'Updates in '+yr)+kpi(opens.toLocaleString(),'Opens in '+yr,true)+kpi(avg.toLocaleString(),'Avg opens / update')
     +`<div class="kpi acc"><b id="givekpi">—</b><span>Give clicks</span></div>`;
   // Which months this year had an update
   const MON=['J','F','M','A','M','J','J','A','S','O','N','D'];
@@ -257,7 +259,7 @@ function renderAll(){
   } else ys.style.display='none';
   // Everything-else numbers, tucked away
   document.getElementById('detailrow').innerHTML=
-    `<span class="d"><b>${ROWS.length}</b> updates all-time</span><span class="d"><b>${pub}</b> published</span><span class="d"><b>${dr}</b> drafts</span>`;
+    `<span class="d"><b>${ROWS.length}</b> updates all-time</span><span class="d"><b>${opensAll.toLocaleString()}</b> opens all-time</span><span class="d"><b>${pub}</b> published</span><span class="d"><b>${dr}</b> drafts</span>`;
   const lc=document.getElementById('listcnt'); if(lc) lc.textContent=ROWS.length?('('+ROWS.length+')'):'';
   renderChart(); renderTop(); renderList();
 }
