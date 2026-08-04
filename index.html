@@ -33,6 +33,12 @@
   .meta{margin-top:20px;font-size:12px;display:flex;gap:8px;flex-wrap:wrap}
   .meta .pill{font-weight:600;color:var(--text);background:var(--soft);padding:6px 12px;border-radius:18px}
   .meta .pill b{color:var(--acc);font-weight:800}
+  /* prayer peek — a 🙏 chip on any card that has a prayer request; hover (desktop) / tap (mobile) */
+  .praychip{position:absolute;top:9px;right:9px;z-index:6;background:#fff;border:1px solid var(--line);color:var(--acc);font-size:11px;font-weight:800;padding:4px 9px;border-radius:20px;cursor:pointer;box-shadow:0 2px 8px rgba(60,40,20,.14);display:inline-flex;align-items:center;gap:4px;font-family:var(--font);line-height:1}
+  .praychip:hover{background:#fff8f1;border-color:var(--acc)}
+  #praypop{position:fixed;z-index:90;max-width:300px;background:#241f1b;color:#fff;font-size:13.5px;line-height:1.55;padding:12px 15px;border-radius:13px;box-shadow:0 18px 44px rgba(0,0,0,.4);opacity:0;transform:translateY(5px);transition:opacity .12s,transform .12s;pointer-events:none}
+  #praypop.on{opacity:1;transform:translateY(0)}
+  #praypop b{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#ffb273;margin-bottom:6px;font-weight:800}
   .rule{border:0;border-top:1px solid var(--line);margin:20px 4px 6px}
   .tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 2px 4px;position:sticky;top:0;background:linear-gradient(var(--soft) 78%,rgba(244,241,236,0));z-index:6}
   .search{flex:1;min-width:180px;display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #ddd2b8;border-radius:10px;padding:9px 12px}
@@ -464,7 +470,37 @@ function render(){
   else html=renderFieldNotes(items);
   s.innerHTML=html;
   s.querySelectorAll('[data-i]').forEach(el=>el.addEventListener('click',()=>openReader(+el.dataset.i)));
+  wirePrayerPeek(s);
 }
+// Pull the prayer request out of an update's blocks (if it has one).
+function prayerText(u){ if(!u||!u.blocks)return ''; for(const b of u.blocks){ if(b&&b.type==='prayer'&&b.text&&String(b.text).trim()) return String(b.text).trim(); } return ''; }
+let _praypop=null;
+function ensurePrayPop(){ if(_praypop)return _praypop; _praypop=document.createElement('div'); _praypop.id='praypop'; document.body.appendChild(_praypop); return _praypop; }
+function showPray(chip,text){
+  const p=ensurePrayPop();
+  const disp=text.length>360?text.slice(0,360).trim()+'…':text;
+  p.innerHTML='<b>🙏 Prayer request</b>'+esc(disp).replace(/\n/g,'<br>');
+  p.classList.add('on');
+  const pw=Math.min(300,window.innerWidth-24); p.style.maxWidth=pw+'px';
+  const r=chip.getBoundingClientRect();
+  let left=r.left+r.width/2-pw/2; left=Math.max(12,Math.min(left,window.innerWidth-pw-12));
+  const ph=p.offsetHeight; let top=r.top-ph-10; if(top<10) top=r.bottom+10;
+  p.style.left=left+'px'; p.style.top=top+'px';
+}
+function hidePray(){ if(_praypop)_praypop.classList.remove('on'); }
+function wirePrayerPeek(root){
+  (root||document).querySelectorAll('[data-i]').forEach(el=>{
+    if(el.dataset.pp)return; const u=U[+el.dataset.i]; const t=prayerText(u); if(!t)return; el.dataset.pp='1';
+    if(getComputedStyle(el).position==='static') el.style.position='relative';
+    const chip=document.createElement('button'); chip.type='button'; chip.className='praychip'; chip.setAttribute('aria-label','See prayer request'); chip.innerHTML='🙏 Prayer';
+    chip.addEventListener('mouseenter',()=>showPray(chip,t));
+    chip.addEventListener('mouseleave',hidePray);
+    chip.addEventListener('click',e=>{ e.stopPropagation(); if(_praypop&&_praypop.classList.contains('on'))hidePray(); else showPray(chip,t); });
+    el.appendChild(chip);
+  });
+}
+document.addEventListener('scroll',hidePray,true);
+document.addEventListener('click',e=>{ if(!e.target.closest('.praychip'))hidePray(); });
 
 function embedURL(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/)))return 'https://www.youtube.com/embed/'+m[1];if((m=v.match(/vimeo\.com\/(\d+)/)))return 'https://player.vimeo.com/video/'+m[1];return '';}
 var LANGNAMES={en:'English',pl:'Polish',uk:'Ukrainian',cs:'Czech',sk:'Slovak',ro:'Romanian',bg:'Bulgarian',sl:'Slovenian',lv:'Latvian',et:'Estonian',hu:'Hungarian',ru:'Russian',de:'German',es:'Spanish',fr:'French'};
