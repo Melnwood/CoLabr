@@ -3,7 +3,7 @@
 // scratch Airtable record (__VIDEO_INGEST__) so we can confirm it landed.
 // This is the "any-size ingest" step of the heart-language (video subtitles) pipeline.
 const crypto = require('crypto');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
 exports.handler = async function (event) {

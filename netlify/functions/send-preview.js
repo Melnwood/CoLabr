@@ -3,7 +3,7 @@
 // renderer the live subscriber-send uses, so what lands is what supporters would get.
 const { sendMail, esc } = require('./_mail');
 const { wrap, renderBlocks } = require('./_emailrender');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
 exports.handler = async function (event) {

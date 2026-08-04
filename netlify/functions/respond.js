@@ -3,7 +3,7 @@
 // Writes to the Responses table. Uses AIRTABLE_TOKEN (needs write scope).
 // Notifies the missionary by email — via Google Workspace/Gmail (preferred) or Resend (fallback).
 const { sendMail, esc } = require('./_mail');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tblVNMG5VnOnFFeto';
 const F = {
   name: 'fld0i05my8OeyflZH', type: 'fldigSBFHPa27Hh3s', message: 'fld5GlgEzO1WbORGu',
@@ -64,7 +64,7 @@ async function notify(token, x) {
   let to = process.env.NOTIFY_EMAIL || '';
   if (x.missionary) {
     const f = encodeURIComponent(`{Name}='${String(x.missionary).replace(/'/g, "")}'`);
-    const mr = await fetch(`https://api.airtable.com/v0/appsSmwptTnmK4luA/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${f}`, { headers: { Authorization: 'Bearer ' + token } });
+    const mr = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${f}`, { headers: { Authorization: 'Bearer ' + token } });
     if (mr.ok) { const md = await mr.json(); const rec = (md.records || [])[0]; const em = rec && rec.fields && rec.fields[MIS_EMAIL]; if (em) to = em; }
   }
   if (!to) return;

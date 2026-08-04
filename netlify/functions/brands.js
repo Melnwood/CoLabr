@@ -1,7 +1,7 @@
 // Co-Labr — National Org branding (logos + colors). Signed-in staff only.
 // Uses AIRTABLE_TOKEN (read for list; read+write for save/delete).
 const { sessionFromEvent } = require('./_auth');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl152sVfqGyrqpJQ';            // National Orgs
 const F = {
   name:    'fldsyU3dpzLdkXI7t',

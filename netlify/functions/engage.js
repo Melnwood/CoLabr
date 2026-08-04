@@ -1,7 +1,7 @@
 // Co-Labr — public engagement for the supporter page.
 // Returns the prayer count and PUBLIC encouragement for one update (or all updates).
 // Private notes are NEVER returned here. Uses AIRTABLE_TOKEN (read).
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tblVNMG5VnOnFFeto';
 const F = {
   name: 'fld0i05my8OeyflZH', type: 'fldigSBFHPa27Hh3s', message: 'fld5GlgEzO1WbORGu',

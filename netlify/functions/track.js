@@ -1,6 +1,6 @@
 // Co-Labr — lightweight event tracking (public). Currently logs Give-button clicks
 // (interest, not gifts). Uses AIRTABLE_TOKEN (write).
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl2Dm5W07cAMrJgs';
 const F = { kind: 'fldNrmKtonmpty6Ks', updateId: 'fldYFmxTqQ4tgBLKM', updateTitle: 'fldrZdDFBAoJr12oT', missionary: 'fldJQEL5qOEQT1Jsh' };
 const KINDS = ['Give'];

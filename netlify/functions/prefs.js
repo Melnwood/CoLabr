@@ -1,6 +1,6 @@
 // Co-Labr — manage-preferences (public, token-gated). A supporter reads/updates how they
 // hear from a missionary, or unsubscribes, via their private token. Uses AIRTABLE_TOKEN.
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl21LyWOBxln6bOy';
 const F = {
   name: 'fld95CZHX6o0uNKEb', email: 'fldzhY8nJPjWLKjUK', phone: 'fldBXPbdBiwEyaoEg',

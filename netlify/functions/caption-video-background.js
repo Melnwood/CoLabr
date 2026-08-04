@@ -3,7 +3,7 @@
 // track, and attach it to a Co-Labr update (published test) so it plays captioned on the page.
 // Background function (up to 15 min) so long transcriptions don't time out. Secret-gated.
 const crypto = require('crypto');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
 exports.handler = async function (event) {

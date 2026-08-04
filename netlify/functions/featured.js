@@ -1,6 +1,6 @@
 // Co-Labr — the "Across Josiah Venture" rail. Returns the teammate stories that have been
 // approved to appear on a given supporter page. Public (read-only).
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const SHARES = 'tblKLXrYICtkiSp40';
 
 exports.handler = async function (event) {

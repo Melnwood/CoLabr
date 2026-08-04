@@ -4,7 +4,7 @@
 const { sessionFromEvent } = require('./_auth');
 const { sendMail } = require('./_mail');
 const { fireNotify } = require('./_notify');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 const RTABLE = 'tblVNMG5VnOnFFeto'; // Responses
 const MIS_TABLE = 'tbli1L8AO0JUDL7Wl';          // Missionaries

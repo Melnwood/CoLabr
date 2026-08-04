@@ -3,7 +3,7 @@
 // (Netlify "-background" function, up to 15 min) so large lists never time out.
 // Triggered internally by create-update / admin with a shared secret. Idempotent via the Update "Sent" flag.
 const { sendMail, esc } = require('./_mail');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const UPDATES = 'tbl7aVErl35Qw36QZ';
 const SUBS = 'tbl21LyWOBxln6bOy';
 const MIS = 'tbli1L8AO0JUDL7Wl';
@@ -110,3 +110,7 @@ function renderBlocks(blocks, site) {
     }
   }).join('');
 }
+
+// Exported so a preview tool can render an identical email to what we actually send.
+module.exports.wrap = wrap;
+module.exports.renderBlocks = renderBlocks;

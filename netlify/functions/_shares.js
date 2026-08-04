@@ -1,5 +1,5 @@
 // Co-Labr — shared helpers for the peer share-and-approve feature.
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const MISS = 'tbli1L8AO0JUDL7Wl';
 const UPDATES = 'tbl7aVErl35Qw36QZ';
 

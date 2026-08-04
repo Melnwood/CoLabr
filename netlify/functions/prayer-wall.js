@@ -2,7 +2,7 @@
 // updates so staff can pray together across the whole movement. Auth required. English where a
 // native-language update carries a translation.
 const { sessionFromEvent } = require('./_auth');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const UPDATES = 'tbl7aVErl35Qw36QZ';
 const MISS = 'tbli1L8AO0JUDL7Wl';
 const U_MISS = 'fldpNShY6OSQBSbx0', U_TITLE = 'fldhkHAXyvqtrx3cu', U_DATE = 'fldvi8dFkZBFANacG', U_BLOCKS = 'fldN9B0v6YU0xptFu', U_TR = 'fld9BeSNNbZpUAtd0';

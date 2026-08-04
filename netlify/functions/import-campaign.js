@@ -2,7 +2,7 @@
 // the matching Airtable update. Called by the Make import (or a one-off) with a shared secret.
 // Idempotent: it overwrites Blocks for the target record each run, so re-running is safe.
 const { htmlToBlocks } = require('./_htmlblocks');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
 exports.handler = async function (event) {

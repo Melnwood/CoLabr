@@ -6,7 +6,7 @@
 // Runs on: the Netlify scheduler (body carries {next_run}). Can also be triggered manually with a
 // POST carrying the shared secret. Public requests without either are denied.
 const crypto = require('crypto');
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLES = {
   'Missionaries':    'tbli1L8AO0JUDL7Wl',
   'Entity Accounts': 'tblkP1sgm5dx11Uf0',

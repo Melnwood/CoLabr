@@ -1,7 +1,7 @@
 // Co-Labr — batch driver: translate every published update into all field languages.
 // Lists published updates and fires the per-update translator, paced so we don't hammer the
 // translation API or spin up too many functions at once. Secret-gated. Idempotent (overwrites).
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
 exports.handler = async function (event) {

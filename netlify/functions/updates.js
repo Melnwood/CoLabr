@@ -2,7 +2,7 @@
 // The Airtable token lives ONLY here (server-side), never sent to the browser.
 // ?m=<Missionary Name> selects whose page this is (defaults to the Ellenwoods).
 
-const BASE = 'appsSmwptTnmK4luA';
+const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 const MIS_TABLE = 'tbli1L8AO0JUDL7Wl';         // Missionaries
 const MIS_STYLE = 'fldvLZXckaQVUbD7F';          // Style (single select)
