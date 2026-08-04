@@ -4,3 +4,7 @@
 
 [functions]
   node_bundler = "esbuild"
+
+# Automated off-Airtable backup: snapshot every table to the GCS bucket every 3 hours.
+[functions."backup"]
+  schedule = "0 */3 * * *"
