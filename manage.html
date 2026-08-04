@@ -127,6 +127,16 @@
   .acc-h .chev{font-size:13px;color:var(--muted);transition:transform .15s;display:inline-block}
   .acc-h.open .chev{transform:rotate(90deg)}
   .acc-h .cnt{font-size:12.5px;color:var(--muted);font-weight:600}
+  .shareitem{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--line)}
+  .shareitem:first-child{border-top:none}
+  .shareitem .sh-b{flex:1}
+  .shareitem .sh-who{font-size:13.5px;color:var(--text)}
+  .shareitem .sh-who b{font-weight:800}
+  .shareitem .sh-what{font-size:13px;color:var(--muted);margin-top:2px}
+  .shareitem .sh-act{display:flex;gap:8px;margin-top:9px}
+  .shareitem .sh-act button{font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--text)}
+  .shareitem .sh-act .ok{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .sh-out{font-size:12.5px;color:var(--muted);padding:10px 0 2px;border-top:1px solid var(--line);margin-top:6px}
 </style>
 </head>
 <body>
@@ -141,6 +151,10 @@
     <div class="panel inbox" id="inboxPanel">
       <h2>Responses <span class="ib zero" id="unread">0 new</span><a id="refreshresp">Refresh</a><a href="inbox.html" style="margin-left:2px">View all &rarr;</a></h2>
       <div id="inbox"><div class="state">Loading…</div></div>
+    </div>
+    <div class="panel" id="sharePanel" style="display:none">
+      <h2>Feature requests <span class="ib zero" id="sharecount">0</span></h2>
+      <div id="sharelist"></div>
     </div>
     <div class="panel insights" id="insightsPanel">
       <h2>Insights <span class="aib">AI</span><a id="refreshins">Refresh</a></h2>
@@ -367,7 +381,30 @@ async function loadMetrics(){
     const dr=document.getElementById('detailrow'); if(dr && !dr.querySelector('.subd')) dr.insertAdjacentHTML('beforeend',`<span class="d subd"><b>${(d.subscribers||0).toLocaleString()}</b> subscribers</span>`);
   }catch(e){}
 }
-(async()=>{ if(await guard()){ load(); loadStyle(); loadResponses(); loadMetrics(); } })();
+async function loadShares(){
+  try{
+    const r=await fetch('/.netlify/functions/share-inbox'); if(!r.ok) return;
+    const d=await r.json(); const inc=(d&&d.incoming)||[], out=(d&&d.outgoing)||[];
+    const panel=document.getElementById('sharePanel'), list=document.getElementById('sharelist'), cnt=document.getElementById('sharecount');
+    if(!inc.length && !out.length){ panel.style.display='none'; return; }
+    panel.style.display='';
+    cnt.textContent=inc.length; cnt.className='ib'+(inc.length?'':' zero');
+    let html=inc.map(s=>`<div class="shareitem" data-id="${s.id}">
+      <div class="sh-b"><div class="sh-who"><b>${esc(s.requesterName||'A teammate')}</b>${s.country?' · '+esc(s.country):''} would like to feature your update</div>
+      <div class="sh-what">“${esc(s.title)}” on their international wall</div>
+      <div class="sh-act"><button class="ok" data-act="approve" data-id="${s.id}">Approve</button><button data-act="decline" data-id="${s.id}">Not now</button></div></div></div>`).join('');
+    if(out.length) html+=`<div class="sh-out">Waiting on ${out.length} teammate${out.length>1?'s':''} to approve your request${out.length>1?'s':''} to feature their stories.</div>`;
+    list.innerHTML=html;
+    list.querySelectorAll('.sh-act button').forEach(b=>b.addEventListener('click',async()=>{
+      const id=b.dataset.id, decision=b.dataset.act; const item=b.closest('.shareitem'); item.style.opacity=.5;
+      try{ const rr=await fetch('/.netlify/functions/share-decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,decision})});
+        if(rr.ok){ item.remove(); const left=list.querySelectorAll('.shareitem').length; cnt.textContent=left; cnt.className='ib'+(left?'':' zero'); if(!left && !out.length) panel.style.display='none'; }
+        else item.style.opacity=1;
+      }catch(_){ item.style.opacity=1; }
+    }));
+  }catch(_){}
+}
+(async()=>{ if(await guard()){ load(); loadStyle(); loadResponses(); loadMetrics(); loadShares(); } })();
 </script>
 </body>
 </html>

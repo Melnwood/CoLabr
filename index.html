@@ -39,6 +39,29 @@
   #praypop{position:fixed;z-index:90;max-width:300px;background:#241f1b;color:#fff;font-size:13.5px;line-height:1.55;padding:12px 15px;border-radius:13px;box-shadow:0 18px 44px rgba(0,0,0,.4);opacity:0;transform:translateY(5px);transition:opacity .12s,transform .12s;pointer-events:none}
   #praypop.on{opacity:1;transform:translateY(0)}
   #praypop b{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#ffb273;margin-bottom:6px;font-weight:800}
+  /* Across Josiah Venture rail — curated teammate stories */
+  .jvrail{margin:8px 0 2px;padding:18px 0 6px;border-top:1px solid var(--line)}
+  .jvrailhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:13px}
+  .jvrt{font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
+  .jvrs{font-size:13px;color:var(--muted)}
+  .jvrailrow{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .jvrailrow::-webkit-scrollbar{height:6px}.jvrailrow::-webkit-scrollbar-thumb{background:#d8cdb6;border-radius:6px}
+  .jvcard{flex:0 0 230px;scroll-snap-align:start;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:0 4px 14px rgba(60,40,20,.07);transition:transform .15s,box-shadow .15s}
+  .jvcard:hover{box-shadow:0 10px 24px rgba(60,40,20,.14);transform:translateY(-2px)}
+  .jvcov{height:120px;background:#e9e2d5;background-size:cover;background-position:center;position:relative}
+  .jvflag{position:absolute;top:8px;left:8px;background:rgba(20,15,10,.62);color:#fff;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px}
+  .jvbody{padding:11px 13px 14px}
+  .jvauthor{font-size:11px;font-weight:800;color:var(--acc);margin-bottom:3px;letter-spacing:.02em}
+  .jvtitle{font-size:14.5px;font-weight:800;line-height:1.2;color:var(--text);margin-bottom:5px}
+  .jvex{font-size:12px;line-height:1.46;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  /* reader ⋯ share (staff only) */
+  .rmore{position:absolute;top:14px;right:56px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(20,15,10,.5);color:#fff;font-size:19px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+  .rmoremenu{display:none;position:absolute;top:52px;right:16px;z-index:8;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.22);overflow:hidden;min-width:250px}
+  .rmoremenu.on{display:block}
+  .rmoremenu button{display:block;width:100%;text-align:left;background:#fff;border:none;padding:13px 16px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;font-family:var(--font)}
+  .rmoremenu button:hover{background:#fff8f1;color:var(--acc)}
+  #cltoast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:120;background:#241f1b;color:#fff;font-size:13.5px;font-weight:600;padding:12px 18px;border-radius:24px;box-shadow:0 14px 40px rgba(0,0,0,.35);opacity:0;transition:opacity .16s,transform .16s;pointer-events:none;max-width:88vw;text-align:center}
+  #cltoast.on{opacity:1;transform:translateX(-50%) translateY(0)}
   .rule{border:0;border-top:1px solid var(--line);margin:20px 4px 6px}
   .tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 2px 4px;position:sticky;top:0;background:linear-gradient(var(--soft) 78%,rgba(244,241,236,0));z-index:6}
   .search{flex:1;min-width:180px;display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #ddd2b8;border-radius:10px;padding:9px 12px}
@@ -276,6 +299,10 @@
         <div class="mvis" id="msub"></div>
       </div>
     </div>
+    <div class="jvrail" id="jvrail" style="display:none">
+      <div class="jvrailhead"><span class="jvrt">Across Josiah Venture</span><span class="jvrs">Stories from teammates around the field</span></div>
+      <div class="jvrailrow" id="jvrailrow"></div>
+    </div>
     <hr class="rule">
     <div class="tools">
       <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="q" placeholder="Search past updates…"></div>
@@ -287,6 +314,7 @@
     <div class="foot">Every update the Ellenwoods have shared since 2012 — live from Co-Labr. Share it with anyone who wants to follow along.</div>
   </div>
   <div class="reader" id="reader"><div class="sheet" id="sheet"></div></div>
+  <div id="cltoast"></div>
   <div class="subov" id="subov"><div class="subsheet">
     <button class="subx" id="subx">×</button>
     <div id="subform">
@@ -635,7 +663,8 @@ async function openReader(i){
   const uu={...u,title,blocks};
   const emb=u.video?embedURL(u.video):'';
   const media=emb?`<iframe src="${emb}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`:(u.cover?`<img src="${u.cover}" alt="" onerror="this.style.display='none'">`:'');
-  sheet.innerHTML=`<div class="rcov">${media}<button class="x" id="rx">×</button></div>
+  sheet.innerHTML=`<div class="rcov">${media}<button class="x" id="rx">×</button>${ME?'<button class="rmore" id="rmore" aria-label="More">⋯</button>':''}</div>
+    ${ME?`<div class="rmoremenu" id="rmoremenu"><button id="rshareBtn">🌍 Share this on my international wall</button></div>`:''}
     <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>
     <div class="rmeta"><span>${u.date}, ${u.y}</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#7a756f" stroke-width="1.9"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>${(u.opens||0).toLocaleString()} opens</span></div>
     ${tnote}
@@ -645,6 +674,12 @@ async function openReader(i){
     <div class="give"><div class="t">Partner with the Ellenwoods</div><div class="d">Stand with us in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
+  if(ME){
+    const mb=document.getElementById('rmore'),mm=document.getElementById('rmoremenu');
+    if(mb&&mm){ mb.addEventListener('click',e=>{e.stopPropagation();mm.classList.toggle('on');}); }
+    const sb=document.getElementById('rshareBtn');
+    if(sb)sb.addEventListener('click',()=>{ if(mm)mm.classList.remove('on'); shareUpdate(u.id); });
+  }
   showCaptions(sheet);
   wireOverlays(sheet,uu);
   pollCaptions(sheet);
@@ -774,6 +809,50 @@ document.addEventListener('click',e=>{
   }catch(_){}
 },true);
 
+/* ---- Across Josiah Venture rail + peer share-and-approve ---- */
+var ME=null;
+async function initShare(){
+  try{ const r=await fetch('/.netlify/functions/me'); if(r.ok) ME=await r.json(); }catch(_){}
+  loadFeatured();
+}
+async function loadFeatured(){
+  try{
+    const r=await fetch('/.netlify/functions/featured?page='+encodeURIComponent(FAMILY));
+    if(!r.ok) return; const d=await r.json(); const items=(d&&d.items)||[];
+    if(items.length) renderRail(items);
+  }catch(_){}
+}
+function renderRail(items){
+  window._feat=items;
+  const row=document.getElementById('jvrailrow');
+  row.innerHTML=items.map((it,i)=>`<div class="jvcard" data-fi="${i}">
+    <div class="jvcov"${it.cover?` style="background-image:url('${esc(it.cover)}')"`:''}>${it.country?`<span class="jvflag">${esc(it.country)}</span>`:''}</div>
+    <div class="jvbody"><div class="jvauthor">${esc(it.author||'A teammate')}</div><div class="jvtitle">${esc(it.title)}</div><div class="jvex">${esc(it.excerpt||'')}</div></div></div>`).join('');
+  row.querySelectorAll('[data-fi]').forEach(el=>el.addEventListener('click',()=>openFeatured(window._feat[+el.dataset.fi])));
+  document.getElementById('jvrail').style.display='block';
+}
+function openFeatured(it){
+  if(!it)return; const sheet=document.getElementById('sheet');
+  sheet.innerHTML=`<div class="rcov">${it.cover?`<img src="${esc(it.cover)}" alt="" onerror="this.style.display='none'">`:''}<button class="x" id="rx">×</button></div>
+    <div class="rbody"><div class="rk">Across Josiah Venture</div><h2>${esc(it.title)}</h2>
+    <div class="rmeta"><span>${esc(it.author||'')}</span>${it.country?`<span>${esc(it.country)}</span>`:''}</div>
+    <p class="rtext">${esc(it.excerpt||'').replace(/\n/g,'<br>')}</p>
+    <div class="trnote" style="margin-top:10px">🌍 Featured with ${esc(it.author||'the author')}'s permission</div></div>`;
+  document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
+  document.getElementById('rx').addEventListener('click',closeReader);
+}
+var _toastT=null;
+function toast(msg){ const t=document.getElementById('cltoast'); if(!t)return; t.textContent=msg; t.classList.add('on'); clearTimeout(_toastT); _toastT=setTimeout(()=>t.classList.remove('on'),3800); }
+async function shareUpdate(id){
+  if(!id)return;
+  try{
+    const r=await fetch('/.netlify/functions/share-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({updateId:id})});
+    const d=await r.json().catch(()=>({}));
+    toast(r.ok?('Sent to '+(d.author||'the author')+' for approval 🌍'):(d.error||'Could not share.'));
+  }catch(_){ toast('Could not share right now.'); }
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('#rmore')&&!e.target.closest('#rmoremenu')){ const mm=document.getElementById('rmoremenu'); if(mm)mm.classList.remove('on'); } });
+initShare();
 load();
 </script>
 </body>
