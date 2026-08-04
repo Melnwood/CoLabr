@@ -162,6 +162,8 @@
   .sheet .rvid iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px}
   .sheet .rvidf{background:#000;border-radius:12px;overflow:hidden}
   .sheet .rvidf video{position:absolute;inset:0;width:100%;height:100%;border-radius:12px;background:#000}
+  .sheet .rvid .vcap{position:absolute;left:50%;transform:translateX(-50%);bottom:44px;width:92%;max-width:92%;background:rgba(0,0,0,.74);color:#fff;font-size:16px;font-weight:600;line-height:1.32;padding:5px 12px;border-radius:7px;text-align:center;opacity:0;transition:opacity .08s;pointer-events:none;white-space:pre-wrap;box-sizing:border-box}
+  @media(max-width:600px){.sheet .rvid .vcap{font-size:13.5px;bottom:38px;padding:4px 9px}}
   .sheet .rvidcc{display:inline-flex;align-items:center;gap:6px;margin:-8px 0 16px;font-size:11.5px;color:#7a756f;font-weight:600;letter-spacing:.02em}
   .sheet .rvidcc b{background:#f0ece6;color:#b0704a;font-weight:800;font-size:10px;padding:2px 6px;border-radius:5px}
   .sheet .rvidcc.proc{color:var(--acc)}
@@ -485,15 +487,53 @@ function renderVideo(bk,recId,idx){
     const pollable=!caps.length&&recId!=null&&(bk.captionStatus==='processing'||(ourUpload&&bk.lang));
     if(caps.length) badge=`<div class="rvidcc" id="${cid}"><b>CC</b> AI‑translated${bk.lang?' from '+esc(langName(bk.lang)):''}</div>`;
     else if(pollable){ badge=`<div class="rvidcc proc" id="${cid}"><span class="ccspin"></span>Generating English subtitles… they'll appear here automatically</div>`; pollAttr=` data-cappoll="${esc(String(recId))}|${idx}|${esc(bk.lang||'')}"`; }
-    return `<div class="rvid rvidf"><video controls playsinline preload="metadata" data-cap="1"${pollAttr}><source src="${esc(url)}">${tracks}</video></div>${badge}`;
+    return `<div class="rvid rvidf"><video controls playsinline preload="metadata" data-cap="1" data-ov="vcap${idx}"${pollAttr}><source src="${esc(url)}">${tracks}</video><div class="vcap" id="vcap${idx}"></div></div>${badge}`;
   }
   const e=embedURL(url); return e?`<div class="rvid"><iframe src="${e}" allow="fullscreen" allowfullscreen></iframe></div>`:'';
 }
+// We render captions ourselves (see attachOverlay) because mobile browsers often ignore a
+// programmatically-enabled native <track>. Keep native tracks off to avoid double subtitles.
 function showCaptions(root){
   try{(root||document).querySelectorAll('video[data-cap]').forEach(v=>{
-    const on=()=>{try{const t=v.textTracks;for(let i=0;i<t.length;i++)t[i].mode=(i===0?'showing':'disabled');}catch(_){}};
-    on(); v.addEventListener('loadedmetadata',on); v.addEventListener('play',on); setTimeout(on,300);
+    const off=()=>{try{const t=v.textTracks;for(let i=0;i<t.length;i++)t[i].mode='disabled';}catch(_){}};
+    off(); v.addEventListener('loadedmetadata',off); setTimeout(off,300);
   });}catch(_){}
+}
+// Parse WebVTT into cue objects.
+function parseVTT(t){
+  const cues=[]; if(!t)return cues;
+  t.replace(/\r/g,'').split(/\n\n+/).forEach(bl=>{
+    const lines=bl.split('\n').filter(l=>l.length);
+    const tl=lines.find(l=>l.indexOf('-->')>-1); if(!tl)return;
+    const m=tl.match(/(\d{1,2}:\d{2}:\d{2}[.,]\d+|\d{1,2}:\d{2}[.,]\d+)\s*-->\s*(\d{1,2}:\d{2}:\d{2}[.,]\d+|\d{1,2}:\d{2}[.,]\d+)/);
+    if(!m)return;
+    const txt=lines.slice(lines.indexOf(tl)+1).join('\n').trim(); if(!txt)return;
+    cues.push({s:vtts(m[1]),e:vtts(m[2]),t:txt});
+  });
+  return cues;
+}
+function vtts(x){x=String(x).replace(',','.');const p=x.split(':').map(parseFloat);return p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1];}
+// Draw the active cue into our own overlay, synced to the video clock.
+function attachOverlay(v,ov,vtt){
+  if(!v||!ov)return false;
+  const cues=parseVTT(vtt); if(!cues.length)return false;
+  let last=null;
+  const upd=()=>{const t=v.currentTime||0;let cur='';for(let i=0;i<cues.length;i++){if(t>=cues[i].s&&t<cues[i].e){cur=cues[i].t;break;}}if(cur!==last){ov.textContent=cur;ov.style.opacity=cur?'1':'0';last=cur;}};
+  v.addEventListener('timeupdate',upd); v.addEventListener('seeked',upd); v.addEventListener('play',upd); upd();
+  ov.dataset.wired='1';
+  return true;
+}
+// Wire overlays for any video blocks whose captions are already available at open time.
+function wireOverlays(root,uu){
+  if(!uu||!uu.blocks)return;
+  uu.blocks.forEach((bk,i)=>{
+    if(!bk||bk.type!=='video')return;
+    const caps=Array.isArray(bk.captions)?bk.captions:[];
+    const cap=caps.find(c=>c&&c.vtt); if(!cap)return;   // not ready yet — pollCaptions will wire it
+    const ov=(root||document).querySelector('#vcap'+i);
+    const v=ov&&ov.parentElement?ov.parentElement.querySelector('video'):null;
+    if(ov&&v)attachOverlay(v,ov,cap.vtt);
+  });
 }
 // While a freshly-uploaded video is still being captioned, poll for its subtitle track and
 // drop it in automatically the moment it's ready — no reload needed.
@@ -515,7 +555,8 @@ function pollCaptions(root){
             const tr=document.createElement('track');
             tr.kind='subtitles'; tr.srclang='en'; tr.label='English'; tr.default=true; tr.src=vttUrl;
             v.appendChild(tr); v.removeAttribute('data-cappoll');
-            show(); setTimeout(show,500);
+            try{const t=v.textTracks;for(let i=0;i<t.length;i++)t[i].mode='disabled';}catch(_){}
+            const ov=document.getElementById('vcap'+b); if(ov)attachOverlay(v,ov,txt);   // draw our own captions
             if(badge){ badge.className='rvidcc'; badge.innerHTML='<b>CC</b> AI‑translated'+(srcLang?' from '+esc(langName(srcLang)):''); }
             return;
           }
@@ -569,6 +610,7 @@ async function openReader(i){
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
   showCaptions(sheet);
+  wireOverlays(sheet,uu);
   pollCaptions(sheet);
   wireRespond(u);
 }
