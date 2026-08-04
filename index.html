@@ -308,7 +308,6 @@
       <div class="mh-l">
         <h1 id="mtitle">The Ellenwoods</h1>
         <div class="mloc"><svg viewBox="0 0 24 24" fill="none" stroke="#7a756f" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="mloctext">Frýdek-Místek, Czechia</span></div>
-        <div class="meta" id="meta"></div>
       </div>
       <div class="mh-r">
         <div class="mmission" id="mkicker"></div>
@@ -427,7 +426,7 @@ async function load(){
       const y=+p[0]||0, mo=MON[(+p[1]||1)-1]||'', d=+p[2]||'';
       return {...u, y, date:`${mo} ${d}`};
     });
-    renderHero(); buildMeta(); buildYears(); render();
+    renderHero(); buildYears(); render();
     document.body.classList.add('ready');   // reveal only now, already in the correct style
   }catch(e){
     document.getElementById('stream').innerHTML='<div class="state">Couldn’t load updates right now. Please refresh in a moment.</div>';
