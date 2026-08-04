@@ -26,7 +26,8 @@ exports.handler = async function (event) {
     const annotate = await fetch('https://videointelligence.googleapis.com/v1/videos:annotate', {
       method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ inputUri: b.gsUri, features: ['SPEECH_TRANSCRIPTION'],
-        videoContext: { speechTranscriptionConfig: { languageCode: srcLang, enableAutomaticPunctuation: true, maxAlternatives: 1 } } })
+        videoContext: { speechTranscriptionConfig: { languageCode: srcLang, enableAutomaticPunctuation: true, maxAlternatives: 1,
+          speechContexts: [{ phrases: ['Josiah Venture', 'Kristus', 'Ježíš', 'evangelium', 'církev', 'učedník', 'mládež', 'tábor', 'English Camp', 'discipleship', 'gospel', 'church', 'Jesus'] }] } } })
     });
     const annJson = await annotate.json();
     if (!annotate.ok || !annJson.name) { await log('ERROR annotate ' + JSON.stringify(annJson).slice(0, 300)); if (b.recordId) await setStatus(b.recordId, b.blockIndex, 'failed'); return j(200, {}); }
@@ -97,17 +98,29 @@ function groupCues(words) {
 
 async function translate(lines, srcLang) {
   const key = process.env.ANTHROPIC_API_KEY; if (!key) return null;
-  const model = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
+  // Give the model the WHOLE transcript for context, ask it to translate faithfully AND to
+  // correct obvious speech-recognition slips using that context — then return one English
+  // segment per source line so caption timing stays aligned. Try a strong model first, fall
+  // back to a fast one so a bad/unknown model id never breaks captioning.
+  const full = lines.join(' ');
   const numbered = lines.map((t, i) => `${i + 1}. ${t}`).join('\n');
-  const prompt = `You are translating spoken captions from a missionary video (source language code ${srcLang}) into natural, warm English. Translate each numbered line. Keep names and places accurate. Return ONLY a JSON array of strings, one per line, in the same order, no numbering.\n\n${numbered}`;
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST', headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model, max_tokens: 2000, messages: [{ role: 'user', content: prompt }] })
-  });
-  const jd = await res.json();
-  const txt = (((jd.content || [])[0]) || {}).text || '';
-  const m = txt.match(/\[[\s\S]*\]/); if (!m) return null;
-  const arr = JSON.parse(m[0]); return Array.isArray(arr) ? arr.map(String) : null;
+  const prompt = `You are translating a Christian missionary's spoken video into natural, warm, accurate English (source language code: ${srcLang}). The source text was produced by automatic speech recognition and may contain small errors — read the WHOLE transcript first and use the overall meaning to infer intent, quietly fixing obvious mis-hearings so the English reads true to what was said.\n\nFull transcript (context only):\n"""\n${full}\n"""\n\nNow translate it as exactly ${lines.length} caption segments that line up with these numbered source lines (same order, same count, each English segment corresponding to its numbered source line so the on-screen timing matches). Keep names, places, and Scripture references accurate. Return ONLY a JSON array of ${lines.length} English strings — no numbering, no commentary.\n\n${numbered}`;
+  const models = [process.env.ANTHROPIC_TRANSLATE_MODEL || 'claude-sonnet-4-5', 'claude-haiku-4-5'];
+  for (const model of models) {
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify({ model, max_tokens: 3000, messages: [{ role: 'user', content: prompt }] })
+      });
+      const jd = await res.json();
+      if (jd.error) { await log('WARN model ' + model + ' ' + JSON.stringify(jd.error).slice(0, 140)); continue; }
+      const txt = (((jd.content || [])[0]) || {}).text || '';
+      const m = txt.match(/\[[\s\S]*\]/); if (!m) continue;
+      const arr = JSON.parse(m[0]);
+      if (Array.isArray(arr) && arr.length) return arr.map(String);
+    } catch (e) { await log('WARN translate ' + model + ' ' + String(e.message || e)); }
+  }
+  return null;
 }
 
 async function createUpdate(title, blocks) {
