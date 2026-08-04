@@ -5,6 +5,9 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID ||
   '466075134045-dt0ijv3b6sfp4ddfbhij60kd6h6744q8.apps.googleusercontent.com';
 const ALLOWED_DOMAIN = 'josiahventure.com';
 const COOKIE = 'cl_session';
+// Super-admins who can add people. Configurable via ADMIN_EMAILS (comma-separated); defaults to Mel.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'mellenwood@josiahventure.com').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+function isAdmin(email){ return !!email && ADMIN_EMAILS.includes(String(email).toLowerCase()); }
 
 function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 function b64urlJSON(obj){ return b64url(JSON.stringify(obj)); }
@@ -48,4 +51,4 @@ function siteBase(event){
   return 'https://' + host;
 }
 
-module.exports = { CLIENT_ID, ALLOWED_DOMAIN, sign, verify, parseCookies, sessionFromEvent, makeSessionCookie, clearSessionCookie, siteBase, b64url };
+module.exports = { CLIENT_ID, ALLOWED_DOMAIN, isAdmin, sign, verify, parseCookies, sessionFromEvent, makeSessionCookie, clearSessionCookie, siteBase, b64url };
