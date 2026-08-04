@@ -24,7 +24,15 @@
   .fld input:focus,.fld textarea:focus{border-color:var(--acc)}
   .hint{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
   .row{display:flex;gap:12px}.row .fld{flex:1}
-  .recount{font-size:12.5px;color:var(--text);font-weight:700;margin-top:6px}
+  /* email-style header: To / From / Subject */
+  .mailhead{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px}
+  .mailhead .mh-row{display:flex;align-items:flex-start;gap:10px;padding:0 14px;border-bottom:1px solid var(--line)}
+  .mailhead .mh-row:last-child{border-bottom:none}
+  .mailhead .mh-lab{flex:none;width:56px;font-size:13px;color:var(--muted);font-weight:600;padding:14px 0 0}
+  .mailhead input,.mailhead textarea{flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:14.5px;color:var(--text);padding:13px 0 12px;resize:none;line-height:1.5}
+  .mailhead textarea{overflow:hidden;min-height:24px}
+  .mailhead textarea::placeholder{color:#b3aa9c}
+  .recount{font-size:12.5px;color:var(--text);font-weight:700;margin:2px 2px 0}
   .recount span{color:var(--acc)}
   .send{background:var(--acc);color:#fff;font-weight:700;font-size:15px;padding:13px 26px;border:none;border-radius:10px;cursor:pointer}
   .send:disabled{opacity:.6;cursor:default}
@@ -45,12 +53,14 @@
     <h1>Invite your supporters</h1>
     <p class="lede">A warm, personal note from you two. Each person gets their own copy (with their first name), and a button to your page where they choose how they'd like to follow along.</p>
 
-    <div class="row">
-      <div class="fld"><label>From</label><input id="fromName" value="Amy &amp; Mel Ellenwood"></div>
-      <div class="fld"><label>Subject</label><input id="subject" value="Come follow our family's journey"></div>
+    <div class="mailhead">
+      <div class="mh-row"><span class="mh-lab">To</span><textarea id="recips" rows="1" placeholder="Paste from anywhere — names optional.  e.g.  Grandma Ruth &lt;ruth@example.com&gt;,  ruth@example.com"></textarea></div>
+      <div class="mh-row"><span class="mh-lab">From</span><input id="fromName" value="Amy &amp; Mel Ellenwood"></div>
+      <div class="mh-row"><span class="mh-lab">Subject</span><input id="subject" value="Come follow our family's journey"></div>
     </div>
+    <div class="recount" id="recount">0 recipients</div>
 
-    <div class="fld"><label>Your letter</label>
+    <div class="fld" style="margin-top:15px"><label>Your letter</label>
       <textarea id="body" rows="11">Dear {name},
 
 For years you have walked with us in ministry, and we are so grateful for you. We've made a simple new home for our updates — one place to read our stories, see photos, pray with us, and cheer us on.
@@ -62,12 +72,6 @@ Come take a look and pick what fits you best.
 With love,
 Amy &amp; Mel</textarea>
       <div class="hint">Tip: <b>{name}</b> is automatically replaced with each person's first name. The button linking to your page is added for you — no need to paste a link.</div>
-    </div>
-
-    <div class="fld"><label>Who should get it?</label>
-      <textarea id="recips" rows="6" placeholder="One per line. Either:&#10;Grandma Ruth &lt;ruth@example.com&gt;&#10;or just:&#10;ruth@example.com"></textarea>
-      <div class="recount" id="recount">0 recipients</div>
-      <div class="hint">Paste from anywhere — names optional. (Pulling straight from your Mailchimp list is a next step; for now paste or type them here.)</div>
     </div>
 
     <details><summary>Preview the email</summary>
@@ -95,7 +99,8 @@ function parseRecips(){
   return out;
 }
 function updateCount(){ const n=parseRecips().length; document.getElementById('recount').innerHTML=`<span>${n}</span> recipient${n===1?'':'s'}`; }
-document.getElementById('recips').addEventListener('input',updateCount);
+function growTo(){ const t=document.getElementById('recips'); t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,220)+'px'; }
+document.getElementById('recips').addEventListener('input',()=>{updateCount();growTo();});
 function renderPreview(){
   const body=(document.getElementById('body').value||'').replace(/\{name\}/gi,'Ruth');
   const html=body.split(/\n{2,}/).map(p=>`<p style="margin:0 0 12px">${esc(p).replace(/\n/g,'<br>')}</p>`).join('');
@@ -130,7 +135,7 @@ document.getElementById('sendBtn').addEventListener('click',async()=>{
   }catch(e){ msg.className='msg err'; msg.textContent=e.message+ (sent?` (sent ${sent} before this).`:''); }
   finally{ btn.disabled=false; }
 });
-(async()=>{ if(await guard()){ updateCount(); renderPreview(); } })();
+(async()=>{ if(await guard()){ updateCount(); growTo(); renderPreview(); } })();
 </script>
 </body>
 </html>
