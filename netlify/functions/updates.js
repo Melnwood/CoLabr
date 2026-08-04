@@ -10,6 +10,7 @@ const MIS_NAME = 'fldPYSQwxoQJGb0Zd';
 const MIS_LOC = 'fld0mx3Sp4JnNnIfc';
 const MIS_ORG = 'fldCQ8c1Eu6SXmY98';
 const MIS_PHOTO = 'fldiXSCuELTQiiT08';
+const MIS_NATIONAL = 'fld4WE8NRwSrNj7ih';        // National staff (checkbox) — authoritative co-brand switch
 const ORGS_TABLE = 'tbl152sVfqGyrqpJQ';        // National Orgs (brand)
 const ORG_CODE = 'fldYMMDdsP2DgNzmZ', ORG_NAME = 'fldsyU3dpzLdkXI7t';
 const ORG_INK = 'fldhe4BdqqpM37Hod', ORG_ACCENT = 'fldqjEmVMB9lVTOzG', ORG_BG = 'fldpgLMC8jv9YHtxm', ORG_TEXTON = 'fldufCKMaSCYUh3xt';
@@ -66,9 +67,9 @@ exports.handler = async function (event) {
       };
     }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate));
 
-    // A page is "national" (national-org member writing in their own language) when any of its
-    // updates is natively non-English. That's what makes the language switch + co-brand meaningful.
-    const native = updates.some(u => u.src && u.src !== 'en');
+    // A page is "national" when the person's "National staff" toggle is on (set by an admin in the
+    // console). That authoritatively turns on the reader-language brand switch + co-brand mark.
+    let native = false;
 
     // Page identity + chosen layout for this missionary.
     let style = 'Field Notes', page = { name: missionary, location: '', org: '', photo: '', country: '', orgName: '', native };
@@ -80,6 +81,7 @@ exports.handler = async function (event) {
         const rec = ((await mr.json()).records || [])[0];
         const mfields = (rec && rec.fields) || {};
         const s = mfields[MIS_STYLE]; if (s) style = (s && s.name) ? s.name : s;
+        native = !!mfields[MIS_NATIONAL];
         page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', country: '', orgName: '', native };
       }
     } catch (e) { /* fall back */ }

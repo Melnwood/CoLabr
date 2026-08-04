@@ -32,6 +32,12 @@ h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:24px 0 4px}
 .pname{font-size:14.5px;font-weight:700}
 .psub{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
 .presend{font-size:12px;font-weight:700;color:var(--acc);border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer}
+.pnat{font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;flex:none}
+.pnat.on{color:#fff;background:var(--ink,#241f1b);border-color:var(--ink,#241f1b)}
+.pnat:disabled{opacity:.6;cursor:default}
+.natrow{display:flex;gap:10px;align-items:flex-start;margin:2px 0 4px;font-size:12.5px;line-height:1.45;color:var(--muted);cursor:pointer}
+.natrow input{margin-top:2px;flex:none;width:16px;height:16px;accent-color:var(--acc)}
+.natrow b{color:var(--text)}
 .state{color:var(--muted);font-size:14px;padding:16px 0}
 .gate{max-width:440px;margin:80px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px 26px}
 </style></head>
@@ -52,6 +58,7 @@ h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:24px 0 4px}
       <div class="fld"><label>National org (optional)</label><input id="fOrg" placeholder="KAM, Poland…"></div>
     </div>
     <div class="fld"><label>Page style</label><select id="fStyle"></select></div>
+    <label class="natrow"><input type="checkbox" id="fNational"><span><b>National staff</b> — writes in their own language. Turns on the “Josiah&nbsp;Venture&nbsp;|&nbsp;Country” co-brand and shows their org’s colors to native-language readers. Leave off for international (English-writing) staff.</span></label>
     <button class="add" id="addBtn">Create page &amp; send onboarding email</button>
     <div class="msg" id="msg"></div>
   </div>
@@ -90,7 +97,13 @@ async function loadPeople(){
     el.innerHTML=d.people.map(p=>`<div class="person">
       <div class="pav"${p.photo?` style="background-image:url('${esc(p.photo)}')"`:''}>${p.photo?'':esc((p.name||'?').trim().charAt(0).toUpperCase())}</div>
       <div class="pinfo"><div class="pname">${esc(p.name)}</div><div class="psub">${[p.location,p.org].filter(Boolean).map(esc).join(' · ')||esc(p.email)}</div></div>
+      <button class="pnat${p.national?' on':''}" data-id="${p.id}" data-on="${p.national?1:0}" title="Toggle national staff">${p.national?'National ✓':'Set national'}</button>
       <button class="presend" data-id="${p.id}">Resend invite</button></div>`).join('');
+    el.querySelectorAll('.pnat').forEach(btn=>btn.addEventListener('click',async()=>{
+      const next=btn.dataset.on==='1'?0:1; btn.disabled=true; const prev=btn.textContent; btn.textContent='Saving…';
+      try{ await api('setNational',{id:btn.dataset.id,national:!!next}); btn.dataset.on=String(next); btn.classList.toggle('on',!!next); btn.textContent=next?'National ✓':'Set national'; }
+      catch(e){ btn.textContent=prev; } finally{ btn.disabled=false; }
+    }));
     el.querySelectorAll('.presend').forEach(btn=>btn.addEventListener('click',async()=>{
       btn.disabled=true; btn.textContent='Sending…';
       try{ const r=await api('resend',{id:btn.dataset.id}); btn.textContent=r.sent&&r.sent.length?'Sent ✓':'Failed'; }
@@ -100,7 +113,8 @@ async function loadPeople(){
 }
 document.getElementById('addBtn').addEventListener('click',async()=>{
   const person={ name:document.getElementById('fName').value.trim(), emails:document.getElementById('fEmails').value.trim(),
-    location:document.getElementById('fLoc').value.trim(), org:document.getElementById('fOrg').value.trim(), style:document.getElementById('fStyle').value };
+    location:document.getElementById('fLoc').value.trim(), org:document.getElementById('fOrg').value.trim(), style:document.getElementById('fStyle').value,
+    national:document.getElementById('fNational').checked };
   const msg=document.getElementById('msg');
   if(!person.name){ msg.className='msg err'; msg.textContent='Please enter a name.'; return; }
   if(!person.emails){ msg.className='msg err'; msg.textContent='Please enter at least one JV email.'; return; }
@@ -109,7 +123,7 @@ document.getElementById('addBtn').addEventListener('click',async()=>{
     const r=await api('add',{person});
     const sentN=(r.sent||[]).length, failN=(r.failed||[]).length;
     msg.className='msg ok'; msg.textContent=`Done — ${person.name}'s page is created`+(sentN?`, onboarding email sent to ${sentN} address${sentN>1?'es':''}.`:'.')+(failN?` (${failN} couldn't be emailed — check the address or email setup.)`:'');
-    document.getElementById('fName').value=''; document.getElementById('fEmails').value=''; document.getElementById('fLoc').value=''; document.getElementById('fOrg').value='';
+    document.getElementById('fName').value=''; document.getElementById('fEmails').value=''; document.getElementById('fLoc').value=''; document.getElementById('fOrg').value=''; document.getElementById('fNational').checked=false;
     loadPeople();
   }catch(e){ msg.className='msg err'; msg.textContent=e.message; }
   finally{ btn.disabled=false; }

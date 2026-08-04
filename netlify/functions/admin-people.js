@@ -4,7 +4,7 @@ const { sessionFromEvent, isAdmin } = require('./_auth');
 const { sendMail } = require('./_mail');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const MIS = 'tbli1L8AO0JUDL7Wl';
-const F = { name: 'fldPYSQwxoQJGb0Zd', email: 'fld65nJ51ewtIWTxj', loc: 'fld0mx3Sp4JnNnIfc', org: 'fldCQ8c1Eu6SXmY98', style: 'fldvLZXckaQVUbD7F', photo: 'fldiXSCuELTQiiT08' };
+const F = { name: 'fldPYSQwxoQJGb0Zd', email: 'fld65nJ51ewtIWTxj', loc: 'fld0mx3Sp4JnNnIfc', org: 'fldCQ8c1Eu6SXmY98', style: 'fldvLZXckaQVUbD7F', photo: 'fldiXSCuELTQiiT08', national: 'fld4WE8NRwSrNj7ih' };
 const STYLES = ['Field Notes', 'Cover Grid', 'Timeline', 'Gallery Wall'];
 
 exports.handler = async function (event) {
@@ -23,7 +23,7 @@ exports.handler = async function (event) {
       const r = await fetch(`${api}?pageSize=100&returnFieldsByFieldId=true`, { headers: auth });
       const d = await r.json(); if (!r.ok) return resp(r.status, { error: 'Could not load people.' });
       const people = (d.records || []).map(rec => { const f = rec.fields || {}; const s = f[F.style];
-        return { id: rec.id, name: f[F.name] || '', email: f[F.email] || '', location: f[F.loc] || '', org: f[F.org] || '', style: (s && s.name) ? s.name : (s || ''), photo: f[F.photo] || '' };
+        return { id: rec.id, name: f[F.name] || '', email: f[F.email] || '', location: f[F.loc] || '', org: f[F.org] || '', style: (s && s.name) ? s.name : (s || ''), photo: f[F.photo] || '', national: !!f[F.national] };
       }).sort((a, b2) => a.name.localeCompare(b2.name));
       return resp(200, { ok: true, people, styles: STYLES });
     }
@@ -36,7 +36,7 @@ exports.handler = async function (event) {
       const bad = emails.find(e => !/^[^\s@]+@josiahventure\.com$/i.test(e));
       if (bad) return resp(400, { error: `“${bad}” isn’t a @josiahventure.com address.` });
       const style = STYLES.includes(o.style) ? o.style : 'Field Notes';
-      const fields = { [F.name]: o.name.trim(), [F.email]: emails.join(', '), [F.loc]: o.location || '', [F.org]: o.org || '', [F.style]: style };
+      const fields = { [F.name]: o.name.trim(), [F.email]: emails.join(', '), [F.loc]: o.location || '', [F.org]: o.org || '', [F.style]: style, [F.national]: !!o.national };
       const cr = await fetch(api, { method: 'POST', headers: auth, body: JSON.stringify({ fields, typecast: true }) });
       const cd = await cr.json();
       if (!cr.ok) return resp(cr.status, { error: (cd.error && cd.error.message) || 'Could not create the page.' });
@@ -50,6 +50,13 @@ exports.handler = async function (event) {
         } catch (e) { failed.push(to); }
       }
       return resp(200, { ok: true, id: cd.id, sent, failed });
+    }
+
+    if (b.action === 'setNational') {
+      if (!b.id) return resp(400, { error: 'Missing id.' });
+      const ur = await fetch(`${api}/${b.id}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ fields: { [F.national]: !!b.national }, typecast: true }) });
+      if (!ur.ok) { const ud = await ur.json().catch(() => ({})); return resp(ur.status, { error: (ud.error && ud.error.message) || 'Could not update.' }); }
+      return resp(200, { ok: true, national: !!b.national });
     }
 
     if (b.action === 'resend') {
