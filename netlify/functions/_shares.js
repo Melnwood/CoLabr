@@ -9,7 +9,8 @@ function esc(s) { return String(s || '').replace(/'/g, "\\'"); }
 async function missByEmail(auth, email) {
   if (!email) return null;
   try {
-    const url = `https://api.airtable.com/v0/${BASE}/${MISS}?maxRecords=1&filterByFormula=${encodeURIComponent(`LOWER({Email})='${esc((email || '').toLowerCase())}'`)}`;
+    // Match if the signed-in email appears in the Email field (supports a couple's two emails, comma-separated).
+    const url = `https://api.airtable.com/v0/${BASE}/${MISS}?maxRecords=1&filterByFormula=${encodeURIComponent(`FIND('${esc((email || '').toLowerCase())}', LOWER({Email}))>0`)}`;
     const r = await fetch(url, { headers: auth }); if (!r.ok) return null;
     const rec = ((await r.json()).records || [])[0]; if (!rec) return null;
     const f = rec.fields || {};
