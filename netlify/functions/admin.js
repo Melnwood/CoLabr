@@ -28,10 +28,17 @@ exports.handler = async function (event) {
 
   try {
     if (b.action === 'list') {
-      const r = await fetch(`${api}?pageSize=100`, { headers: auth });
-      const data = await r.json();
-      if (!r.ok) return resp(r.status, { error: 'Airtable read failed.' });
-      const rows = (data.records || []).map(rec => {
+      // Page through ALL records (Airtable caps a page at 100). Without this the dashboard silently
+      // dropped real updates once the table grew past 100 rows, understating opens/counts.
+      let recs = [], offset = '';
+      do {
+        const r = await fetch(`${api}?pageSize=100${offset ? '&offset=' + offset : ''}`, { headers: auth });
+        const data = await r.json();
+        if (!r.ok) return resp(r.status, { error: 'Airtable read failed.' });
+        recs = recs.concat(data.records || []);
+        offset = data.offset || '';
+      } while (offset);
+      const rows = recs.map(rec => {
         const c = rec.fields || {};
         return {
           id: rec.id,
@@ -45,7 +52,11 @@ exports.handler = async function (event) {
           hasCover: !!c['Cover Image URL'],
           hasVideo: !!c['Video URL']
         };
-      }).sort((a, b2) => (b2.date).localeCompare(a.date));
+      })
+      // Drop internal system/job markers (e.g. __TRANSLATE__, __VIDEO_CAPTION__, __BACKUP__) so they
+      // never count as updates or pollute the totals.
+      .filter(r => !/^__.*__$/.test((r.title || '').trim()))
+      .sort((a, b2) => (b2.date).localeCompare(a.date));
       return resp(200, { ok: true, rows });
     }
 
