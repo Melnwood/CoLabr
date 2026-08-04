@@ -452,7 +452,9 @@ async function load(){
     const styleName=Array.isArray(raw)?'Field Notes':(raw.style||'Field Notes');
     if(PAGEM && raw.page) applyPageIdentity(raw.page);
     if(raw.page && raw.page.photo) setPageAvatar(raw.page.photo);
-    if(raw.brand) applyBrand(raw.brand);
+    // NOTE: org-brand application temporarily disabled — org colour data needs remapping after the
+    // field rename. English view should use JV defaults anyway (see co-brand plan).
+    // if(raw.brand) applyBrand(raw.brand);
     applyStyle(styleName);
     U=arr.map(u=>{
       const p=(u.rawdate||'').split('-');
