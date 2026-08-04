@@ -164,6 +164,8 @@
   .sheet .rvidf video{position:absolute;inset:0;width:100%;height:100%;border-radius:12px;background:#000}
   .sheet .rvidcc{display:inline-flex;align-items:center;gap:6px;margin:-8px 0 16px;font-size:11.5px;color:#7a756f;font-weight:600;letter-spacing:.02em}
   .sheet .rvidcc b{background:#f0ece6;color:#b0704a;font-weight:800;font-size:10px;padding:2px 6px;border-radius:5px}
+  .sheet .rvidcc.proc{color:var(--acc)}
+  .sheet .rvidcc .ccspin{width:12px;height:12px;border:2px solid #f0d8c4;border-top-color:var(--acc);border-radius:50%;display:inline-block;animation:bootspin .8s linear infinite;flex:none}
   .sheet .rquote{border-left:3px solid var(--acc);margin:0 0 16px;padding:2px 0 2px 16px;font-size:16px;font-style:italic;color:#241f1b;line-height:1.5}
   .sheet .rquote span{display:block;font-style:normal;font-size:12.5px;color:var(--acc);font-weight:700;margin-top:6px}
   .sheet .rprayer{background:#eef3fe;border-left:3px solid #2f6df0;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;color:#3c3733;line-height:1.55}
@@ -464,7 +466,7 @@ function render(){
 
 function embedURL(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/)))return 'https://www.youtube.com/embed/'+m[1];if((m=v.match(/vimeo\.com\/(\d+)/)))return 'https://player.vimeo.com/video/'+m[1];return '';}
 var LANGNAMES={en:'English',pl:'Polish',uk:'Ukrainian',cs:'Czech',sk:'Slovak',ro:'Romanian',bg:'Bulgarian',sl:'Slovenian',lv:'Latvian',et:'Estonian',hu:'Hungarian',ru:'Russian',de:'German',es:'Spanish',fr:'French'};
-function langName(c){return LANGNAMES[(c||'').toLowerCase()]||(c||'').toUpperCase();}
+function langName(c){c=(c||'').toLowerCase();const base=c.split(/[-_]/)[0];return LANGNAMES[c]||LANGNAMES[base]||base.toUpperCase();}
 function renderVideo(bk,recId,idx){
   const url=bk.url||''; if(!url) return '';
   const caps=Array.isArray(bk.captions)?bk.captions.filter(c=>c&&(c.vtt||c.url)):[];
@@ -477,10 +479,13 @@ function renderVideo(bk,recId,idx){
       else src=esc(c.url);
       return `<track kind="subtitles" src="${src}" srclang="${esc(c.lang||'en')}" label="${esc(c.label||langName(c.lang))}"${i===0?' default':''}>`;
     }).join('');
-    let badge='';
-    if(caps.length) badge=`<div class="rvidcc"><b>CC</b> AI‑translated${bk.lang?' from '+esc(langName(bk.lang)):''}</div>`;
-    else if(bk.captionStatus==='processing') badge=`<div class="rvidcc"><b>CC</b> English subtitles are being prepared — check back in a minute</div>`;
-    return `<div class="rvid rvidf"><video controls playsinline preload="metadata" data-cap="1"><source src="${esc(url)}">${tracks}</video></div>${badge}`;
+    let badge='',pollAttr='';
+    const cid='cc'+idx;
+    const ourUpload=/storage\.googleapis\.com\/.+\/videos\//.test(url);
+    const pollable=!caps.length&&recId!=null&&(bk.captionStatus==='processing'||(ourUpload&&bk.lang));
+    if(caps.length) badge=`<div class="rvidcc" id="${cid}"><b>CC</b> AI‑translated${bk.lang?' from '+esc(langName(bk.lang)):''}</div>`;
+    else if(pollable){ badge=`<div class="rvidcc proc" id="${cid}"><span class="ccspin"></span>Generating English subtitles… they'll appear here automatically</div>`; pollAttr=` data-cappoll="${esc(String(recId))}|${idx}|${esc(bk.lang||'')}"`; }
+    return `<div class="rvid rvidf"><video controls playsinline preload="metadata" data-cap="1"${pollAttr}><source src="${esc(url)}">${tracks}</video></div>${badge}`;
   }
   const e=embedURL(url); return e?`<div class="rvid"><iframe src="${e}" allow="fullscreen" allowfullscreen></iframe></div>`:'';
 }
@@ -489,6 +494,38 @@ function showCaptions(root){
     const on=()=>{try{const t=v.textTracks;for(let i=0;i<t.length;i++)t[i].mode=(i===0?'showing':'disabled');}catch(_){}};
     on(); v.addEventListener('loadedmetadata',on); v.addEventListener('play',on); setTimeout(on,300);
   });}catch(_){}
+}
+// While a freshly-uploaded video is still being captioned, poll for its subtitle track and
+// drop it in automatically the moment it's ready — no reload needed.
+function pollCaptions(root){
+  (root||document).querySelectorAll('video[data-cappoll]').forEach(v=>{
+    const parts=(v.getAttribute('data-cappoll')||'').split('|');
+    const u=parts[0], b=parts[1], srcLang=parts[2]||'';
+    if(!u){return;}
+    const badge=document.getElementById('cc'+b);
+    const vttUrl='/.netlify/functions/vtt?u='+encodeURIComponent(u)+'&b='+b+'&l=en';
+    let tries=0; const MAX=30; // ~7.5 min at 15s
+    const show=()=>{try{const t=v.textTracks;for(let i=0;i<t.length;i++)t[i].mode=(i===0?'showing':'disabled');}catch(_){}};
+    const tick=async()=>{
+      tries++;
+      try{
+        const r=await fetch(vttUrl+'&t='+tries,{cache:'no-store'});
+        if(r.ok){ const txt=await r.text();
+          if(/-->/.test(txt)){                       // has real cues, not just the empty WEBVTT header
+            const tr=document.createElement('track');
+            tr.kind='subtitles'; tr.srclang='en'; tr.label='English'; tr.default=true; tr.src=vttUrl;
+            v.appendChild(tr); v.removeAttribute('data-cappoll');
+            show(); setTimeout(show,500);
+            if(badge){ badge.className='rvidcc'; badge.innerHTML='<b>CC</b> AI‑translated'+(srcLang?' from '+esc(langName(srcLang)):''); }
+            return;
+          }
+        }
+      }catch(_){}
+      if(tries<MAX) setTimeout(tick,15000);
+      else if(badge){ badge.className='rvidcc'; badge.innerHTML='<b>CC</b> Subtitles are taking longer than usual — please reload'; }
+    };
+    setTimeout(tick,8000);   // first check ~8s after the update opens
+  });
 }
 function bodyHtml(u){
   if(u.blocks && u.blocks.length){
@@ -532,6 +569,7 @@ async function openReader(i){
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
   showCaptions(sheet);
+  pollCaptions(sheet);
   wireRespond(u);
 }
 const FAMILY='The Ellenwood Family', FAMSHORT='Ellenwoods';
