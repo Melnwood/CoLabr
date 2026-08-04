@@ -4,6 +4,7 @@
 
 const { sessionFromEvent } = require('./_auth');
 const { fireNotify } = require('./_notify');
+const { missByEmail } = require('./_shares');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
@@ -20,6 +21,12 @@ exports.handler = async function (event) {
   const session = sessionFromEvent(event);
   if (!session && !(editKey && b.key === editKey)) return resp(401, { error: 'Please sign in.' });
   if (!b.title || !b.title.trim()) return resp(400, { error: 'A title is required.' });
+
+  // Tag the update to the signed-in staff member's own page (by email), not a hardcoded family.
+  let missionaryName = 'The Ellenwood Family';
+  if (session) {
+    try { const me = await missByEmail({ Authorization: 'Bearer ' + token }, session.email); if (me && me.name) missionaryName = me.name; } catch (e) {}
+  }
 
   const blocks = Array.isArray(b.blocks) ? b.blocks : [];
   const bodyText = blocks.filter(x => ['heading','text','quote','prayer','praise','signoff'].includes(x.type))
@@ -43,7 +50,7 @@ exports.handler = async function (event) {
     'Type': b.type || 'Newsletter',
     'Status': b.publish ? 'Published' : 'Draft',
     'Source': 'Co-Labr',
-    'Missionary': ['The Ellenwood Family'],
+    'Missionary': [missionaryName],
     'Date': b.date || new Date().toISOString().slice(0, 10)
   };
   if (blocks.length) fields['Blocks'] = JSON.stringify(blocks);
