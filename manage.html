@@ -142,6 +142,10 @@
   .shareitem .sh-act button{font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--text)}
   .shareitem .sh-act .ok{background:var(--acc);color:#fff;border-color:var(--acc)}
   .sh-out{font-size:12.5px;color:var(--muted);padding:10px 0 2px;border-top:1px solid var(--line);margin-top:6px}
+  .photorow{display:flex;gap:16px;align-items:center}
+  .photoav{width:72px;height:72px;border-radius:50%;background:#e9e2d5;background-size:cover;background-position:center;flex:none;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px;font-weight:800}
+  .photobtn{font-size:13px;font-weight:700;padding:9px 15px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--text);cursor:pointer;font-family:inherit}
+  .photobtn:hover{border-color:#d8cdb6}
 
   /* Uniform dashboard-zone nav buttons (shared across all backend pages) */
   .nav{flex-wrap:wrap}
@@ -174,6 +178,18 @@
     <div class="panel insights" id="insightsPanel">
       <h2>Insights <span class="aib">AI</span><a id="refreshins">Refresh</a></h2>
       <div id="insights"><div class="state">Reading your updates…</div></div>
+    </div>
+    <div class="panel" id="photoPanel">
+      <h2>Your page photo <span class="hint">The portrait in your page header and beside your prayer requests</span></h2>
+      <div class="photorow">
+        <div class="photoav" id="photoAv"></div>
+        <div>
+          <button class="photobtn" id="photoBtn" type="button">Upload photo…</button>
+          <input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" style="display:none">
+          <div class="hint" style="margin-top:6px">A clear photo of you, your family, or your couple. PNG or JPG.</div>
+          <div class="savenote" id="photoMsg"></div>
+        </div>
+      </div>
     </div>
     <div class="panel appearance" id="appearance">
       <h2>Supporter page style <span class="hint">Pick how your supporters see your updates</span></h2>
@@ -419,7 +435,28 @@ async function loadShares(){
     }));
   }catch(_){}
 }
-(async()=>{ if(await guard()){ load(); loadStyle(); loadResponses(); loadMetrics(); loadShares(); } })();
+async function loadProfile(){
+  try{ const d=await api('getProfile'); const av=document.getElementById('photoAv');
+    if(d.photo){ av.style.backgroundImage=`url('${d.photo}')`; av.textContent=''; }
+    else { av.textContent=(d.name||'?').trim().charAt(0).toUpperCase(); }
+  }catch(e){}
+}
+document.getElementById('photoBtn').addEventListener('click',()=>document.getElementById('photoFile').click());
+document.getElementById('photoFile').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f)return; const msg=document.getElementById('photoMsg');
+  if(f.size>4*1024*1024){ msg.className='savenote err'; msg.textContent='That photo is over 4 MB — please use a smaller one.'; return; }
+  msg.className='savenote'; msg.textContent='Uploading…';
+  try{
+    const data=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>res(rd.result);rd.onerror=rej;rd.readAsDataURL(f);});
+    const r=await fetch('/.netlify/functions/upload-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data.split(',')[1],type:f.type,folder:'profile'})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Upload failed.');
+    await api('setPhoto',{photo:d.url});
+    const av=document.getElementById('photoAv'); av.style.backgroundImage=`url('${d.url}')`; av.textContent='';
+    msg.className='savenote ok'; msg.textContent='Saved — your page header now shows this photo.';
+  }catch(err){ msg.className='savenote err'; msg.textContent=err.message; }
+  finally{ e.target.value=''; }
+});
+(async()=>{ if(await guard()){ load(); loadStyle(); loadProfile(); loadResponses(); loadMetrics(); loadShares(); } })();
 </script>
 </body>
 </html>

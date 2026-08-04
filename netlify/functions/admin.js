@@ -9,6 +9,7 @@ const TABLE = 'tbl7aVErl35Qw36QZ';
 const RTABLE = 'tblVNMG5VnOnFFeto'; // Responses
 const MIS_TABLE = 'tbli1L8AO0JUDL7Wl';          // Missionaries
 const MIS_STYLE = 'fldvLZXckaQVUbD7F';           // Style (single select)
+const MIS_NAME = 'fldPYSQwxoQJGb0Zd', MIS_LOC = 'fld0mx3Sp4JnNnIfc', MIS_PHOTO = 'fldiXSCuELTQiiT08';
 const STYLES = ['Field Notes', 'Cover Grid', 'Timeline', 'Gallery Wall'];
 const SITE_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 
@@ -97,6 +98,23 @@ exports.handler = async function (event) {
       return resp(200, { ok: true, style: b.style });
     }
 
+    if (b.action === 'getProfile') {
+      const rec = await findMissionary(auth);
+      if (!rec) return resp(404, { error: 'Missionary record not found.' });
+      const f = rec.fields || {};
+      return resp(200, { ok: true, name: f[MIS_NAME] || '', location: f[MIS_LOC] || '', photo: f[MIS_PHOTO] || '' });
+    }
+
+    if (b.action === 'setPhoto') {
+      if (typeof b.photo !== 'string') return resp(400, { error: 'Missing photo.' });
+      const rec = await findMissionary(auth);
+      if (!rec) return resp(404, { error: 'Missionary record not found.' });
+      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: rec.id, fields: { [MIS_PHOTO]: b.photo } }], typecast: true }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); return resp(r.status, { error: (e.error && e.error.message) || 'Could not save photo.' }); }
+      return resp(200, { ok: true, photo: b.photo });
+    }
+
     if (b.action === 'metrics') {
       // Give-button clicks + active subscribers, for the dashboard.
       const ev = await fetch(`https://api.airtable.com/v0/${BASE}/tbl2Dm5W07cAMrJgs?pageSize=100&filterByFormula=${encodeURIComponent("{Kind}='Give'")}`, { headers: auth });
@@ -175,9 +193,15 @@ exports.handler = async function (event) {
   }
 
   async function findMissionary(headers) {
+    // Prefer the signed-in member's OWN record (by email), so each person manages their own page.
+    const sess = sessionFromEvent(event);
+    if (sess && sess.email) {
+      const ef = encodeURIComponent(`FIND('${sess.email.toLowerCase().replace(/'/g, "\\'")}', LOWER({Email}))>0`);
+      const er = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${ef}`, { headers });
+      if (er.ok) { const d = await er.json(); if (d.records && d.records[0]) return d.records[0]; }
+    }
     const mf = encodeURIComponent(`{Name}='${SITE_MISSIONARY.replace(/'/g, "\\'")}'`);
-    const u = `https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${mf}`;
-    const r = await fetch(u, { headers });
+    const r = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${mf}`, { headers });
     if (!r.ok) return null;
     const d = await r.json();
     return (d.records || [])[0] || null;
