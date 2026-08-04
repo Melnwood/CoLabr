@@ -9,6 +9,7 @@ const MIS_STYLE = 'fldvLZXckaQVUbD7F';          // Style (single select)
 const MIS_NAME = 'fldPYSQwxoQJGb0Zd';
 const MIS_LOC = 'fld0mx3Sp4JnNnIfc';
 const MIS_ORG = 'fldCQ8c1Eu6SXmY98';
+const MIS_PHOTO = 'fldiXSCuELTQiiT08';
 const DEFAULT_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 const F = {
   title:  'fldhkHAXyvqtrx3cu',
@@ -62,7 +63,7 @@ exports.handler = async function (event) {
     }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate));
 
     // Page identity + chosen layout for this missionary.
-    let style = 'Field Notes', page = { name: missionary, location: '', org: '' };
+    let style = 'Field Notes', page = { name: missionary, location: '', org: '', photo: '' };
     try {
       const mf = encodeURIComponent(`{Name}='${nameEsc}'`);
       const mUrl = `https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${mf}`;
@@ -71,7 +72,7 @@ exports.handler = async function (event) {
         const rec = ((await mr.json()).records || [])[0];
         const mfields = (rec && rec.fields) || {};
         const s = mfields[MIS_STYLE]; if (s) style = (s && s.name) ? s.name : s;
-        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '' };
+        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '' };
       }
     } catch (e) { /* fall back */ }
 

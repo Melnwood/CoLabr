@@ -36,6 +36,16 @@
   .rcompose .send{background:var(--acc);color:#fff;font-weight:700;font-size:12.5px;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;margin-top:6px}
   .rcompose .cmsg{font-size:12px;margin-left:10px}.rcompose .cmsg.err{color:var(--red)}.rcompose .cmsg.ok{color:var(--green)}
   .state{color:var(--muted);padding:34px 4px;font-size:14px}
+
+  /* Uniform dashboard-zone nav buttons (shared across all backend pages) */
+  .nav{flex-wrap:wrap}
+  .nav a{flex:0 0 auto;font-size:12.5px;font-weight:600;color:#241f1b;background:#fff;border:1px solid #e7e0d6;padding:8px 14px;border-radius:22px;white-space:nowrap;line-height:1;text-decoration:none;display:inline-flex;align-items:center;box-shadow:0 1px 2px rgba(60,40,20,.05);transition:transform .12s,box-shadow .12s,border-color .12s,background .12s;cursor:pointer}
+  .nav a:hover{box-shadow:0 6px 15px rgba(60,40,20,.14);transform:translateY(-1px);border-color:#d8cdb6}
+  .nav a:active{transform:translateY(0);box-shadow:0 1px 2px rgba(60,40,20,.08);background:#f6f2ec}
+  .nav a:focus-visible{outline:2px solid #241f1b;outline-offset:2px}
+  .nav a.acc{background:#241f1b;color:#fff;border-color:#241f1b;box-shadow:0 2px 8px rgba(36,31,27,.22)}
+  .nav a.acc:hover{background:#000;box-shadow:0 8px 18px rgba(36,31,27,.28)}
+  .nav a.acc:active{background:#241f1b}
 </style>
 </head>
 <body>

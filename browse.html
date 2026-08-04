@@ -19,6 +19,7 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 .mcard:hover{box-shadow:0 10px 24px rgba(60,40,20,.13);transform:translateY(-2px)}
 .mcov{height:112px;background:#e9e2d5;background-size:cover;background-position:center;position:relative}
 .mcov .mcount{position:absolute;top:8px;right:8px;background:rgba(20,15,10,.62);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+.mcov .mav{position:absolute;left:12px;bottom:10px;width:46px;height:46px;border-radius:50%;border:2.5px solid #fff;background-size:cover;background-position:center;background-color:var(--acc);box-shadow:0 3px 10px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
 .mbody{padding:12px 14px 15px}
 .mname{font-size:16px;font-weight:800;line-height:1.15}
 .morg{font-size:12.5px;color:var(--acc);font-weight:700;margin-top:3px}
@@ -44,8 +45,10 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 .tab{font-size:13.5px;font-weight:700;padding:9px 16px;border-radius:22px;border:1px solid var(--line);background:#fff;color:var(--text);cursor:pointer;font-family:var(--font)}
 .tab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .pwall{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.pw{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 16px;border-left:3px solid var(--acc);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.pw{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 16px;border-left:3px solid var(--acc);cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;gap:12px;align-items:flex-start}
 .pw:hover{box-shadow:0 10px 22px rgba(60,40,20,.12);transform:translateY(-2px)}
+.pwav{width:42px;height:42px;border-radius:50%;flex:none;background-size:cover;background-position:center;background-color:var(--acc);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.pwc{flex:1;min-width:0}
 .pw .pwt{font-size:14.5px;line-height:1.55;color:#33291c}
 .pw .pwm{font-size:12px;color:var(--muted);margin-top:10px}
 .pw .pwm b{color:var(--acc);font-weight:700}
@@ -73,6 +76,16 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:120;background:#241f1b;color:#fff;font-size:13.5px;font-weight:600;padding:12px 18px;border-radius:24px;box-shadow:0 14px 40px rgba(0,0,0,.35);opacity:0;transition:opacity .16s,transform .16s;pointer-events:none;max-width:88vw;text-align:center}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:560px){.uthumb{width:92px}.top{gap:8px}}
+
+  /* Uniform dashboard-zone nav buttons (shared across all backend pages) */
+  .nav{flex-wrap:wrap}
+  .nav a{flex:0 0 auto;font-size:12.5px;font-weight:600;color:#241f1b;background:#fff;border:1px solid #e7e0d6;padding:8px 14px;border-radius:22px;white-space:nowrap;line-height:1;text-decoration:none;display:inline-flex;align-items:center;box-shadow:0 1px 2px rgba(60,40,20,.05);transition:transform .12s,box-shadow .12s,border-color .12s,background .12s;cursor:pointer}
+  .nav a:hover{box-shadow:0 6px 15px rgba(60,40,20,.14);transform:translateY(-1px);border-color:#d8cdb6}
+  .nav a:active{transform:translateY(0);box-shadow:0 1px 2px rgba(60,40,20,.08);background:#f6f2ec}
+  .nav a:focus-visible{outline:2px solid #241f1b;outline-offset:2px}
+  .nav a.acc{background:#241f1b;color:#fff;border-color:#241f1b;box-shadow:0 2px 8px rgba(36,31,27,.22)}
+  .nav a.acc:hover{background:#000;box-shadow:0 8px 18px rgba(36,31,27,.28)}
+  .nav a.acc:active{background:#241f1b}
 </style></head>
 <body>
 <div class="wrap">
@@ -131,7 +144,7 @@ async function loadDir(){
     const el=document.getElementById('dir');
     if(!ms.length){ el.innerHTML='<div class="state">No teammate pages yet.</div>'; return; }
     el.innerHTML=ms.map((m,i)=>`<div class="mcard" data-i="${i}">
-      <div class="mcov"${m.latest&&m.latest.cover?` style="background-image:url('${esc(m.latest.cover)}')"`:''}><span class="mcount">${m.count} update${m.count===1?'':'s'}</span></div>
+      <div class="mcov"${m.latest&&m.latest.cover?` style="background-image:url('${esc(m.latest.cover)}')"`:''}><span class="mcount">${m.count} update${m.count===1?'':'s'}</span>${m.photo?`<div class="mav" style="background-image:url('${esc(m.photo)}')"></div>`:`<div class="mav">${esc((m.name||'?').trim().charAt(0).toUpperCase())}</div>`}</div>
       <div class="mbody"><div class="mname">${esc(m.name)}</div>${m.org?`<div class="morg">${esc(m.org)}</div>`:''}${m.location?`<div class="mloc">${esc(m.location)}</div>`:''}
       ${m.latest?`<div class="mlatest">Latest: <b>${esc(m.latest.title)}</b></div>`:''}</div></div>`).join('');
     window._ms=ms;
@@ -224,9 +237,12 @@ async function loadPrayer(){
     const items=(d&&d.items)||[];
     if(!items.length){ el.innerHTML='<div class="state">No prayer requests yet. When teammates add a prayer to an update, it shows up here.</div>'; return; }
     window._pray=items;
-    el.innerHTML=items.map((p,i)=>`<div class="pw" data-pi="${i}"><div class="pwt">${esc(p.text)}</div>
+    el.innerHTML=items.map((p,i)=>{
+      const av=p.photo?`<div class="pwav" style="background-image:url('${esc(p.photo)}')"></div>`:`<div class="pwav">${esc((p.author||'?').trim().charAt(0).toUpperCase())}</div>`;
+      return `<div class="pw" data-pi="${i}">${av}<div class="pwc"><div class="pwt">${esc(p.text)}</div>
       <div class="pwm"><b>${esc(p.author||'A teammate')}</b>${p.org?' · '+esc(p.org):''} · ${fmtDate(p.date)}</div>
-      <div class="pwlink">Read the update →</div></div>`).join('');
+      <div class="pwlink">Read the update →</div></div></div>`;
+    }).join('');
     el.querySelectorAll('[data-pi]').forEach(c=>c.addEventListener('click',()=>openPrayerUpdate(window._pray[+c.dataset.pi])));
   }catch(e){ el.innerHTML='<div class="state">Could not load the prayer wall.</div>'; }
 }

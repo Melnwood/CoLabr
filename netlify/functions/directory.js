@@ -5,7 +5,7 @@ const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const UPDATES = 'tbl7aVErl35Qw36QZ';
 const MISS = 'tbli1L8AO0JUDL7Wl';
 const U_MISS = 'fldpNShY6OSQBSbx0', U_TITLE = 'fldhkHAXyvqtrx3cu', U_COVER = 'fldsU5p6r9LzdeTF7', U_DATE = 'fldvi8dFkZBFANacG';
-const M_NAME = 'fldPYSQwxoQJGb0Zd', M_ORG = 'fldCQ8c1Eu6SXmY98', M_LOC = 'fld0mx3Sp4JnNnIfc';
+const M_NAME = 'fldPYSQwxoQJGb0Zd', M_ORG = 'fldCQ8c1Eu6SXmY98', M_LOC = 'fld0mx3Sp4JnNnIfc', M_PHOTO = 'fldiXSCuELTQiiT08';
 
 exports.handler = async function (event) {
   const session = sessionFromEvent(event);
@@ -17,7 +17,7 @@ exports.handler = async function (event) {
     // All missionaries → map by record id.
     const mr = await fetch(`https://api.airtable.com/v0/${BASE}/${MISS}?pageSize=100&returnFieldsByFieldId=true`, { headers: auth });
     const md = await mr.json(); const map = {};
-    (md.records || []).forEach(r => { const f = r.fields || {}; map[r.id] = { id: r.id, name: f[M_NAME] || '', org: f[M_ORG] || '', location: f[M_LOC] || '', count: 0, latest: null }; });
+    (md.records || []).forEach(r => { const f = r.fields || {}; map[r.id] = { id: r.id, name: f[M_NAME] || '', org: f[M_ORG] || '', location: f[M_LOC] || '', photo: f[M_PHOTO] || '', count: 0, latest: null }; });
 
     // All published updates → tally per missionary.
     const flds = `&fields%5B%5D=${U_MISS}&fields%5B%5D=${U_TITLE}&fields%5B%5D=${U_COVER}&fields%5B%5D=${U_DATE}`;
