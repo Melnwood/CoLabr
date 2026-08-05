@@ -16,8 +16,8 @@ exports.handler = async function (event) {
   let b; try { b = JSON.parse(event.body || '{}'); } catch { b = {}; }
   const days = Math.min(365, Math.max(7, +b.days || 60));
   try {
-    const { items, scanned } = await careScan({ token, key, days, windowOnly: false });
-    return r(200, { items, scanned, days });
+    const { items, scanned, quiet } = await careScan({ token, key, days, windowOnly: false, withQuiet: true });
+    return r(200, { items, scanned, quiet: quiet || [], days });
   } catch (e) {
     return r(502, { error: e.message || 'Could not finish the scan.' });
   }

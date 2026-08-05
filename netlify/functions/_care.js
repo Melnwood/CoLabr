@@ -29,7 +29,8 @@ Return ONLY a JSON array like [{"idx":0,"categories":["Baby"],"note":"...","quot
 
 // windowOnly: true = only updates dated inside the window (the daily digest);
 // false = the window plus at least each person's single latest update (the admin page).
-async function careScan({ token, key, days, windowOnly }) {
+// withQuiet: also return who has gone quiet — no published update in 60+ days (or ever).
+async function careScan({ token, key, days, windowOnly, withQuiet }) {
   const auth = { Authorization: 'Bearer ' + token };
 
   const mr = await fetch(`https://api.airtable.com/v0/${BASE}/${MISS}?pageSize=100&returnFieldsByFieldId=true`, { headers: auth });
@@ -40,6 +41,27 @@ async function careScan({ token, key, days, windowOnly }) {
   const ur = await fetch(`https://api.airtable.com/v0/${BASE}/${UPDATES}?pageSize=100&returnFieldsByFieldId=true&filterByFormula=${uf}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`, { headers: auth });
   if (!ur.ok) throw new Error('Could not read the updates.');
   const recs = ((await ur.json()).records || []);
+
+  // Silence is a signal: who hasn't published in 60+ days, or never has.
+  // People can curate what they write — they can't curate a gap.
+  let quiet;
+  if (withQuiet) {
+    const QUIET_DAYS = 60;
+    const last = {}; const counts = {};
+    for (const rec of recs) {
+      const f = rec.fields || {};
+      const mid = Array.isArray(f[F.miss]) ? f[F.miss][0] : '';
+      if (!mid) continue;
+      counts[mid] = (counts[mid] || 0) + 1;
+      if (!last[mid] || (f[F.date] || '') > last[mid]) last[mid] = f[F.date] || '';
+    }
+    quiet = Object.entries(mmap).map(([mid, m]) => {
+      const lastDate = last[mid] || '';
+      const daysSince = lastDate ? Math.floor((Date.now() - new Date(lastDate + 'T12:00:00')) / 86400000) : null;
+      return { author: m.name, photo: m.photo, lastDate, daysSince, count: counts[mid] || 0 };
+    }).filter(q => q.author && (q.daysSince === null || q.daysSince >= QUIET_DAYS))
+      .sort((a, b) => (b.daysSince === null ? 1e9 : b.daysSince) - (a.daysSince === null ? 1e9 : a.daysSince));
+  }
 
   const cutoff = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
   const seen = new Set(); const picked = [];
@@ -58,7 +80,7 @@ async function careScan({ token, key, days, windowOnly }) {
     });
     if (picked.length >= 25) break;
   }
-  if (!picked.length) return { items: [], scanned: 0 };
+  if (!picked.length) return { items: [], scanned: 0, quiet };
 
   const payload = picked.map((p, i) => ({ idx: i, author: p.author, date: p.date, title: p.title, text: p.text }));
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -86,7 +108,7 @@ async function careScan({ token, key, days, windowOnly }) {
       };
     })
     .filter(x => x.categories.length);
-  return { items, scanned: picked.length };
+  return { items, scanned: picked.length, quiet };
 }
 
 module.exports = { careScan, CATS };

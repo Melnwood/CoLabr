@@ -41,6 +41,27 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 .copen{font-size:12.5px;font-weight:700;color:var(--acc)}
 .state{text-align:center;color:#8a7550;padding:50px 20px;font-size:14px}
 .allclear{background:#e7f6ee;border:1px solid #bfe6d0;border-radius:14px;padding:18px 20px;font-size:14.5px;color:#215c3c}
+h2.sec{font-size:19px;font-weight:800;letter-spacing:-.01em;margin:34px 0 6px}
+.seclede{font-size:13.5px;color:var(--muted);margin:0 0 14px;max-width:62ch;line-height:1.5}
+.fup{margin-top:10px;padding-top:10px;border-top:1px solid #f0ece4;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fupbtn{background:#fff;border:1.5px solid var(--acc);color:var(--acc);font-weight:700;font-size:12.5px;padding:8px 15px;border-radius:20px;cursor:pointer;font-family:var(--font)}
+.fupdone{font-size:12.5px;color:#2f9e63;font-weight:700}
+.fupundo{background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;font-family:var(--font);padding:0}
+.qcard{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px 15px;margin-bottom:10px}
+.qdays{margin-left:auto;text-align:right}
+.qdays b{display:block;font-size:17px;color:#b02a25}
+.qdays span{font-size:11px;color:var(--muted)}
+.qnever b{color:#7a6c58}
+.trow2{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:10px}
+.tlabel{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:14px;flex:none;margin-top:2px}
+.tlabel.l0{background:#e7f6ee;color:#2f9e63}
+.tlabel.l1{background:#f0ece4;color:#6b6357}
+.tlabel.l2{background:#fff3e0;color:#b26a00}
+.tlabel.l3{background:#fdeaea;color:#b02a25}
+.twhy{font-size:13.5px;line-height:1.5;color:#3c3733}
+.twhy b{display:block;font-size:14px;margin-bottom:2px;color:#241f1b}
+.trbtn{background:#241f1b;color:#fff;border:none;font-weight:700;font-size:13px;padding:10px 18px;border-radius:9px;cursor:pointer;font-family:var(--font)}
+.trbtn:disabled{opacity:.6}
 </style></head>
 <body>
 <div class="wrap">
@@ -59,6 +80,15 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
   </div>
   <div class="filters" id="filters" style="display:none"></div>
   <div id="results"><div class="state">Reading everyone’s latest updates…</div></div>
+
+  <h2 class="sec">Gone quiet</h2>
+  <p class="seclede">No published update in 60+ days. People curate what they write — they can’t curate a gap. Silence often comes before the hard news, not after it.</p>
+  <div id="quiet"><div class="state">…</div></div>
+
+  <h2 class="sec">Trajectories</h2>
+  <p class="seclede">Each person’s recent updates read in sequence — direction, not events. One hard month is a moment; a drift is a shepherding conversation.</p>
+  <button class="trbtn" id="trendBtn">Read trajectories</button>
+  <div id="trends" style="margin-top:12px"></div>
 </div>
 
 <script>
@@ -76,6 +106,13 @@ async function guard(){
     return true;
   }catch{ location.replace('login.html'); return false; }
 }
+let FUP={};
+async function loadFup(){
+  try{
+    const r=await fetch('/.netlify/functions/care-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})});
+    if(r.ok){ FUP=(await r.json()).map||{}; }
+  }catch(e){}
+}
 async function scan(){
   const btn=document.getElementById('scanBtn'), box=document.getElementById('results'), stat=document.getElementById('stat');
   btn.disabled=true; stat.textContent=''; box.innerHTML='<div class="state">Reading everyone\u2019s latest updates\u2026</div>';
@@ -84,7 +121,7 @@ async function scan(){
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Scan failed.');
     ITEMS=(d.items||[]).sort((a,b)=>Math.min(...a.categories.map(c=>RANK[c]))-Math.min(...b.categories.map(c=>RANK[c])));
     stat.textContent='Scanned '+d.scanned+' update'+(d.scanned===1?'':'s')+' \u00b7 '+ITEMS.length+' flagged';
-    renderFilters(); render();
+    renderFilters(); render(); renderQuiet(d.quiet||[]);
   }catch(e){ box.innerHTML='<div class="state">'+esc(e.message)+'</div>'; }
   btn.disabled=false;
 }
@@ -112,8 +149,58 @@ function render(){
     +'<div class="cnote">'+esc(i.note)+'</div>'
     +(i.quote?'<div class="cquote">\u201c'+esc(i.quote)+'\u201d</div>':'')
     +'<a class="copen" href="index.html?m='+encodeURIComponent(i.author)+'" target="_blank" rel="noopener">Open '+esc(i.author)+'\u2019s page \u2192</a>'
+    +fupHtml(i)
+    +'</div>').join('');
+  box.querySelectorAll('[data-mark]').forEach(b=>b.addEventListener('click',()=>mark(b.dataset.mark)));
+  box.querySelectorAll('[data-unmark]').forEach(b=>b.addEventListener('click',()=>unmark(b.dataset.unmark)));
+}
+function fupHtml(i){
+  const f=FUP[i.updateId];
+  if(f) return '<div class="fup"><span class="fupdone">Followed up by '+esc(f.by)+' \u00b7 '+fmtD(f.date)+'</span><button class="fupundo" data-unmark="'+esc(i.updateId)+'">undo</button></div>';
+  return '<div class="fup"><button class="fupbtn" data-mark="'+esc(i.updateId)+'">I\u2019ve followed up</button></div>';
+}
+async function mark(updateId){
+  const i=ITEMS.find(x=>x.updateId===updateId); if(!i)return;
+  try{
+    const r=await fetch('/.netlify/functions/care-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'mark',updateId,author:i.author,categories:i.categories,note:i.note})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not save.');
+    FUP[updateId]={recId:d.recId,by:d.by,date:d.date}; render();
+  }catch(e){ document.getElementById('stat').textContent=e.message; }
+}
+async function unmark(updateId){
+  const f=FUP[updateId]; if(!f)return;
+  try{
+    const r=await fetch('/.netlify/functions/care-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'unmark',recId:f.recId})});
+    if(!r.ok) throw new Error('Could not undo.');
+    delete FUP[updateId]; render();
+  }catch(e){ document.getElementById('stat').textContent=e.message; }
+}
+function renderQuiet(list){
+  const q=document.getElementById('quiet');
+  if(!list.length){ q.innerHTML='<div class="allclear">Everyone has published within the last 60 days.</div>'; return; }
+  q.innerHTML=list.map(p=>'<div class="qcard">'
+    +(p.photo?'<div class="cav" style="background-image:url(\''+esc(p.photo)+'\')"></div>':'<div class="cav">'+esc((p.author||'?').trim().charAt(0).toUpperCase())+'</div>')
+    +'<div class="cwho"><b>'+esc(p.author)+'</b><span>'+(p.lastDate?('Last update '+fmtD(p.lastDate)+' \u00b7 '+p.count+' total'):'Has never published an update')+'</span></div>'
+    +'<div class="qdays'+(p.daysSince===null?' qnever':'')+'"><b>'+(p.daysSince===null?'\u2014':p.daysSince)+'</b><span>'+(p.daysSince===null?'no updates':'days quiet')+'</span></div>'
     +'</div>').join('');
 }
+async function trends(){
+  const btn=document.getElementById('trendBtn'), box=document.getElementById('trends');
+  btn.disabled=true; btn.textContent='Reading\u2026';
+  box.innerHTML='<div class="state">Reading everyone\u2019s recent updates in sequence\u2026</div>';
+  try{
+    const r=await fetch('/.netlify/functions/care-trend',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not read trajectories.');
+    const L={'Full of life':'l0','Steady':'l1','Tiring':'l2','Worth a check-in':'l3'};
+    box.innerHTML=(d.people||[]).length?d.people.map(p=>'<div class="trow2">'
+      +(p.photo?'<div class="cav" style="background-image:url(\''+esc(p.photo)+'\')"></div>':'<div class="cav">'+esc((p.author||'?').trim().charAt(0).toUpperCase())+'</div>')
+      +'<div class="twhy"><b>'+esc(p.author)+'</b>'+esc(p.why)+'<div style="font-size:11px;color:#8a7550;margin-top:3px">read from their last '+p.updates+' updates</div></div>'
+      +'<span class="tlabel '+(L[p.label]||'l1')+'" style="margin-left:auto">'+esc(p.label)+'</span>'
+      +'</div>').join(''):'<div class="state">Not enough update history yet \u2014 trajectories need at least two updates per person.</div>';
+  }catch(e){ box.innerHTML='<div class="state">'+esc(e.message)+'</div>'; }
+  btn.disabled=false; btn.textContent='Read trajectories';
+}
+document.getElementById('trendBtn').addEventListener('click',trends);
 document.getElementById('scanBtn').addEventListener('click',scan);
 document.getElementById('mailBtn').addEventListener('click',async()=>{
   const b=document.getElementById('mailBtn'),stat=document.getElementById('stat');
@@ -126,6 +213,6 @@ document.getElementById('mailBtn').addEventListener('click',async()=>{
   b.disabled=false; b.textContent=t;
 });
 document.getElementById('days').addEventListener('change',scan);
-guard().then(ok=>{ if(ok) scan(); });
+guard().then(async ok=>{ if(ok){ await loadFup(); scan(); } });
 </script>
 </body></html>

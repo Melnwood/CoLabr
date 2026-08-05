@@ -103,6 +103,8 @@
   .foot{text-align:center;color:#8a7550;font-size:12px;padding:22px 10px 30px;line-height:1.7}
   .yearrow{text-align:center;font-size:15px;color:#8a7550;letter-spacing:.3em;margin:26px 0 22px;position:relative;font-weight:700}
   .yearrow span{background:var(--soft);padding:0 16px;position:relative;z-index:2}
+  .top10{display:inline-block;background:#fff8f1;border:1px solid var(--acc);color:var(--acc);font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:12px;margin-left:8px;vertical-align:1px;white-space:nowrap}
+  .wcap .top10{background:rgba(255,255,255,.92)}
   .yearrow::before{content:"";position:absolute;left:8%;right:8%;top:50%;border-top:1px solid var(--line);z-index:1}
 
   /* ============ FIELD NOTES (paper) ============ */
@@ -501,7 +503,7 @@ async function load(){
       const y=+p[0]||0, mo=MON[(+p[1]||1)-1]||'', d=+p[2]||'';
       return {...u, y, date:`${mo} ${d}`};
     });
-    renderHero(); buildYears(); render();
+    computeTop10(); renderHero(); buildYears(); render();
     document.body.classList.add('ready');   // reveal only now, already in the correct style
   }catch(e){
     document.getElementById('stream').innerHTML='<div class="state">Couldn’t load updates right now. Please refresh in a moment.</div>';
@@ -534,6 +536,11 @@ function buildMeta(){
 }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function opensNum(u){return (u.opens||0).toLocaleString();}
+/* Top ten most-read updates get a rank badge; recomputed from opens on every load,
+   so an update that climbs moves into its place automatically. */
+let TOP10={};
+function computeTop10(){ TOP10={}; U.filter(u=>(u.opens||0)>0).slice().sort((a,b)=>(b.opens||0)-(a.opens||0)).slice(0,10).forEach((u,i)=>{TOP10[u.id]=i+1;}); }
+function topBadge(u){ const r=TOP10[u.id]; return r?`<span class="top10">#${r} most read</span>`:''; }
 function caption(u){const t=(u.type||'').toLowerCase();const yy=u.y?("'"+String(u.y).slice(2)):'';return `— ${t?esc(t):'from the field'} ${yy} —`;}
 
 /* ---------- selection + filter shared ---------- */
@@ -548,7 +555,7 @@ function getItems(){
 /* ---------- FIELD NOTES ---------- */
 function fnEntry(o,vi,latest,topFlag){
   const u=o.u,i=o.idx,opens=opensNum(u);
-  const dstamp=`<span class="datestamp">${u.date}, ${u.y}</span>${latest?'<span class="latest">Latest</span>':''}`;
+  const dstamp=`<span class="datestamp">${u.date}, ${u.y}</span>${latest?'<span class="latest">Latest</span>':''}${topBadge(u)}`;
   if(u.cover){
     const side=vi%2===0?'':' rev',rot=ROT[vi%ROT.length];
     return `<div class="entry" data-i="${i}"><div class="pl${side}">
@@ -581,7 +588,7 @@ function renderGrid(items){
   return `<div class="cgrid">`+items.map(o=>{const u=o.u;
     const cov=u.cover?`<img src="${esc(u.cover)}" alt="" onerror="this.style.display='none'">`:'';
     return `<div class="gcard" data-i="${o.idx}"><div class="gcov">${cov}${u.type?`<span class="gtag">${esc(u.type)}</span>`:''}${u.video?'<div class="cplay"></div>':''}</div>
-      <div class="gbody"><div class="gdate">${u.date}, ${u.y}</div><div class="gh">${esc(u.title)}</div><div class="gx">${esc(u.excerpt||'')}</div>
+      <div class="gbody"><div class="gdate">${u.date}, ${u.y}${topBadge(u)}</div><div class="gh">${esc(u.title)}</div><div class="gx">${esc(u.excerpt||'')}</div>
       <div class="grf"><span class="gread">Read &amp; respond →</span><span class="gopens">${opensNum(u)} opens</span></div></div></div>`;
   }).join('')+`</div>`;
 }
@@ -593,7 +600,7 @@ function renderTimeline(items){
     if(u.y!==lastY){html+=`<div class="tlyr">${u.y}</div>`;lastY=u.y;}
     const cov=u.cover?`<img src="${esc(u.cover)}" alt="" onerror="this.style.display='none'">`:'';
     html+=`<div class="tlentry" data-i="${o.idx}"><div class="tlcard"><div class="tlcov">${cov}${u.video?'<div class="cplay"></div>':''}</div>
-      <div class="tlb"><div class="tld">${u.date}, ${u.y}</div><div class="tlt">${esc(u.title)}</div><div class="tlx">${esc(u.excerpt||'')}</div>
+      <div class="tlb"><div class="tld">${u.date}, ${u.y}${topBadge(u)}</div><div class="tlt">${esc(u.title)}</div><div class="tlx">${esc(u.excerpt||'')}</div>
       <div class="tlf"><span class="tlread">Read &amp; respond →</span><span class="gopens">${opensNum(u)} opens</span></div></div></div></div>`;
   });
   return html+'</div>';
@@ -605,7 +612,7 @@ function renderWall(items){
     if(u.cover){
       return `<div class="wtile" data-i="${o.idx}"><img src="${esc(u.cover)}" alt="" onerror="this.closest('.wtile').classList.add('textonly');this.remove()">
         ${u.type?`<span class="wtag">${esc(u.type)}</span>`:''}${u.video?'<div class="cplay"></div>':''}<div class="wsh"></div>
-        <div class="wcap"><div class="wdate">${u.date}, ${u.y}</div><div class="wt">${esc(u.title)}</div></div></div>`;
+        <div class="wcap"><div class="wdate">${u.date}, ${u.y}${topBadge(u)}</div><div class="wt">${esc(u.title)}</div></div></div>`;
     }
     return `<div class="wtile textonly" data-i="${o.idx}"><div style="padding:22px 16px 60px"><div class="wdate" style="color:#5a4c37">${u.date}, ${u.y}</div><div class="wt" style="color:#2a2118;font-size:17px;margin-top:6px">${esc(u.title)}</div></div>
       <div class="wsh"></div><div class="wcap"><div class="wdate" style="color:#5a4c37">${opensNum(u)} opens</div></div></div>`;
@@ -977,6 +984,10 @@ async function loadFeatured(){
 }
 function renderRail(items){
   window._feat=items;
+  // "Our" for a couple/family page, "My" for an individual — these are chosen, not random.
+  const plural=/&| and |family/i.test(FAMILY)||/^the\s/i.test(FAMILY);
+  const rt=document.querySelector('#jvrail .jvrt');
+  if(rt) rt.textContent=(plural?'Our':'My')+' team picks from across Josiah Venture';
   const row=document.getElementById('jvrailrow');
   row.innerHTML=items.map((it,i)=>`<div class="jvcard" data-fi="${i}">
     <div class="jvcov"${it.cover?` style="background-image:url('${esc(it.cover)}')"`:''}>${it.country?`<span class="jvflag">${esc(it.country)}</span>`:''}</div>
