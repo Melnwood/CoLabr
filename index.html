@@ -1031,17 +1031,28 @@ function renderRail(items){
   row.querySelectorAll('[data-fi]').forEach(el=>el.addEventListener('click',()=>openFeatured(window._feat[+el.dataset.fi])));
   document.getElementById('jvrail').style.display='block';
 }
-function openFeatured(it){
+async function openFeatured(it){
   if(!it)return; const sheet=document.getElementById('sheet');
-  sheet.innerHTML=`<div class="rcov">${it.cover?`<img src="${esc(it.cover)}" alt="" onerror="this.style.display='none'">`:''}<button class="x" id="rx">×</button></div>
+  const shell=body=>`<div class="rcov">${it.cover?`<img src="${esc(it.cover)}" alt="" onerror="this.style.display='none'">`:''}<button class="x" id="rx">×</button></div>
     <div class="rbody"><div class="rk">Across Josiah Venture</div><h2>${esc(it.title)}</h2>
     <div class="rmeta"><span>${esc(it.author||'')}</span>${it.country?`<span>${esc(it.country)}</span>`:''}</div>
-    <p class="rtext">${esc(it.excerpt||'').replace(/\n/g,'<br>')}</p>
+    ${body}
     ${it.author==='Dave Patty'?'':`<div class="trnote" style="margin-top:10px">🌍 Featured with ${esc(it.author||'the author')}'s permission</div>`}
     ${it.author?`<button class="jvsub" id="jvsubbtn">✉️ I’d like ${esc(it.author)}’s updates too</button>`:''}</div>`;
+  const wire=()=>{
+    document.getElementById('rx').addEventListener('click',closeReader);
+    const jb=document.getElementById('jvsubbtn'); if(jb)jb.addEventListener('click',()=>openSubFor(it.author));
+  };
+  sheet.innerHTML=shell(`<p class="rtext">${esc(it.excerpt||'').replace(/\n/g,'<br>')||'Loading…'}</p>`);
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
-  document.getElementById('rx').addEventListener('click',closeReader);
-  const jb=document.getElementById('jvsubbtn'); if(jb)jb.addEventListener('click',()=>openSubFor(it.author));
+  wire();
+  // Pull the whole update from the author's page so the full story reads here, not just a teaser.
+  try{
+    const r=await fetch('/.netlify/functions/updates?m='+encodeURIComponent(it.author||''));
+    if(!r.ok)return; const d=await r.json();
+    const u=(d.updates||[]).find(x=>x.id===it.updateId);
+    if(u&&u.blocks&&u.blocks.length){ sheet.innerHTML=shell(bodyHtml(u,!!it.cover)); wire(); }
+  }catch(_){}
 }
 var _toastT=null;
 function toast(msg){ const t=document.getElementById('cltoast'); if(!t)return; t.textContent=msg; t.classList.add('on'); clearTimeout(_toastT); _toastT=setTimeout(()=>t.classList.remove('on'),3800); }
