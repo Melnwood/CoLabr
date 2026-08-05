@@ -13,7 +13,12 @@ function wrap(inner, site, manage) {
 
 function renderBlocks(blocks, site) {
   const GIVE = 'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969';
-  const em = s => esc(s || '').replace(/\n/g, '<br>');
+  // **bold**, _italic_, ++larger++ from the composer's format bar.
+  const em = s => esc(s || '')
+    .replace(/\*\*([^*\n][^*]*?)\*\*/g, '<b>$1</b>')
+    .replace(/\+\+([^+\n][^+]*?)\+\+/g, '<span style="font-size:1.35em;line-height:1.4">$1</span>')
+    .replace(/_([^_\n]+)_/g, '<i>$1</i>')
+    .replace(/\n/g, '<br>');
   return (blocks || []).map(bk => {
     switch (bk.type) {
       case 'hero': return `${bk.url ? `<img src="${esc(bk.url)}" style="width:100%;border-radius:12px;margin:0 0 14px">` : ''}${bk.heading ? `<h2 style="font-size:22px;font-weight:800;margin:0 0 6px">${esc(bk.heading)}</h2>` : ''}${bk.sub ? `<p style="color:#7a756f;margin:0 0 14px">${esc(bk.sub)}</p>` : ''}`;

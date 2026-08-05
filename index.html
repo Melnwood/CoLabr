@@ -91,6 +91,7 @@
   #cltoast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:120;background:#241f1b;color:#fff;font-size:13.5px;font-weight:600;padding:12px 18px;border-radius:24px;box-shadow:0 14px 40px rgba(0,0,0,.35);opacity:0;transition:opacity .16s,transform .16s;pointer-events:none;max-width:88vw;text-align:center}
   #cltoast.on{opacity:1;transform:translateX(-50%) translateY(0)}
   .rule{border:0;border-top:1px solid var(--line);margin:20px 4px 6px}
+  .bigt{font-size:1.4em;line-height:1.4}
   .tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 2px 4px;position:sticky;top:0;background:linear-gradient(var(--soft) 78%,rgba(244,241,236,0));z-index:6}
   .search{flex:1;min-width:180px;display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #ddd2b8;border-radius:10px;padding:9px 12px}
   .search svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2}
@@ -785,6 +786,15 @@ function pollCaptions(root){
 }
 function blockColor(bk){return (bk.color&&/^#[0-9a-fA-F]{6}$/.test(bk.color))?bk.color:'';}
 function hexA(c,a){const m=(c||'').replace('#','');if(!/^[0-9a-fA-F]{6}$/.test(m))return '';return `rgba(${parseInt(m.slice(0,2),16)},${parseInt(m.slice(2,4),16)},${parseInt(m.slice(4,6),16)},${a})`;}
+// Inline formatting written in the composer: **bold**, _italic_, ++larger++.
+// Escape first, then convert markers — nothing else becomes HTML.
+function fmt(t){
+  let x=esc(t||'');
+  x=x.replace(/\*\*([^*\n][^*]*?)\*\*/g,'<b>$1</b>');
+  x=x.replace(/\+\+([^+\n][^+]*?)\+\+/g,'<span class="bigt">$1</span>');
+  x=x.replace(/_([^_\n]+)_/g,'<i>$1</i>');
+  return x.replace(/\n/g,'<br>');
+}
 function bodyHtml(u,dedupeCover){
   if(u.blocks && u.blocks.length){
     // The cover already shows above the title — don't repeat that same image as the first block.
@@ -799,17 +809,17 @@ function bodyHtml(u,dedupeCover){
         return (bk.heading||bk.sub)?`<div class="rhero"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:'';
       }
       if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}')"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
-      if(bk.type==='praise'){const C=blockColor(bk);return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;}
+      if(bk.type==='praise'){const C=blockColor(bk);return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${fmt(bk.text)}</div>`;}
       if(bk.type==='heading'){const C=blockColor(bk);return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;}
       if(bk.type==='divider') return `<hr class="rhr">`;
-      if(bk.type==='signoff') return `<p class="rsign">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
+      if(bk.type==='signoff') return `<p class="rsign">${fmt(bk.text)}</p>`;
       if(bk.type==='give'){const C=blockColor(bk);return `<a class="rgive"${C?` style="background:${C}"`:''} href="${esc(bk.url||GIVE)}" target="_blank" rel="noopener">${esc(bk.label||'Give')}</a>`;}
       if(bk.type==='numbers'){ const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]); if(!it.length)return ''; return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`; }
-      if(bk.type==='text') return `<p class="rtext">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
+      if(bk.type==='text') return `<p class="rtext">${fmt(bk.text)}</p>`;
       if(bk.type==='photo'){ if(!bk.url) return ''; let h=`<img class="rimg" src="${esc(bk.url)}" alt="" onerror="this.style.display='none'">`; if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`; return h; }
       if(bk.type==='video'){ return renderVideo(bk,u.id,bidx); }
-      if(bk.type==='quote'){const C=blockColor(bk);return `<blockquote class="rquote"${C?` style="border-left-color:${C}"`:''}>${esc(bk.text||'')}${bk.by?`<span${C?` style="color:${C}"`:''}>${esc(bk.by)}</span>`:''}</blockquote>`;}
-      if(bk.type==='prayer'){const C=blockColor(bk);return `<div class="rprayer"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Prayer</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;}
+      if(bk.type==='quote'){const C=blockColor(bk);return `<blockquote class="rquote"${C?` style="border-left-color:${C}"`:''}>${fmt(bk.text)}${bk.by?`<span${C?` style="color:${C}"`:''}>${esc(bk.by)}</span>`:''}</blockquote>`;}
+      if(bk.type==='prayer'){const C=blockColor(bk);return `<div class="rprayer"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Prayer</b>${fmt(bk.text)}</div>`;}
       return '';
     }).join('');
   }
