@@ -530,7 +530,7 @@ function renderHero(){
   if(!latest) return;
   HEROID=latest.id;
   const h=document.getElementById('hero'), img=document.getElementById('heroimg');
-  if(latest.cover){ img.style.backgroundImage=`url('${latest.cover.replace(/'/g,"%27")}')`; h.classList.remove('textonly'); }
+  if(latest.cover){ img.style.backgroundImage=`url('${latest.cover.replace(/'/g,"%27")}')`; const cf=coverFocus(latest); if(cf) img.style.backgroundPosition=cf; h.classList.remove('textonly'); }
   else { h.classList.add('textonly'); img.style.backgroundImage=''; }
   document.getElementById('herotitle').textContent=latest.title;
   document.getElementById('heroex').textContent=latest.excerpt||'';
@@ -580,7 +580,7 @@ function fnEntry(o,vi,latest,topFlag){
     const side=vi%2===0?'':' rev',rot=ROT[vi%ROT.length];
     return `<div class="entry${topCls(u)}" data-i="${i}"><div class="pl${side}">
       <div class="porb" style="transform:rotate(${rot}deg)"><div class="polaroid"><div class="tape"></div>
-        <div class="imgwrap"><img src="${esc(u.cover)}" alt="" onerror="this.style.display='none'">${u.video?'<div class="fnplay"></div>':''}</div>
+        <div class="imgwrap"><img src="${esc(u.cover)}" alt=""${coverFocus(u)?` style="object-position:${coverFocus(u)}"`:''} onerror="this.style.display='none'">${u.video?'<div class="fnplay"></div>':''}</div>
         <div class="cap">${caption(u)}</div></div></div>
       <div class="note">${topBanner(u)}${dstamp}<h2>${esc(u.title)}</h2><p>${esc(u.excerpt||'')}</p>
         <a class="readmore">Read the whole letter →</a>
@@ -606,7 +606,8 @@ function renderFieldNotes(items){
 /* ---------- COVER GRID ---------- */
 function renderGrid(items){
   return `<div class="cgrid">`+items.map(o=>{const u=o.u;
-    const cov=u.cover?`<img src="${esc(u.cover)}" alt="" onerror="this.style.display='none'">`:'';
+    const cf0=coverFocus(u);
+    const cov=u.cover?`<img src="${esc(u.cover)}" alt=""${cf0?` style="object-position:${cf0}"`:''} onerror="this.style.display='none'">`:'';
     return `<div class="gcard${topCls(u)}" data-i="${o.idx}">${topBanner(u)}<div class="gcov">${cov}${u.type?`<span class="gtag">${esc(u.type)}</span>`:''}${u.video?'<div class="cplay"></div>':''}</div>
       <div class="gbody"><div class="gdate">${u.date}, ${u.y}</div><div class="gh">${esc(u.title)}</div><div class="gx">${esc(u.excerpt||'')}</div>
       <div class="grf"><span class="gread">Read &amp; respond →</span><span class="gopens">${opensNum(u)} opens</span></div></div></div>`;
@@ -618,7 +619,8 @@ function renderTimeline(items){
   let html='<div class="tl">',lastY=null;
   items.forEach(o=>{const u=o.u;
     if(u.y!==lastY){html+=`<div class="tlyr">${u.y}</div>`;lastY=u.y;}
-    const cov=u.cover?`<img src="${esc(u.cover)}" alt="" onerror="this.style.display='none'">`:'';
+    const cf0=coverFocus(u);
+    const cov=u.cover?`<img src="${esc(u.cover)}" alt=""${cf0?` style="object-position:${cf0}"`:''} onerror="this.style.display='none'">`:'';
     html+=`<div class="tlentry" data-i="${o.idx}"><div class="tlcard${topCls(u)}">${topBanner(u)}<div class="tlcov">${cov}${u.video?'<div class="cplay"></div>':''}</div>
       <div class="tlb"><div class="tld">${u.date}, ${u.y}</div><div class="tlt">${esc(u.title)}</div><div class="tlx">${esc(u.excerpt||'')}</div>
       <div class="tlf"><span class="tlread">Read &amp; respond →</span><span class="gopens">${opensNum(u)} opens</span></div></div></div></div>`;
@@ -630,7 +632,7 @@ function renderTimeline(items){
 function renderWall(items){
   return `<div class="gwall">`+items.map(o=>{const u=o.u;
     if(u.cover){
-      return `<div class="wtile${topCls(u)}" data-i="${o.idx}">${topBanner(u)}<img src="${esc(u.cover)}" alt="" onerror="this.closest('.wtile').classList.add('textonly');this.remove()">
+      return `<div class="wtile${topCls(u)}" data-i="${o.idx}">${topBanner(u)}<img src="${esc(u.cover)}" alt=""${coverFocus(u)?` style="object-position:${coverFocus(u)}"`:''} onerror="this.closest('.wtile').classList.add('textonly');this.remove()">
         ${u.type?`<span class="wtag">${esc(u.type)}</span>`:''}${u.video?'<div class="cplay"></div>':''}<div class="wsh"></div>
         <div class="wcap"><div class="wdate">${u.date}, ${u.y}</div><div class="wt">${esc(u.title)}</div></div></div>`;
     }
@@ -795,6 +797,11 @@ function fmt(t){
   x=x.replace(/_([^_\n]+)_/g,'<i>$1</i>');
   return x.replace(/\n/g,'<br>');
 }
+// Where the banner's focal point sits (set by dragging in the composer).
+function coverFocus(u){
+  const b=(u.blocks||[]).find(x=>x&&(x.type==='hero'||x.type==='photo')&&x.url);
+  return b&&(b.fx!=null||b.fy!=null)?((+b.fx||50)+'% '+(+b.fy||50)+'%'):'';
+}
 function bodyHtml(u,dedupeCover){
   if(u.blocks && u.blocks.length){
     // The cover already shows above the title — don't repeat that same image as the first block.
@@ -808,7 +815,7 @@ function bodyHtml(u,dedupeCover){
         if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';
         return (bk.heading||bk.sub)?`<div class="rhero"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:'';
       }
-      if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}')"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+      if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}');background-position:${(+bk.fx||50)}% ${(+bk.fy||50)}%"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
       if(bk.type==='praise'){const C=blockColor(bk);return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${fmt(bk.text)}</div>`;}
       if(bk.type==='heading'){const C=blockColor(bk);return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;}
       if(bk.type==='divider') return `<hr class="rhr">`;
@@ -839,7 +846,8 @@ async function openReader(i){
   }
   const uu={...u,title,blocks};
   const emb=u.video?embedURL(u.video):'';
-  const media=emb?`<iframe src="${emb}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`:(u.cover?`<img src="${u.cover}" alt="" onerror="this.style.display='none'">`:'');
+  const cf=coverFocus(u);
+  const media=emb?`<iframe src="${emb}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`:(u.cover?`<img src="${u.cover}" alt=""${cf?` style="object-position:${cf}"`:''} onerror="this.style.display='none'">`:'');
   sheet.innerHTML=`<div class="rcov">${media}<button class="x" id="rx">×</button>${ME?'<button class="rmore" id="rmore" aria-label="More">⋯</button>':''}</div>
     ${ME?`<div class="rmoremenu" id="rmoremenu"><button id="rshareBtn">🌍 Share this on my international wall</button></div>`:''}
     <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>

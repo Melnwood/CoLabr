@@ -195,6 +195,9 @@
     .winlab{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:0 0 10px}
     .winhint{font-size:12.5px;color:var(--muted);margin-top:8px}
     .actions .btn svg{vertical-align:-2px;margin-right:5px}
+    .focusbox{width:100%;aspect-ratio:16/9;background-size:cover;border-radius:10px;margin:8px 0 2px;position:relative;cursor:grab;touch-action:none;border:1px solid var(--line)}
+    .focusbox:active{cursor:grabbing}
+    .focushint{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);background:rgba(20,15,10,.62);color:#fff;font-size:11px;font-weight:600;padding:4px 11px;border-radius:14px;white-space:nowrap;pointer-events:none}
     .fbar{display:flex;gap:5px;margin:0 0 6px}
     .fbtn{min-width:30px;height:26px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-family:var(--font);font-size:12.5px;color:var(--text);padding:0 7px}
     .fbtn:hover{border-color:var(--acc);color:var(--acc)}
@@ -357,7 +360,7 @@ document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
 function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.stringify(DEF[t]))}; if(at==null||at>blocks.length)blocks.push(nb); else blocks.splice(at,0,nb); render(); }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fieldHtml(b){
-  if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div><input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
+  if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${+b.fx||50}% ${+b.fy||50}%"><span class="focushint">Drag the photo to position it — this is the crop on your wall</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
   if(b.type==='praise') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="Something to praise God for…">${esc(b.text)}</textarea>`+colorRow(b);
   if(b.type==='heading') return `<input data-id="${b.id}" data-f="text" placeholder="Section heading" value="${esc(b.text)}">`+colorRow(b);
   if(b.type==='divider') return `<div style="color:var(--muted);font-size:12.5px;padding:2px 0">A divider bar will appear here between sections.</div>`;
@@ -385,6 +388,7 @@ function render(){
   c.querySelectorAll('[data-grip]').forEach(el=>el.addEventListener('pointerdown',e=>beginDrag(e,'move',{from:+el.dataset.grip,label:NAME[blocks[+el.dataset.grip].type]})));
   c.querySelectorAll('[data-drop]').forEach(setupDrop);
   c.querySelectorAll('[data-vdrop]').forEach(setupVideoDrop);
+  c.querySelectorAll('[data-focus]').forEach(setupFocus);
   c.querySelectorAll('.fbtn').forEach(el=>{
     el.addEventListener('pointerdown',e=>e.preventDefault());   // keep the textarea selection
     el.addEventListener('click',()=>{
@@ -421,6 +425,19 @@ async function loadBrandPal(){
     orgs.forEach(o=>push(o.ink,(o.code||o.name)+' ink'));
     if(pal.length){BRAND_PAL=pal.slice(0,12); render();}
   }catch(_){}
+}
+/* Banner focal point: drag the crop preview to choose what stays in frame. */
+function setupFocus(el){
+  const id=el.dataset.focus;
+  let drag=false,sx,sy,bx,by;
+  el.addEventListener('pointerdown',e=>{const b=blocks.find(x=>String(x.id)===id);if(!b)return;
+    drag=true;sx=e.clientX;sy=e.clientY;bx=+b.fx||50;by=+b.fy||50;try{el.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
+  el.addEventListener('pointermove',e=>{if(!drag)return;const b=blocks.find(x=>String(x.id)===id);if(!b)return;
+    const r=el.getBoundingClientRect();
+    b.fx=Math.round(Math.max(0,Math.min(100,bx-(e.clientX-sx)/r.width*100)));
+    b.fy=Math.round(Math.max(0,Math.min(100,by-(e.clientY-sy)/r.height*100)));
+    el.style.backgroundPosition=b.fx+'% '+b.fy+'%';});
+  ['pointerup','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>{drag=false;}));
 }
 /* Format bar: **bold**, _italic_, ++larger++ — wraps/unwraps the selection. */
 function fmtBar(b){
@@ -753,7 +770,7 @@ function pvFmt(t){
 }
 function pvBlockHtml(bk){
   const C=bk.color&&/^#[0-9a-fA-F]{6}$/.test(bk.color)?bk.color:'';
-  if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}')"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+  if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}');background-position:${(+bk.fx||50)}% ${(+bk.fy||50)}%"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
   if(bk.type==='praise') return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${pvFmt(bk.text)}</div>`;
   if(bk.type==='heading') return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;
   if(bk.type==='divider') return `<hr class="rhr">`;
@@ -777,6 +794,7 @@ document.getElementById('previewBtn').addEventListener('click',()=>{
   // Same rule as the live page: the first photo/hero becomes the cover and isn't repeated in the body.
   const ci=clean.findIndex(b=>(b.type==='photo'||b.type==='hero')&&b.url);
   const cover=ci>-1?clean[ci].url:'';
+  const cfoc=ci>-1?((+clean[ci].fx||50)+'% '+(+clean[ci].fy||50)+'%'):'50% 50%';
   const body=clean.map((bk,i)=>{
     if(i===ci&&cover){
       if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';
@@ -784,7 +802,7 @@ document.getElementById('previewBtn').addEventListener('click',()=>{
     }
     return pvBlockHtml(bk);
   }).join('')||'<p class="rtext" style="color:#8a7550">Nothing here yet — add some sections first.</p>';
-  document.getElementById('pvsheet').innerHTML=`<div class="rcov">${cover?`<img src="${esc(cover)}" alt="">`:''}<button class="x" id="pvx" type="button">×</button></div>
+  document.getElementById('pvsheet').innerHTML=`<div class="rcov">${cover?`<img src="${esc(cover)}" alt="" style="object-position:${cfoc}">`:''}<button class="x" id="pvx" type="button">×</button></div>
     <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>
     <div class="rmeta"><span>${esc(dateStr)}</span></div>
     ${body}</div>`;
