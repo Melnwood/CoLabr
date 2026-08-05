@@ -8,3 +8,7 @@
 # Automated off-Airtable backup: snapshot every table to the GCS bucket every 3 hours.
 [functions."backup"]
   schedule = "0 */3 * * *"
+
+# Care radar morning digest: daily at 05:00 UTC = 7:00 in Czechia (summer).
+[functions."care-digest"]
+  schedule = "0 5 * * *"

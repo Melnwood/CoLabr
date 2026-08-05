@@ -54,6 +54,7 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
   <div class="controls">
     <select id="days"><option value="30">Last 30 days</option><option value="60" selected>Last 60 days</option><option value="90">Last 90 days</option><option value="180">Last 6 months</option></select>
     <button id="scanBtn">Scan again</button>
+    <button id="mailBtn" style="background:#241f1b">Email me this now</button>
     <span class="stat" id="stat"></span>
   </div>
   <div class="filters" id="filters" style="display:none"></div>
@@ -114,6 +115,16 @@ function render(){
     +'</div>').join('');
 }
 document.getElementById('scanBtn').addEventListener('click',scan);
+document.getElementById('mailBtn').addEventListener('click',async()=>{
+  const b=document.getElementById('mailBtn'),stat=document.getElementById('stat');
+  b.disabled=true; const t=b.textContent; b.textContent='Sending\u2026';
+  try{
+    const r=await fetch('/.netlify/functions/care-digest',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not send.');
+    stat.textContent='Morning email sent \u2014 '+d.flagged+' flagged from '+d.scanned+' new update'+(d.scanned===1?'':'s')+' in the last day. Check your inbox.';
+  }catch(e){ stat.textContent=e.message; }
+  b.disabled=false; b.textContent=t;
+});
 document.getElementById('days').addEventListener('change',scan);
 guard().then(ok=>{ if(ok) scan(); });
 </script>
