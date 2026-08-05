@@ -47,6 +47,9 @@ exports.handler = async function (event) {
 
     const fields = { 'Blocks': JSON.stringify(blocks) };
     if (!existingCover && cover) fields['Cover Image URL'] = cover;
+    // Cards and share teasers read the Excerpt — derive one from the first text block.
+    const firstText = blocks.find(x => x.type === 'text' && x.text);
+    if (firstText) fields['Excerpt'] = firstText.text.replace(/\s+/g, ' ').replace(/^Dear Friends,\s*/i, '').trim().slice(0, 240);
 
     const pr = await fetch(api, { method: 'PATCH', headers: auth,
       body: JSON.stringify({ records: [{ id: recId, fields }], typecast: true }) });
