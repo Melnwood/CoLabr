@@ -542,7 +542,13 @@ function opensNum(u){return (u.opens||0).toLocaleString();}
 /* Top ten most-read updates get a rank badge; recomputed from opens on every load,
    so an update that climbs moves into its place automatically. */
 let TOP10={};
-function computeTop10(){ TOP10={}; U.filter(u=>(u.opens||0)>0).slice().sort((a,b)=>(b.opens||0)-(a.opens||0)).slice(0,10).forEach((u,i)=>{TOP10[u.id]=i+1;}); }
+function computeTop10(){
+  TOP10={};
+  const n=U.length;
+  if(n<20) return;                 // young walls: no ranking yet
+  const k=n>50?10:5;               // 20–50 updates: top five; past 50: top ten
+  U.filter(u=>(u.opens||0)>0).slice().sort((a,b)=>(b.opens||0)-(a.opens||0)).slice(0,k).forEach((u,i)=>{TOP10[u.id]=i+1;});
+}
 function topBanner(u){ const r=TOP10[u.id]; return r?`<div class="topbnr${r===1?' first':''}">#${r} most read</div>`:''; }
 function caption(u){const t=(u.type||'').toLowerCase();const yy=u.y?("'"+String(u.y).slice(2)):'';return `— ${t?esc(t):'from the field'} ${yy} —`;}
 
