@@ -1023,7 +1023,7 @@ function renderRail(items){
   // "Our" for a couple/family page, "My" for an individual — these are chosen, not random.
   const plural=/&| and |family/i.test(FAMILY)||/^the\s/i.test(FAMILY);
   const rt=document.querySelector('#jvrail .jvrt');
-  if(rt) rt.textContent=(plural?'Our':'My')+' team picks from across Josiah Venture';
+  if(rt) rt.textContent=(plural?'Our':'My')+' picks from across our Josiah Venture team';
   const row=document.getElementById('jvrailrow');
   row.innerHTML=items.map((it,i)=>`<div class="jvcard" data-fi="${i}">
     <div class="jvcov"${it.cover?` style="background-image:url('${esc(it.cover)}')"`:''}>${it.country?`<span class="jvflag">${esc(it.country)}</span>`:''}</div>
