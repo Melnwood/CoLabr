@@ -195,8 +195,12 @@
     .winlab{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:0 0 10px}
     .winhint{font-size:12.5px;color:var(--muted);margin-top:8px}
     .actions .btn svg{vertical-align:-2px;margin-right:5px}
-    .focusbox{width:100%;aspect-ratio:16/9;background-size:cover;border-radius:10px;margin:8px 0 2px;position:relative;cursor:grab;touch-action:none;border:1px solid var(--line)}
+    .focusbox{width:100%;aspect-ratio:16/9;background-size:cover;border-radius:10px;margin:8px 0 2px;position:relative;cursor:grab;touch-action:none;border:1px solid var(--line);overflow:hidden}
     .focusbox:active{cursor:grabbing}
+    /* The 16:9 frame is the reader/card crop; the marked strip is the wall banner (3:1).
+       Band height = (16/9)/(3/1) = 59.26% of the frame; it rides with the focal point. */
+    .focband{position:absolute;left:0;right:0;height:59.26%;border-top:2px dashed rgba(255,255,255,.95);border-bottom:2px dashed rgba(255,255,255,.95);box-shadow:0 0 0 999px rgba(20,15,10,.5);pointer-events:none}
+    .focbandlab{position:absolute;top:6px;left:8px;background:var(--acc);color:#fff;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:12px}
     .focushint{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);background:rgba(20,15,10,.62);color:#fff;font-size:11px;font-weight:600;padding:4px 11px;border-radius:14px;white-space:nowrap;pointer-events:none}
     .fbar{display:flex;gap:5px;margin:0 0 6px}
     .fbtn{min-width:30px;height:26px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-family:var(--font);font-size:12.5px;color:var(--text);padding:0 7px}
@@ -360,7 +364,7 @@ document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
 function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.stringify(DEF[t]))}; if(at==null||at>blocks.length)blocks.push(nb); else blocks.splice(at,0,nb); render(); }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fieldHtml(b){
-  if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${+b.fx||50}% ${+b.fy||50}%"><span class="focushint">Drag the photo to position it — this is the crop on your wall</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
+  if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${+b.fx||50}% ${+b.fy||50}%"><div class="focband" style="top:${((+b.fy||50)*0.4074).toFixed(1)}%"><span class="focbandlab">The wall banner shows this strip</span></div><span class="focushint">Drag the photo up or down to place it</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
   if(b.type==='praise') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="Something to praise God for…">${esc(b.text)}</textarea>`+colorRow(b);
   if(b.type==='heading') return `<input data-id="${b.id}" data-f="text" placeholder="Section heading" value="${esc(b.text)}">`+colorRow(b);
   if(b.type==='divider') return `<div style="color:var(--muted);font-size:12.5px;padding:2px 0">A divider bar will appear here between sections.</div>`;
@@ -436,7 +440,8 @@ function setupFocus(el){
     const r=el.getBoundingClientRect();
     b.fx=Math.round(Math.max(0,Math.min(100,bx-(e.clientX-sx)/r.width*100)));
     b.fy=Math.round(Math.max(0,Math.min(100,by-(e.clientY-sy)/r.height*100)));
-    el.style.backgroundPosition=b.fx+'% '+b.fy+'%';});
+    el.style.backgroundPosition=b.fx+'% '+b.fy+'%';
+    const band=el.querySelector('.focband'); if(band) band.style.top=(b.fy*0.4074).toFixed(1)+'%';});
   ['pointerup','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>{drag=false;}));
 }
 /* Format bar: **bold**, _italic_, ++larger++ — wraps/unwraps the selection. */
