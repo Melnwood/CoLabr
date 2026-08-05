@@ -83,6 +83,7 @@ function isJunkImg(src, w) {
       && /(icon|soc|share|\.png|\.svg)/.test(s)) return true;            // social icons
   if (/(track|beacon|open\.php|impression|\/o\.gif)/.test(s)) return true;
   if (/\/logo|logo\.|-logo|_logo|wordmark|masthead|header-?image/.test(s)) return true; // org logo/header
+  if (/signature/.test(s)) return true;                                   // signed-letter signature images
   return false;
 }
 
@@ -90,6 +91,7 @@ function isJunkImg(src, w) {
 function isContentImg(src) {
   const s = (src || '').toLowerCase();
   return /(mcusercontent\.com|gallery\.mailchimp\.com|\.amazonaws\.com|files\.constantcontact|googleusercontent|cloudfront)/.test(s)
+    || /wp-content\/uploads/.test(s)
     || /\/images\//.test(s);
 }
 
@@ -112,6 +114,14 @@ function htmlToBlocks(html, opts) {
   const textRe = /<td[^>]*class="[^"]*mcnTextContent[^"]*"[^>]*>([\s\S]*?)<\/td>/gi;
   let m;
   while ((m = textRe.exec(h))) items.push({ pos: m.index, kind: 'text', raw: m[1] });
+  // Not a Mailchimp campaign? Fall back to generic article HTML (WordPress posts etc.):
+  // paragraphs and blockquotes become text, h2-h4 become headings.
+  if (!items.length) {
+    const pRe = /<(p|blockquote)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+    while ((m = pRe.exec(h))) items.push({ pos: m.index, kind: 'text', raw: m[2] });
+    const hRe = /<h([2-4])\b[^>]*>([\s\S]*?)<\/h\1>/gi;
+    while ((m = hRe.exec(h))) items.push({ pos: m.index, kind: 'head', raw: m[2] });
+  }
   const imgRe = /<img\b[^>]*>/gi;
   while ((m = imgRe.exec(h))) items.push({ pos: m.index, kind: 'img', src: attr(m[0], 'src'), w: parseInt(attr(m[0], 'width') || '0', 10) });
   items.sort((a, b) => a.pos - b.pos);
@@ -135,6 +145,7 @@ function htmlToBlocks(html, opts) {
 
   for (const it of items) {
     if (it.kind === 'img') { takeImage(it.src, it.w); continue; }
+    if (it.kind === 'head') { const t = htmlTextToPlain(it.raw); if (t) blocks.push({ type: 'heading', text: t }); continue; }
     // A text block may itself contain inline images — split so order is preserved.
     const seg = it.raw;
     const innerImg = /<img\b[^>]*>/gi;
