@@ -30,16 +30,19 @@ exports.handler = async function (event) {
     // Don't let someone request to feature their own update on their own page.
     if (author && requesterPage && author === requesterPage) return resp(400, { error: "That's already your own update." });
 
+    // The president's notes are already public JV stories — no approval needed,
+    // they land on the requester's wall immediately.
+    const autoApproved = author === 'Dave Patty';
     const fields = {
       'Label': (session.name || 'Someone') + ' → ' + (author || 'update'),
       'Update ID': b.updateId, 'Update Title': title, 'Excerpt': excerpt, 'Cover URL': cover,
       'Author': author || '', 'Country': country || '', 'Author Photo': authorPhoto || '',
       'Requester Page': requesterPage, 'Requester Name': session.name || '', 'Requester Email': session.email || '',
-      'Status': 'Pending'
+      'Status': autoApproved ? 'Approved' : 'Pending'
     };
     const cr = await fetch(`https://api.airtable.com/v0/${BASE}/${SHARES}`, { method: 'POST', headers: auth, body: JSON.stringify({ records: [{ fields }], typecast: true }) });
     if (!cr.ok) { const t = await cr.text(); return resp(502, { error: 'Could not save the request. ' + t.slice(0, 80) }); }
-    return resp(200, { ok: true, author: author || 'the author' });
+    return resp(200, { ok: true, author: author || 'the author', approved: autoApproved });
   } catch (e) {
     return resp(502, { error: 'Something went wrong.' });
   }

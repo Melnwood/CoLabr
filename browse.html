@@ -213,7 +213,7 @@ async function feature(u){
   try{
     const r=await fetch('/.netlify/functions/share-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({updateId:u.id})});
     const d=await r.json().catch(()=>({}));
-    toast(r.ok?('Sent to '+(d.author||'the author')+' for approval 🌍'):(d.error||'Could not share.'));
+    toast(r.ok?(d.approved?'Added to your wall — it\u2019s live in your team picks.':'Sent to '+(d.author||'the author')+' for approval 🌍'):(d.error||'Could not share.'));
   }catch(_){ toast('Could not share right now.'); }
 }
 
