@@ -69,6 +69,7 @@
       <div class="mh-row"><span class="mh-lab">Subject</span><input id="subject" value="Come follow our family's journey"></div>
     </div>
     <div class="recount" id="recount">0 recipients</div>
+    <label style="display:flex;gap:9px;align-items:flex-start;margin:10px 0 0;font-size:13px;cursor:pointer"><input type="checkbox" id="existingChk" style="margin-top:2px;accent-color:var(--acc)"><span><b>These friends already get my updates</b> — add them as <b>Following</b> (full email) right away instead of waiting for them to choose. Your letter still gives each one a personal link to change how they hear from you.</span></label>
 
     <div class="fld" style="margin-top:15px"><label>Your letter</label>
       <textarea id="body" rows="11">Dear {name},
@@ -156,7 +157,7 @@ document.getElementById('sendBtn').addEventListener('click',async()=>{
   try{
     for(let i=0;i<recipients.length;i+=size){
       const batch=recipients.slice(i,i+size);
-      const r=await fetch('/.netlify/functions/send-invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject,body,fromName,recipients:batch})});
+      const r=await fetch('/.netlify/functions/send-invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject,body,fromName,recipients:batch,existing:document.getElementById('existingChk').checked})});
       const d=await r.json(); if(!r.ok) throw new Error(d.error||'Send failed.');
       sent+=d.sent||0; (d.failed||[]).forEach(f=>fails.push(f));
       fill.style.width=Math.round(Math.min(100,((i+batch.length)/recipients.length)*100))+'%';

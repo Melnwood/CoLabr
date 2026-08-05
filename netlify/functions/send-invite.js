@@ -33,6 +33,7 @@ exports.handler = async function (event) {
   if (!bodyText.trim()) return r(400, { error: 'The letter is empty.' });
   const fromName = (b.fromName || '').toString().trim().slice(0, 80) || 'Co-Labr';
   const recipients = Array.isArray(b.recipients) ? b.recipients.slice(0, MAX) : [];
+  const existingSupporters = !!b.existing;   // they already receive updates — start them as Following
   if (!recipients.length) return r(400, { error: 'No recipients in this batch.' });
   const site = process.env.SITE_BASE || '';
   const replyTo = session.email || '';
@@ -65,7 +66,9 @@ exports.handler = async function (event) {
         if (fullName && !ef[SF.name]) patch[SF.name] = fullName;
         if (Object.keys(patch).length) await fetch(api, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: [{ id: existing.id, fields: patch }] }) });
       } else {
-        const fields = { [SF.name]: fullName || email.split('@')[0], [SF.email]: email, [SF.missionary]: missionary, [SF.active]: false, [SF.source]: 'Invited', [SF.token]: token };
+        const fields = existingSupporters
+          ? { [SF.name]: fullName || email.split('@')[0], [SF.email]: email, [SF.missionary]: missionary, [SF.active]: true, [SF.pref]: 'Full email', [SF.source]: 'Imported', [SF.token]: token }
+          : { [SF.name]: fullName || email.split('@')[0], [SF.email]: email, [SF.missionary]: missionary, [SF.active]: false, [SF.source]: 'Invited', [SF.token]: token };
         const cr = await fetch(api, { method: 'POST', headers: auth, body: JSON.stringify({ fields, typecast: true }) });
         if (!cr.ok) { failed.push({ email, error: 'could not save to your people' }); continue; }
       }
