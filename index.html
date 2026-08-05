@@ -63,7 +63,7 @@
   .hero.textonly .heroread{background:var(--acc);color:#fff}
   @media(max-width:600px){.hero{min-height:clamp(260px,46vh,420px)}.hero .heroinner{padding:26px 22px 28px}}
   /* Across Josiah Venture rail — curated teammate stories */
-  .jvrail{margin:8px 0 2px;padding:18px 0 6px;border-top:1px solid var(--line)}
+  .jvrail{margin:16px 0 10px;padding:18px 18px 10px;border:1.5px solid #d9cba4;border-radius:16px;background:linear-gradient(165deg,#fffdf8,#f6efe0);box-shadow:0 8px 24px rgba(60,40,20,.08)}
   .jvrailhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:13px}
   .jvrt{font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
   .jvrs{font-size:13px;color:var(--muted)}
@@ -75,8 +75,13 @@
   .jvflag{position:absolute;top:8px;left:8px;background:rgba(20,15,10,.62);color:#fff;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px}
   .jvbody{padding:11px 13px 14px}
   .jvauthor{font-size:11px;font-weight:800;color:var(--acc);margin-bottom:3px;letter-spacing:.02em}
+  .jvauthrow{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+  .jvauthrow .jvauthor{margin-bottom:0}
+  .jvav{width:26px;height:26px;border-radius:50%;flex:none;background-size:cover;background-position:center;background-color:var(--acc);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;box-shadow:0 2px 6px rgba(60,40,20,.18)}
   .jvtitle{font-size:14.5px;font-weight:800;line-height:1.2;color:var(--text);margin-bottom:5px}
   .jvex{font-size:12px;line-height:1.46;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .jvsub{display:block;width:max-content;max-width:100%;margin:18px auto 2px;background:var(--acc);color:var(--acc-text,#fff);border:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:24px;cursor:pointer;font-family:var(--font)}
+  .jvsub:hover{filter:brightness(1.08)}
   /* reader ⋯ share (staff only) */
   .rmore{position:absolute;top:14px;right:56px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(20,15,10,.5);color:#fff;font-size:19px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
   .rmoremenu{display:none;position:absolute;top:52px;right:16px;z-index:8;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.22);overflow:hidden;min-width:250px}
@@ -879,8 +884,20 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeReader();});
 
 /* ---- Follow / subscribe ---- */
 let curU=null;
-function openSub(){document.getElementById('subov').classList.add('open');document.body.style.overflow='hidden';}
-function closeSub(){document.getElementById('subov').classList.remove('open');document.body.style.overflow='';}
+let SUBFOR='';                      // set when subscribing to a featured teammate instead of this page
+function openSub(){SUBFOR='';showSub();}
+function openSubFor(name){SUBFOR=(name||'').trim();showSub();}
+function showSub(){
+  const h=document.querySelector('#subform h3'),p=document.querySelector('#subform p');
+  if(h)h.textContent=SUBFOR?('Follow '+SUBFOR):(PAGEM?('Follow '+PAGEM):'Follow the Ellenwoods');
+  if(p)p.textContent=SUBFOR?('Get '+SUBFOR+'’s updates too. You can change it or stop anytime.'):'Choose how you’d like to hear from us. You can change it or stop anytime.';
+  document.getElementById('subform').style.display='block';
+  document.getElementById('subdone').style.display='none';
+  const m=document.getElementById('submsg');m.className='submsg';m.textContent='';
+  document.getElementById('subSend').disabled=false;
+  document.getElementById('subov').classList.add('open');document.body.style.overflow='hidden';
+}
+function closeSub(){document.getElementById('subov').classList.remove('open');document.body.style.overflow=document.getElementById('reader').classList.contains('open')?'hidden':'';}
 ['followBtn','followBtn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',openSub);});
 
 // ---- reader language ----
@@ -912,7 +929,7 @@ document.getElementById('subSend').addEventListener('click',async()=>{
   else if(!/.+@.+\..+/.test(email)){msg.className='submsg err';msg.textContent='Please add a valid email.';return;}
   const btn=document.getElementById('subSend');btn.disabled=true;msg.className='submsg';msg.textContent='Saving…';
   try{
-    const r=await fetch('/.netlify/functions/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,phone,preference:pref,missionary:FAMILY})});
+    const r=await fetch('/.netlify/functions/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,phone,preference:pref,missionary:SUBFOR||FAMILY})});
     const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not subscribe.');
     document.getElementById('subform').style.display='none';
     document.getElementById('subdone').style.display='block';
@@ -951,7 +968,7 @@ function renderRail(items){
   const row=document.getElementById('jvrailrow');
   row.innerHTML=items.map((it,i)=>`<div class="jvcard" data-fi="${i}">
     <div class="jvcov"${it.cover?` style="background-image:url('${esc(it.cover)}')"`:''}>${it.country?`<span class="jvflag">${esc(it.country)}</span>`:''}</div>
-    <div class="jvbody"><div class="jvauthor">${esc(it.author||'A teammate')}</div><div class="jvtitle">${esc(it.title)}</div><div class="jvex">${esc(it.excerpt||'')}</div></div></div>`).join('');
+    <div class="jvbody"><div class="jvauthrow">${it.photo?`<span class="jvav" style="background-image:url('${esc(it.photo)}')"></span>`:`<span class="jvav">${esc((it.author||'?').trim().charAt(0).toUpperCase())}</span>`}<div class="jvauthor">${esc(it.author||'A teammate')}</div></div><div class="jvtitle">${esc(it.title)}</div><div class="jvex">${esc(it.excerpt||'')}</div></div></div>`).join('');
   row.querySelectorAll('[data-fi]').forEach(el=>el.addEventListener('click',()=>openFeatured(window._feat[+el.dataset.fi])));
   document.getElementById('jvrail').style.display='block';
 }
@@ -961,9 +978,11 @@ function openFeatured(it){
     <div class="rbody"><div class="rk">Across Josiah Venture</div><h2>${esc(it.title)}</h2>
     <div class="rmeta"><span>${esc(it.author||'')}</span>${it.country?`<span>${esc(it.country)}</span>`:''}</div>
     <p class="rtext">${esc(it.excerpt||'').replace(/\n/g,'<br>')}</p>
-    <div class="trnote" style="margin-top:10px">🌍 Featured with ${esc(it.author||'the author')}'s permission</div></div>`;
+    <div class="trnote" style="margin-top:10px">🌍 Featured with ${esc(it.author||'the author')}'s permission</div>
+    ${it.author?`<button class="jvsub" id="jvsubbtn">✉️ I’d like ${esc(it.author)}’s updates too</button>`:''}</div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
+  const jb=document.getElementById('jvsubbtn'); if(jb)jb.addEventListener('click',()=>openSubFor(it.author));
 }
 var _toastT=null;
 function toast(msg){ const t=document.getElementById('cltoast'); if(!t)return; t.textContent=msg; t.classList.add('on'); clearTimeout(_toastT); _toastT=setTimeout(()=>t.classList.remove('on'),3800); }
