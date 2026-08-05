@@ -1037,7 +1037,7 @@ function openFeatured(it){
     <div class="rbody"><div class="rk">Across Josiah Venture</div><h2>${esc(it.title)}</h2>
     <div class="rmeta"><span>${esc(it.author||'')}</span>${it.country?`<span>${esc(it.country)}</span>`:''}</div>
     <p class="rtext">${esc(it.excerpt||'').replace(/\n/g,'<br>')}</p>
-    <div class="trnote" style="margin-top:10px">🌍 Featured with ${esc(it.author||'the author')}'s permission</div>
+    ${it.author==='Dave Patty'?'':`<div class="trnote" style="margin-top:10px">🌍 Featured with ${esc(it.author||'the author')}'s permission</div>`}
     ${it.author?`<button class="jvsub" id="jvsubbtn">✉️ I’d like ${esc(it.author)}’s updates too</button>`:''}</div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
