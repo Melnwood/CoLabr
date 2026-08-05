@@ -67,6 +67,23 @@ function stripFooter(text) {
   return t.replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// Pick the sharpest source for an <img>: largest srcset candidate, else src
+// (with WordPress's -WxH thumbnail suffix stripped so we get the original).
+function bestSrc(tag) {
+  const srcset = attr(tag, 'srcset');
+  if (srcset) {
+    let best = '', bw = 0;
+    srcset.split(',').forEach(p => {
+      const m = p.trim().match(/^(\S+)\s+(\d+)w/);
+      if (m && +m[2] > bw) { bw = +m[2]; best = m[1]; }
+    });
+    if (best) return best;
+  }
+  let src = attr(tag, 'src');
+  if (/wp-content\/uploads/.test(src)) src = src.replace(/-\d+x\d+(\.\w+)$/, '$1');
+  return src;
+}
+
 function attr(tag, name) {
   const m = tag.match(new RegExp('\\b' + name + '\\s*=\\s*["\\\']([^"\\\']*)["\\\']', 'i'));
   return m ? m[1] : '';
@@ -123,7 +140,7 @@ function htmlToBlocks(html, opts) {
     while ((m = hRe.exec(h))) items.push({ pos: m.index, kind: 'head', raw: m[2] });
   }
   const imgRe = /<img\b[^>]*>/gi;
-  while ((m = imgRe.exec(h))) items.push({ pos: m.index, kind: 'img', src: attr(m[0], 'src'), w: parseInt(attr(m[0], 'width') || '0', 10) });
+  while ((m = imgRe.exec(h))) items.push({ pos: m.index, kind: 'img', src: bestSrc(m[0]), w: parseInt(attr(m[0], 'width') || '0', 10) });
   items.sort((a, b) => a.pos - b.pos);
 
   const blocks = [];
@@ -154,7 +171,7 @@ function htmlToBlocks(html, opts) {
       const before = seg.slice(last, im.index);
       const txt = htmlTextToPlain(before);
       if (txt) blocks.push({ type: 'text', text: txt });
-      takeImage(attr(im[0], 'src'), parseInt(attr(im[0], 'width') || '0', 10));
+      takeImage(bestSrc(im[0]), parseInt(attr(im[0], 'width') || '0', 10));
       last = im.index + im[0].length;
     }
     const tail = htmlTextToPlain(seg.slice(last));
