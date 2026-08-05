@@ -809,7 +809,7 @@ async function openReader(i){
     <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>
     <div class="rmeta"><span>${u.date}, ${u.y}</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#7a756f" stroke-width="1.9"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>${(u.opens||0).toLocaleString()} opens</span></div>
     ${tnote}
-    ${bodyHtml(uu)}
+    ${bodyHtml(uu, !emb&&!!u.cover)}
     ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
     ${respondHTML(u)}
     <div class="give"><div class="t">Partner with the Ellenwoods</div><div class="d">Stand with us in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
