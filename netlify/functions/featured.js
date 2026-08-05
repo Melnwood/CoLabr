@@ -24,7 +24,7 @@ exports.handler = async function (event) {
     } catch (_) {}
     const items = (d.records || []).map(rec => {
       const f = rec.fields || {};
-      return { id: rec.id, updateId: f['Update ID'] || '', title: f['Update Title'] || '', excerpt: f['Excerpt'] || '', cover: f['Cover URL'] || '', author: f['Author'] || '', country: f['Country'] || '', photo: photos[f['Author'] || ''] || '' };
+      return { id: rec.id, updateId: f['Update ID'] || '', title: f['Update Title'] || '', excerpt: f['Excerpt'] || '', cover: f['Cover URL'] || '', author: f['Author'] || '', country: f['Country'] || '', photo: f['Author Photo'] || photos[f['Author'] || ''] || '' };
     });
     return { statusCode: 200, headers: hdr, body: JSON.stringify({ items }) };
   } catch (e) {

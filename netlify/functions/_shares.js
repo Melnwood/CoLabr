@@ -14,14 +14,14 @@ async function missByEmail(auth, email) {
     const r = await fetch(url, { headers: auth }); if (!r.ok) return null;
     const rec = ((await r.json()).records || [])[0]; if (!rec) return null;
     const f = rec.fields || {};
-    return { id: rec.id, name: f['Name'] || '', country: f['Field Location'] || f['National Org'] || '' };
+    return { id: rec.id, name: f['Name'] || '', country: f['Field Location'] || f['National Org'] || '', photo: f['Photo'] || '', signoff: f['Sign-off'] || '' };
   } catch { return null; }
 }
 async function missById(auth, recId) {
   try {
     const r = await fetch(`https://api.airtable.com/v0/${BASE}/${MISS}/${recId}`, { headers: auth }); if (!r.ok) return null;
     const f = (await r.json()).fields || {};
-    return { name: f['Name'] || '', country: f['Field Location'] || f['National Org'] || '' };
+    return { name: f['Name'] || '', country: f['Field Location'] || f['National Org'] || '', photo: f['Photo'] || '', signoff: f['Sign-off'] || '' };
   } catch { return null; }
 }
 

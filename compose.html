@@ -168,6 +168,7 @@
       <div class="hint">Photos: drag one in or tap to choose from your Photos/desktop, or paste a URL. Videos: paste a YouTube/Vimeo link. The first photo becomes the cover.</div>
 
       <div class="actions">
+        <button class="btn draft" id="previewBtn" type="button">👁 Preview</button>
         <button class="btn draft" id="saveDraft">Save draft</button>
         <button class="btn pub" id="publish">Publish now</button>
         <button class="btn tpl" id="saveTpl" type="button">Save as template</button>
@@ -210,6 +211,41 @@
     .topt.disabled{opacity:.5;cursor:not-allowed}
     .trow{display:flex;gap:10px;margin-top:8px}
     .trow .btn{flex:1;justify-content:center;display:flex;align-items:center}
+
+    /* ---- Preview overlay: mirrors the supporter page reader ---- */
+    .pvov{position:fixed;inset:0;z-index:70;background:rgba(20,15,10,.55);backdrop-filter:blur(3px);display:none;overflow-y:auto;padding:24px 14px 60px}
+    .pvov.open{display:block}
+    .pvnote{max-width:680px;margin:0 auto 10px;text-align:center;color:#fff;font-size:13px;font-weight:600;opacity:.92}
+    .pvsheet{max-width:680px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+    .pvsheet .rcov{position:relative;width:100%;aspect-ratio:16/9;background:linear-gradient(155deg,#9a7c4a,#5d4a2c)}
+    .pvsheet .rcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .pvsheet .x{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(20,15,10,.55);color:#fff;font-size:20px;font-weight:700;cursor:pointer;line-height:1}
+    .pvsheet .rbody{padding:22px 26px 26px}
+    .pvsheet .rk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--acc)}
+    .pvsheet .rbody h2{font-size:26px;font-weight:780;letter-spacing:-.02em;margin:4px 0 8px;color:#1c1814}
+    .pvsheet .rmeta{font-size:12.5px;color:var(--muted);display:flex;gap:16px;margin-bottom:16px}
+    .pvsheet .rtext{font-size:15px;line-height:1.65;color:#3c3733;margin:0 0 18px}
+    .pvsheet .rimg{width:100%;border-radius:12px;margin:4px 0 14px}
+    .pvsheet .rcap{font-size:12px;color:var(--muted);margin:-8px 0 16px}
+    .pvsheet .rquote{border-left:3px solid var(--acc);margin:0 0 16px;padding:2px 0 2px 16px;font-size:16px;font-style:italic;color:#241f1b;line-height:1.5}
+    .pvsheet .rquote span{display:block;font-style:normal;font-size:12.5px;color:var(--acc);font-weight:700;margin-top:6px}
+    .pvsheet .rprayer{background:#eef3fe;border-left:3px solid #2f6df0;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;color:#3c3733;line-height:1.55}
+    .pvsheet .rprayer b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#2f6df0;margin-bottom:4px}
+    .pvsheet .rpraise{background:#eafaf1;border-left:3px solid #2f9e63;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;color:#2c4a38;line-height:1.55}
+    .pvsheet .rpraise b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#2f9e63;margin-bottom:4px}
+    .pvsheet .rh{font-size:19px;font-weight:750;margin:8px 0 10px;color:#1c1814;letter-spacing:-.01em}
+    .pvsheet .rhr{border:none;border-top:1px solid var(--line);margin:18px 0}
+    .pvsheet .rsign{font-style:italic;color:#3c3733;margin:6px 0 16px;line-height:1.5}
+    .pvsheet .rgive{display:inline-block;background:var(--acc);color:#fff;font-weight:700;font-size:15px;padding:12px 28px;border-radius:10px;margin:6px 0 16px}
+    .pvsheet .rnums{display:flex;gap:10px;margin:8px 0 18px}
+    .pvsheet .rnum{flex:1;background:#f4f1ec;border:1px solid var(--line);border-radius:11px;padding:13px 8px;text-align:center}
+    .pvsheet .rnum b{display:block;font-size:22px;font-weight:750;color:var(--acc)}
+    .pvsheet .rnum span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+    .pvsheet .rhero{position:relative;border-radius:12px;overflow:hidden;min-height:200px;background:linear-gradient(155deg,#9a7c4a,#4a3a22);background-size:cover;background-position:center;margin:4px 0 16px;display:flex;align-items:flex-end}
+    .pvsheet .rherog{position:absolute;inset:0;background:linear-gradient(to top,rgba(15,10,6,.75),rgba(15,10,6,.1) 60%,transparent)}
+    .pvsheet .rherot{position:relative;padding:20px 22px;color:#fff}
+    .pvsheet .rherot h2{color:#fff;margin:0;font-size:24px;font-weight:770;letter-spacing:-.02em}
+    .pvsheet .rherot span{display:block;margin-top:6px;font-size:13.5px;opacity:.92}
   </style>
 
   <div class="tov" id="tplpick"><div class="tcard">
@@ -235,13 +271,21 @@
     <div class="msg" id="tplmsg"></div>
   </div></div>
 
+  <div class="pvov" id="pvov">
+    <div class="pvnote">This is what supporters will see — close to keep editing.</div>
+    <div class="pvsheet" id="pvsheet"></div>
+  </div>
+
 <script>
 async function guard(){
   try{
-    const r=await fetch('/.netlify/functions/me'); if(!r.ok) throw 0;
+    const r=await fetch('/.netlify/functions/me?full=1'); if(!r.ok) throw 0;
     const me=await r.json();
     ME_ADMIN=!!me.admin;
     if(me.upload) UPLOAD_READY=me.upload.ready;
+    // Personal sign-off default: the missionary's chosen first names, or a best guess.
+    const signNames=(me.miss&&me.miss.signoff)||signGuess((me.miss&&me.miss.name)||'',me.name||'');
+    if(signNames) DEF.signoff.text='With love,\n'+signNames;
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
     document.getElementById('form').style.display='block';
     document.getElementById('date').value=new Date().toISOString().slice(0,10);
@@ -565,6 +609,58 @@ async function submit(publish){
 function show(kind,html){const m=document.getElementById('msg');m.className='msg '+kind;m.innerHTML=html;m.scrollIntoView({behavior:'smooth',block:'nearest'});}
 document.getElementById('publish').addEventListener('click',()=>submit(true));
 document.getElementById('saveDraft').addEventListener('click',()=>submit(false));
+
+/* ---------- Preview: what supporters will see ---------- */
+// First names for the sign-off when no explicit Sign-off is stored:
+// "Petra & Tomáš Novák" → "Petra and Tomáš"; "Kasia Kowalska" → "Kasia"; else the user's first name.
+function signGuess(pageName,userName){
+  let m;
+  if(pageName&&(m=pageName.match(/^(\S+)\s*&\s*(\S+)\s+\S+$/))) return m[1]+' and '+m[2];
+  if(pageName&&!/^the\s/i.test(pageName)&&!/family/i.test(pageName)){const p=pageName.trim().split(/\s+/);if(p.length>=2)return p[0];}
+  return (userName||'').split(' ')[0]||'';
+}
+function pvEmbed(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/)))return 'https://www.youtube.com/embed/'+m[1];if((m=v.match(/vimeo\.com\/(\d+)/)))return 'https://player.vimeo.com/video/'+m[1];return '';}
+function pvBlockHtml(bk){
+  if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}')"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+  if(bk.type==='praise') return `<div class="rpraise"><b>Praise</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
+  if(bk.type==='heading') return `<h3 class="rh">${esc(bk.text||'')}</h3>`;
+  if(bk.type==='divider') return `<hr class="rhr">`;
+  if(bk.type==='signoff') return `<p class="rsign">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
+  if(bk.type==='give') return `<span class="rgive">${esc(bk.label||'Give')}</span>`;
+  if(bk.type==='numbers'){const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]);if(!it.length)return '';return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`;}
+  if(bk.type==='text') return `<p class="rtext">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
+  if(bk.type==='photo'){if(!bk.url)return '';let h=`<img class="rimg" src="${esc(bk.url)}" alt="">`;if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`;return h;}
+  if(bk.type==='video'){const url=bk.url||'';if(!url)return '';const emb=pvEmbed(url);if(emb)return `<div style="position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;margin:4px 0 16px"><iframe src="${esc(emb)}" style="position:absolute;inset:0;width:100%;height:100%;border:0" allowfullscreen></iframe></div>`;return `<video controls style="width:100%;border-radius:12px;margin:4px 0 16px" src="${esc(url)}"></video>`;}
+  if(bk.type==='quote') return `<blockquote class="rquote">${esc(bk.text||'')}${bk.by?`<span>${esc(bk.by)}</span>`:''}</blockquote>`;
+  if(bk.type==='prayer') return `<div class="rprayer"><b>Prayer</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
+  return '';
+}
+document.getElementById('previewBtn').addEventListener('click',()=>{
+  syncFromDOM();
+  const clean=blocks.map(b=>{const o={type:b.type};for(const k in b){if(k!=='id'&&k!=='type')o[k]=(typeof b[k]==='string')?b[k].trim():b[k];}return o;})
+    .filter(b=> b.type==='divider' || b.type==='give' || Object.keys(b).some(k=>k!=='type' && b[k] && (Array.isArray(b[k])?b[k].length:String(b[k]).length)));
+  const title=document.getElementById('title').value.trim()||'Untitled update';
+  let dateStr=document.getElementById('date').value;
+  try{const d=new Date(dateStr+'T12:00:00');if(!isNaN(d))dateStr=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(_){}
+  // Same rule as the live page: the first photo/hero becomes the cover and isn't repeated in the body.
+  const ci=clean.findIndex(b=>(b.type==='photo'||b.type==='hero')&&b.url);
+  const cover=ci>-1?clean[ci].url:'';
+  const body=clean.map((bk,i)=>{
+    if(i===ci&&cover){
+      if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';
+      return (bk.heading||bk.sub)?`<div class="rhero"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:'';
+    }
+    return pvBlockHtml(bk);
+  }).join('')||'<p class="rtext" style="color:#8a7550">Nothing here yet — add some sections first.</p>';
+  document.getElementById('pvsheet').innerHTML=`<div class="rcov">${cover?`<img src="${esc(cover)}" alt="">`:''}<button class="x" id="pvx" type="button">×</button></div>
+    <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>
+    <div class="rmeta"><span>${esc(dateStr)}</span></div>
+    ${body}</div>`;
+  document.getElementById('pvov').classList.add('open');document.body.style.overflow='hidden';
+  document.getElementById('pvx').addEventListener('click',pvClose);
+});
+function pvClose(){document.getElementById('pvov').classList.remove('open');document.body.style.overflow='';}
+document.getElementById('pvov').addEventListener('click',e=>{if(e.target.id==='pvov')pvClose();});
 
 /* ---------- Templates ---------- */
 let ME_ADMIN=false, TPLS={personal:[],shared:[]};

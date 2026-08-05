@@ -339,7 +339,7 @@
       </div>
     </div>
     <div class="jvrail" id="jvrail" style="display:none">
-      <div class="jvrailhead"><span class="jvrt">Across Josiah Venture</span><span class="jvrs">Stories from teammates</span></div>
+      <div class="jvrailhead"><span class="jvrt">Team picks from across Josiah Venture</span></div>
       <div class="jvrailrow" id="jvrailrow"></div>
     </div>
     <hr class="rule">
@@ -757,9 +757,19 @@ function pollCaptions(root){
     setTimeout(tick,8000);   // first check ~8s after the update opens
   });
 }
-function bodyHtml(u){
+function bodyHtml(u,dedupeCover){
   if(u.blocks && u.blocks.length){
+    // The cover already shows above the title — don't repeat that same image as the first block.
+    let skipIdx=-1;
+    if(dedupeCover&&u.cover){
+      const i=u.blocks.findIndex(b=>b&&(b.type==='photo'||b.type==='hero')&&b.url);
+      if(i>-1&&u.blocks[i].url===u.cover) skipIdx=i;
+    }
     return u.blocks.map((bk,bidx)=>{
+      if(bidx===skipIdx){
+        if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';
+        return (bk.heading||bk.sub)?`<div class="rhero"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:'';
+      }
       if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}')"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
       if(bk.type==='praise') return `<div class="rpraise"><b>Praise</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
       if(bk.type==='heading') return `<h3 class="rh">${esc(bk.text||'')}</h3>`;

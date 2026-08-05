@@ -19,9 +19,9 @@ exports.handler = async function (event) {
     if (!ur.ok) return resp(404, { error: 'That update could not be found.' });
     const uf = (await ur.json()).fields || {};
     const title = uf['Title'] || (b.title || ''); const cover = uf['Cover Image URL'] || (b.cover || ''); const excerpt = uf['Excerpt'] || '';
-    let author = '', country = '';
+    let author = '', country = '', authorPhoto = '';
     const mission = uf['Missionary'];
-    if (Array.isArray(mission) && mission.length) { const m = await missById(auth, mission[0]); if (m) { author = m.name; country = m.country; } }
+    if (Array.isArray(mission) && mission.length) { const m = await missById(auth, mission[0]); if (m) { author = m.name; country = m.country; authorPhoto = m.photo || ''; } }
 
     // The requester is the signed-in member → their own page.
     const me = await missByEmail(auth, session.email);
@@ -33,7 +33,7 @@ exports.handler = async function (event) {
     const fields = {
       'Label': (session.name || 'Someone') + ' → ' + (author || 'update'),
       'Update ID': b.updateId, 'Update Title': title, 'Excerpt': excerpt, 'Cover URL': cover,
-      'Author': author || '', 'Country': country || '',
+      'Author': author || '', 'Country': country || '', 'Author Photo': authorPhoto || '',
       'Requester Page': requesterPage, 'Requester Name': session.name || '', 'Requester Email': session.email || '',
       'Status': 'Pending'
     };
