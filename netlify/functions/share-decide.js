@@ -11,7 +11,7 @@ exports.handler = async function (event) {
   const token = process.env.AIRTABLE_TOKEN;
   if (!token) return resp(500, { error: 'Server not configured.' });
   let b; try { b = JSON.parse(event.body || '{}'); } catch { return resp(400, { error: 'Bad request.' }); }
-  if (!b.id || !['approve', 'decline'].includes(b.decision)) return resp(400, { error: 'Bad request.' });
+  if (!b.id || !['approve', 'decline', 'unfeature'].includes(b.decision)) return resp(400, { error: 'Bad request.' });
   const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
   try {
     const gr = await fetch(`https://api.airtable.com/v0/${BASE}/${SHARES}/${b.id}`, { headers: auth });
@@ -19,6 +19,13 @@ exports.handler = async function (event) {
     const f = (await gr.json()).fields || {};
     const me = await missByEmail(auth, session.email);
     const myName = me ? me.name : (session.name || '');
+    // 'unfeature': the wall owner takes a pick off their own rail — the share row is deleted.
+    if (b.decision === 'unfeature') {
+      if ((f['Requester Page'] || '') !== myName) return resp(403, { error: 'This is not on your wall.' });
+      const dr = await fetch(`https://api.airtable.com/v0/${BASE}/${SHARES}/${b.id}`, { method: 'DELETE', headers: auth });
+      if (!dr.ok) return resp(502, { error: 'Could not remove.' });
+      return resp(200, { ok: true, status: 'Removed' });
+    }
     // Only the author of the update may approve/decline sharing it.
     if ((f['Author'] || '') !== myName) return resp(403, { error: "This isn't yours to decide." });
     const status = b.decision === 'approve' ? 'Approved' : 'Revoked';

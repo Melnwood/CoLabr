@@ -73,6 +73,8 @@
   .jvcard:hover{box-shadow:0 10px 24px rgba(60,40,20,.14);transform:translateY(-2px)}
   .jvcov{height:120px;background:#e9e2d5;background-size:cover;background-position:center;position:relative}
   .jvflag{position:absolute;top:8px;left:8px;background:rgba(20,15,10,.62);color:#fff;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px}
+  .jvrm{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(20,15,10,.62);color:#fff;font-size:16px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .jvrm:hover{background:#c0392b}
   .jvbody{padding:11px 13px 14px}
   .jvauthor{font-size:11px;font-weight:800;color:var(--acc);margin-bottom:3px;letter-spacing:.02em}
   .jvauthrow{display:flex;align-items:flex-end;gap:9px;margin:-26px 0 6px;position:relative;z-index:2}
@@ -1006,9 +1008,9 @@ document.addEventListener('click',e=>{
 },true);
 
 /* ---- Across Josiah Venture rail + peer share-and-approve ---- */
-var ME=null;
+var ME=null, MYPAGE='';
 async function initShare(){
-  try{ const r=await fetch('/.netlify/functions/me'); if(r.ok) ME=await r.json(); }catch(_){}
+  try{ const r=await fetch('/.netlify/functions/me?full=1'); if(r.ok){ ME=await r.json(); MYPAGE=(ME.miss&&ME.miss.name)||''; } }catch(_){}
   loadFeatured();
 }
 async function loadFeatured(){
@@ -1025,11 +1027,23 @@ function renderRail(items){
   const rt=document.querySelector('#jvrail .jvrt');
   if(rt) rt.textContent=(plural?'Our':'My')+' picks from across our Josiah Venture team';
   const row=document.getElementById('jvrailrow');
+  const mine=!!MYPAGE&&MYPAGE===FAMILY;   // signed-in owner looking at their own wall
   row.innerHTML=items.map((it,i)=>`<div class="jvcard" data-fi="${i}">
-    <div class="jvcov"${it.cover?` style="background-image:url('${esc(it.cover)}')"`:''}>${it.country?`<span class="jvflag">${esc(it.country)}</span>`:''}</div>
+    <div class="jvcov"${it.cover?` style="background-image:url('${esc(it.cover)}')"`:''}>${it.country?`<span class="jvflag">${esc(it.country)}</span>`:''}${mine?`<button class="jvrm" data-rm="${esc(it.id)}" data-t="${esc(it.title)}" title="Take this off my wall">×</button>`:''}</div>
     <div class="jvbody"><div class="jvauthrow">${it.photo?`<span class="jvav" style="background-image:url('${esc(it.photo)}')"></span>`:`<span class="jvav">${esc((it.author||'?').trim().charAt(0).toUpperCase())}</span>`}<div class="jvauthor">${esc(it.author||'A teammate')}</div></div><div class="jvtitle">${esc(it.title)}</div><div class="jvex">${esc(it.excerpt||'')}</div></div></div>`).join('');
   row.querySelectorAll('[data-fi]').forEach(el=>el.addEventListener('click',()=>openFeatured(window._feat[+el.dataset.fi])));
-  document.getElementById('jvrail').style.display='block';
+  row.querySelectorAll('[data-rm]').forEach(el=>el.addEventListener('click',async e=>{
+    e.stopPropagation();
+    if(!confirm('Take \u201c'+el.dataset.t+'\u201d off your wall?'))return;
+    try{
+      const r=await fetch('/.netlify/functions/share-decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:el.dataset.rm,decision:'unfeature'})});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(d.error||'Could not remove.');
+      toast('Removed from your wall.');
+      loadFeatured();
+    }catch(err){ toast(err.message); }
+  }));
+  document.getElementById('jvrail').style.display=items.length?'block':'none';
 }
 async function openFeatured(it){
   if(!it)return; const sheet=document.getElementById('sheet');
