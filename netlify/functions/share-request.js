@@ -33,6 +33,8 @@ exports.handler = async function (event) {
     // The president's notes are already public JV stories — no approval needed,
     // they land on the requester's wall immediately.
     const autoApproved = author === 'Dave Patty';
+    // His cards wear the series name, not his job title.
+    if (autoApproved) country = "President's Monthly";
     const fields = {
       'Label': (session.name || 'Someone') + ' → ' + (author || 'update'),
       'Update ID': b.updateId, 'Update Title': title, 'Excerpt': excerpt, 'Cover URL': cover,
