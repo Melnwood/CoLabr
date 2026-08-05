@@ -200,6 +200,9 @@
     .cdot{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
     .cdot.none{background:linear-gradient(135deg,#fff 44%,#c9c3ba 46%,#c9c3ba 54%,#fff 56%)}
     .cdot.on{box-shadow:0 0 0 2px var(--acc)}
+    .crow{flex-wrap:wrap}
+    .cdot.custom{background:conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+    .reqtag{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:#f4f1ec;border:1px solid var(--line);border-radius:12px;padding:3px 9px}
     .tplstart{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);color:var(--text);font-family:inherit;font-size:13.5px;font-weight:700;padding:9px 15px;border-radius:22px;cursor:pointer;margin:2px 0 6px}
     .tplstart:hover{border-color:var(--acc);color:var(--acc)}
     .tplstart svg{color:var(--acc)}
@@ -293,6 +296,7 @@
     <div class="msg" id="tplmsg"></div>
   </div></div>
 
+  <input type="color" id="cpickinp" style="position:fixed;left:-9999px;top:0" aria-hidden="true">
   <div class="pvov" id="pvov">
     <div class="pvnote">This is what supporters will see — close to keep editing.</div>
     <div class="pvsheet" id="pvsheet"></div>
@@ -308,12 +312,13 @@ async function guard(){
     // Personal sign-off default: the missionary's chosen first names, or a best guess.
     const signNames=(me.miss&&me.miss.signoff)||signGuess((me.miss&&me.miss.name)||'',me.name||'');
     if(signNames) DEF.signoff.text='With love,\n'+signNames;
+    loadBrandPal();
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
     document.getElementById('form').style.display='block';
     document.getElementById('date').value=new Date().toISOString().slice(0,10);
     const editParam=new URLSearchParams(location.search).get('id');
     if(editParam){ loadForEdit(editParam); }
-    else if(!blocks.length){ add('text'); }
+    else if(!blocks.length){ add('hero'); add('text'); add('signoff'); }
   }catch{ location.replace('login.html'); }
 }
 let editId=null;
@@ -328,6 +333,9 @@ async function loadForEdit(id){
     if(rec.type) document.getElementById('type').value=rec.type;
     aud.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',(rec.audiences||[]).includes(c.dataset.a)));
     blocks=(rec.blocks||[]).map(b=>({id:seq++,...b}));
+    // Banner and sign-off are always part of an update.
+    if(!blocks.some(b=>b.type==='hero')) blocks.unshift({id:seq++,type:'hero',...JSON.parse(JSON.stringify(DEF.hero))});
+    if(!blocks.some(b=>b.type==='signoff')) blocks.push({id:seq++,type:'signoff',...JSON.parse(JSON.stringify(DEF.signoff))});
     if(!blocks.length) add('text'); else render();
     const h=document.querySelector('#form h1'); if(h)h.textContent='Edit update';
     const sub=document.querySelector('#form .sub'); if(sub)sub.textContent='Make your changes, then publish or save as a draft.';
@@ -365,7 +373,7 @@ function render(){
   c.innerHTML=blocks.map((b,i)=>`<div class="blk" data-i="${i}">
     <div class="bh"><span class="grip" data-grip="${i}"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
       <span class="bt">${NAME[b.type]}</span>
-      <span class="bctl"><button type="button" data-up="${i}" title="Move up">↑</button><button type="button" data-down="${i}" title="Move down">↓</button><button type="button" class="del" data-del="${i}" title="Remove">✕</button></span></div>
+      <span class="bctl"><button type="button" data-up="${i}" title="Move up">↑</button><button type="button" data-down="${i}" title="Move down">↓</button>${((b.type==='hero'||b.type==='signoff')&&blocks.filter(x=>x.type===b.type).length===1)?`<span class="reqtag" title="Every update has this">Always included</span>`:`<button type="button" class="del" data-del="${i}" title="Remove">✕</button>`}</span></div>
     ${fieldHtml(b)}</div>`).join('');
   c.querySelectorAll('[data-up]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();move(+el.dataset.up,-1);}));
   c.querySelectorAll('[data-down]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();move(+el.dataset.down,1);}));
@@ -373,19 +381,44 @@ function render(){
   c.querySelectorAll('[data-grip]').forEach(el=>el.addEventListener('pointerdown',e=>beginDrag(e,'move',{from:+el.dataset.grip,label:NAME[blocks[+el.dataset.grip].type]})));
   c.querySelectorAll('[data-drop]').forEach(setupDrop);
   c.querySelectorAll('[data-vdrop]').forEach(setupVideoDrop);
-  c.querySelectorAll('.cdot').forEach(el=>el.addEventListener('click',()=>{
+  c.querySelectorAll('.cdot[data-cb]').forEach(el=>el.addEventListener('click',()=>{
     syncFromDOM();
     const b=blocks.find(x=>String(x.id)===el.dataset.cb); if(!b)return;
     b.color=el.dataset.c||''; render();
   }));
+  c.querySelectorAll('[data-cpick]').forEach(el=>el.addEventListener('click',()=>{
+    const inp=document.getElementById('cpickinp'); if(!inp)return;
+    const b=blocks.find(x=>String(x.id)===el.dataset.cpick); if(!b)return;
+    inp.value=(b.color&&/^#[0-9a-fA-F]{6}$/.test(b.color))?b.color:'#FF6600';
+    inp.dataset.for=el.dataset.cpick;
+    inp.onchange=()=>{ syncFromDOM(); const t=blocks.find(x=>String(x.id)===inp.dataset.for); if(t){ t.color=inp.value; render(); } };
+    inp.click();
+  }));
   samplePalette();
 }
-/* ---- block accent colors: JV brand + shades pulled from the banner photo ---- */
-const BRAND_COLORS=['#FF6600','#241f1b','#2f6df0','#2f9e63'];
+/* ---- block accent colors: real org brand colors + banner shades + free pick ---- */
+let BRAND_PAL=null;                                   // [{c:'#FF6600',t:'JV'},…] from National Orgs
+const FALLBACK_PAL=[{c:'#FF6600',t:'JV'},{c:'#241f1b',t:'Ink'}];
+async function loadBrandPal(){
+  try{
+    const r=await fetch('/.netlify/functions/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})});
+    if(!r.ok)return; const d=await r.json();
+    const seen=new Set(), pal=[];
+    const push=(c,t)=>{c=(c||'').trim();if(/^#[0-9a-fA-F]{6}$/.test(c)&&!seen.has(c.toLowerCase())){seen.add(c.toLowerCase());pal.push({c,t});}};
+    const orgs=(d.orgs||[]).slice().sort((a,b)=>(a.code==='JV'?-1:0)-(b.code==='JV'?-1:0));
+    orgs.forEach(o=>push(o.accent,(o.code||o.name)+' accent'));
+    orgs.forEach(o=>push(o.ink,(o.code||o.name)+' ink'));
+    if(pal.length){BRAND_PAL=pal.slice(0,12); render();}
+  }catch(_){}
+}
 function colorRow(b){
-  const opts=['' ].concat(BRAND_COLORS).concat((window._imgPal||[]).filter(c=>!BRAND_COLORS.includes(c)));
-  return `<div class="crow"><span class="crowlab">Color</span>${opts.map(c=>
-    `<button type="button" class="cdot${(b.color||'')===c?' on':''}${c?'':' none'}" data-cb="${b.id}" data-c="${c}"${c?` style="background:${c}"`:''} title="${c||'Default'}"></button>`).join('')}</div>`;
+  const brand=BRAND_PAL||FALLBACK_PAL;
+  const extra=(window._imgPal||[]).filter(c=>!brand.some(x=>x.c.toLowerCase()===c.toLowerCase())).map(c=>({c,t:'From your banner photo'}));
+  const opts=[{c:'',t:'Default'}].concat(brand).concat(extra);
+  const isCustom=b.color&&!opts.some(o=>o.c===b.color);
+  return `<div class="crow"><span class="crowlab">Color</span>${opts.map(o=>
+    `<button type="button" class="cdot${(b.color||'')===o.c?' on':''}${o.c?'':' none'}" data-cb="${b.id}" data-c="${o.c}"${o.c?` style="background:${o.c}"`:''} title="${esc(o.t)}"></button>`).join('')}
+    <button type="button" class="cdot custom${isCustom?' on':''}" data-cpick="${b.id}"${isCustom?` style="background:${b.color}"`:''} title="Any color — opens the picker"></button></div>`;
 }
 let _palFor='';
 function samplePalette(){
@@ -645,6 +678,7 @@ async function submit(publish){
   if(!title){show('err','Please add a title.');return;}
   const clean=blocks.map(b=>{const o={type:b.type};for(const k in b){if(k!=='id'&&k!=='type')o[k]=(typeof b[k]==='string')?b[k].trim():b[k];}return o;})
     .filter(b=> b.type==='divider' || b.type==='give' || Object.keys(b).some(k=>k!=='type' && b[k] && (Array.isArray(b[k])?b[k].length:String(b[k]).length)));
+  if(publish&&!clean.some(b=>b.type==='hero'&&b.url)){show('err','Add a banner photo up top — it becomes the main picture on your wall.');return;}
   const audiences=[...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a);
   const payload={publish,title,date:document.getElementById('date').value,type:document.getElementById('type').value,audiences,blocks:clean};
   if(editId) payload.id=editId;
