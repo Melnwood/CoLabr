@@ -118,12 +118,8 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
   </div>
 
   <div id="tab-president" style="display:none">
-    <div class="pcard">
-      <span class="soon">Coming together</span>
-      <h3>Dave Patty's monthly thank-you</h3>
-      <p>The president's short monthly note of thanks to JV's partners will live here. When the C-team uploads it once to Co-Labr, every missionary will be able to add it to their own wall with one tap — so it reaches supporters everywhere, in their language, instead of only in the States.</p>
-      <p>Nothing to show yet. As soon as the first one is uploaded, it'll appear here ready to share.</p>
-    </div>
+    <p class="lede" style="margin-top:2px">Dave Patty’s notes to JV’s partners. Read one, then feature it on your own wall with one tap — it reaches your supporters everywhere.</p>
+    <div id="plist"><div class="state">Loading…</div></div>
   </div>
 </div>
 
@@ -230,7 +226,26 @@ document.querySelectorAll('#tabs .tab').forEach(t=>t.addEventListener('click',()
   document.getElementById('tab-prayer').style.display=which==='prayer'?'':'none';
   document.getElementById('tab-president').style.display=which==='president'?'':'none';
   if(which==='prayer'&&!PRAYER_LOADED){ PRAYER_LOADED=true; loadPrayer(); }
+  if(which==='president'&&!PRES_LOADED){ PRES_LOADED=true; loadPresident(); }
 }));
+var PRES_LOADED=false, PRES=[];
+async function loadPresident(){
+  const el=document.getElementById('plist');
+  try{
+    const r=await fetch('/.netlify/functions/updates?m='+encodeURIComponent('Dave Patty'));
+    const d=await r.json(); PRES=(d&&d.updates)||[];
+    if(!PRES.length){ el.innerHTML='<div class="state">Nothing here yet — the first president’s note will appear as soon as it’s uploaded.</div>'; return; }
+    el.innerHTML=PRES.map((u,i)=>{
+      const disp=view(u);
+      return `<div class="uitem">${u.cover?`<div class="uthumb" style="background-image:url('${esc(u.cover)}')"></div>`:''}
+      <div class="ub"><div class="udate">${fmtDate(u.rawdate)}</div><div class="ut">${esc(disp.title)}</div>
+      <div class="ux">${esc(firstText(disp.blocks)||u.excerpt||'')}</div>
+      <div class="uact"><button data-pread="${i}">Read</button><button class="feat" data-pfeat="${i}">🌍 Feature on my wall</button></div></div></div>`;
+    }).join('');
+    el.querySelectorAll('[data-pread]').forEach(b=>b.addEventListener('click',()=>openReaderU(PRES[+b.dataset.pread],'Dave Patty · President, Josiah Venture')));
+    el.querySelectorAll('[data-pfeat]').forEach(b=>b.addEventListener('click',()=>feature(PRES[+b.dataset.pfeat])));
+  }catch(e){ el.innerHTML='<div class="state">Could not load the president’s updates.</div>'; }
+}
 async function loadPrayer(){
   const el=document.getElementById('pwall');
   try{
