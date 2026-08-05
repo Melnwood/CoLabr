@@ -75,9 +75,9 @@
   .jvflag{position:absolute;top:8px;left:8px;background:rgba(20,15,10,.62);color:#fff;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px}
   .jvbody{padding:11px 13px 14px}
   .jvauthor{font-size:11px;font-weight:800;color:var(--acc);margin-bottom:3px;letter-spacing:.02em}
-  .jvauthrow{display:flex;align-items:center;gap:7px;margin-bottom:6px}
-  .jvauthrow .jvauthor{margin-bottom:0}
-  .jvav{width:26px;height:26px;border-radius:50%;flex:none;background-size:cover;background-position:center;background-color:var(--acc);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;box-shadow:0 2px 6px rgba(60,40,20,.18)}
+  .jvauthrow{display:flex;align-items:flex-end;gap:9px;margin:-26px 0 6px;position:relative;z-index:2}
+  .jvauthrow .jvauthor{margin-bottom:5px}
+  .jvav{width:50px;height:50px;border-radius:50%;flex:none;background-size:cover;background-position:center;background-color:var(--acc);color:#fff;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;border:2.5px solid #fff;box-shadow:0 3px 10px rgba(60,40,20,.25)}
   .jvtitle{font-size:14.5px;font-weight:800;line-height:1.2;color:var(--text);margin-bottom:5px}
   .jvex{font-size:12px;line-height:1.46;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   .jvsub{display:block;width:max-content;max-width:100%;margin:18px auto 2px;background:var(--acc);color:var(--acc-text,#fff);border:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:24px;cursor:pointer;font-family:var(--font)}
@@ -757,6 +757,8 @@ function pollCaptions(root){
     setTimeout(tick,8000);   // first check ~8s after the update opens
   });
 }
+function blockColor(bk){return (bk.color&&/^#[0-9a-fA-F]{6}$/.test(bk.color))?bk.color:'';}
+function hexA(c,a){const m=(c||'').replace('#','');if(!/^[0-9a-fA-F]{6}$/.test(m))return '';return `rgba(${parseInt(m.slice(0,2),16)},${parseInt(m.slice(2,4),16)},${parseInt(m.slice(4,6),16)},${a})`;}
 function bodyHtml(u,dedupeCover){
   if(u.blocks && u.blocks.length){
     // The cover already shows above the title — don't repeat that same image as the first block.
@@ -771,17 +773,17 @@ function bodyHtml(u,dedupeCover){
         return (bk.heading||bk.sub)?`<div class="rhero"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:'';
       }
       if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}')"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
-      if(bk.type==='praise') return `<div class="rpraise"><b>Praise</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
-      if(bk.type==='heading') return `<h3 class="rh">${esc(bk.text||'')}</h3>`;
+      if(bk.type==='praise'){const C=blockColor(bk);return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;}
+      if(bk.type==='heading'){const C=blockColor(bk);return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;}
       if(bk.type==='divider') return `<hr class="rhr">`;
       if(bk.type==='signoff') return `<p class="rsign">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
-      if(bk.type==='give') return `<a class="rgive" href="${esc(bk.url||GIVE)}" target="_blank" rel="noopener">${esc(bk.label||'Give')}</a>`;
+      if(bk.type==='give'){const C=blockColor(bk);return `<a class="rgive"${C?` style="background:${C}"`:''} href="${esc(bk.url||GIVE)}" target="_blank" rel="noopener">${esc(bk.label||'Give')}</a>`;}
       if(bk.type==='numbers'){ const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]); if(!it.length)return ''; return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`; }
       if(bk.type==='text') return `<p class="rtext">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
       if(bk.type==='photo'){ if(!bk.url) return ''; let h=`<img class="rimg" src="${esc(bk.url)}" alt="" onerror="this.style.display='none'">`; if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`; return h; }
       if(bk.type==='video'){ return renderVideo(bk,u.id,bidx); }
-      if(bk.type==='quote') return `<blockquote class="rquote">${esc(bk.text||'')}${bk.by?`<span>${esc(bk.by)}</span>`:''}</blockquote>`;
-      if(bk.type==='prayer') return `<div class="rprayer"><b>Prayer</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
+      if(bk.type==='quote'){const C=blockColor(bk);return `<blockquote class="rquote"${C?` style="border-left-color:${C}"`:''}>${esc(bk.text||'')}${bk.by?`<span${C?` style="color:${C}"`:''}>${esc(bk.by)}</span>`:''}</blockquote>`;}
+      if(bk.type==='prayer'){const C=blockColor(bk);return `<div class="rprayer"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Prayer</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;}
       return '';
     }).join('');
   }

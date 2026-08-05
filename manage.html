@@ -175,10 +175,6 @@
       <h2>Feature requests <span class="ib zero" id="sharecount">0</span></h2>
       <div id="sharelist"></div>
     </div>
-    <div class="panel insights" id="insightsPanel">
-      <h2>Insights <span class="aib">AI</span><a id="refreshins">Refresh</a></h2>
-      <div id="insights"><div class="state">Reading your updates…</div></div>
-    </div>
     <div class="panel" id="photoPanel">
       <h2>Your page photo <span class="hint">The portrait in your page header and beside your prayer requests</span></h2>
       <div class="photorow">
@@ -200,14 +196,20 @@
       <div class="panel"><h2>Opens by year</h2><div class="chart" id="chart"></div></div>
       <div class="panel"><h2>Most opened</h2><div class="tl" id="topu"></div></div>
     </div>
-    <div class="listhead"><h2 id="listtoggle" class="acc-h">All updates <span class="chev" id="chev">▸</span> <span class="cnt" id="listcnt"></span></h2>
+    <div class="listhead"><h2 id="listtoggle" class="acc-h">All updates <span class="chev" id="chev">▸</span> <span class="cnt" id="listcnt"></span> <span class="cnt" id="latestpeek"></span></h2>
       <div class="seg" id="statusfilter" style="display:none"><button data-s="all" class="on">All</button><button data-s="Published">Published</button><button data-s="Draft">Drafts</button></div>
     </div>
     <div id="list" style="display:none"><div class="state">Loading…</div></div>
+
+    <div class="panel insights" id="insightsPanel">
+      <h2 id="instoggle" class="acc-h">Insights <span class="aib">AI</span> <span class="chev" id="inschev">▸</span><a id="refreshins">Refresh</a></h2>
+      <div id="insights" style="display:none"><div class="state">Reading your updates…</div></div>
+    </div>
   </div>
 
 <script>
 let ROWS=[], statusF='all';
+function fmtD(d){ try{ const x=new Date(d+'T12:00:00'); if(!isNaN(x)) return x.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }catch(e){} return d||''; }
 async function guard(){
   try{ const r=await fetch('/.netlify/functions/me'); if(!r.ok) throw 0; const me=await r.json();
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
@@ -219,7 +221,7 @@ async function api(action,extra){
   if(r.status===401){location.replace('login.html');throw new Error('Please sign in.');}
   const d=await r.json(); if(!r.ok) throw new Error(d.error||'Error'); return d;
 }
-async function load(){ try{ ROWS=(await api('list')).rows; renderAll(); loadInsights(); } catch(e){ document.getElementById('list').innerHTML='<div class="state">'+e.message+'</div>'; } }
+async function load(){ try{ ROWS=(await api('list')).rows; renderAll(); } catch(e){ document.getElementById('list').innerHTML='<div class="state">'+e.message+'</div>'; } }
 async function loadInsights(){
   const box=document.getElementById('insights');
   const rows=ROWS.map(r=>({t:r.title,y:(r.date||'').slice(0,4),o:r.opens||0,type:r.type,status:r.status}));
@@ -232,7 +234,14 @@ async function loadInsights(){
     box.innerHTML=d.insights.map(t=>`<div class="ins"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5 10.1 10.9 5.5 9l4.6-1.4z"/></svg><span>${esc(t)}</span></div>`).join('');
   }catch(e){ box.innerHTML='<div class="state" style="padding:10px 0">'+e.message+'</div>'; }
 }
-document.getElementById('refreshins').addEventListener('click',loadInsights);
+let insLoaded=false;
+document.getElementById('instoggle').addEventListener('click',e=>{
+  if(e.target.id==='refreshins')return;
+  const open=document.getElementById('instoggle').classList.toggle('open');
+  document.getElementById('insights').style.display=open?'':'none';
+  if(open&&!insLoaded){insLoaded=true;loadInsights();}
+});
+document.getElementById('refreshins').addEventListener('click',e=>{e.stopPropagation();insLoaded=true;loadInsights();});
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function renderAll(){
@@ -261,6 +270,9 @@ function renderAll(){
   document.getElementById('detailrow').innerHTML=
     `<span class="d"><b>${ROWS.length}</b> updates all-time</span><span class="d"><b>${opensAll.toLocaleString()}</b> opens all-time</span><span class="d"><b>${pub}</b> published</span><span class="d"><b>${dr}</b> drafts</span>`;
   const lc=document.getElementById('listcnt'); if(lc) lc.textContent=ROWS.length?('('+ROWS.length+')'):'';
+  const lp=document.getElementById('latestpeek');
+  if(lp){ const latest=ROWS.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+    lp.textContent=latest?('· Latest: “'+latest.title+'” — '+fmtD(latest.date)):''; }
   renderChart(); renderTop(); renderList();
 }
 function kpi(v,l,acc){ return `<div class="kpi${acc?' acc':''}"><b>${v}</b><span>${l}</span></div>`; }
