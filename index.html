@@ -394,7 +394,7 @@
   </div></div>
 
 <script>
-const GIVE='https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969';
+let GIVE='https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969';
 const PAGEM=(new URLSearchParams(location.search)).get('m')||'';   // whose page (teammate) — empty = the Ellenwoods
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const ROT=[-2.5,2,-1.5,2.5,-2,1.5];
@@ -483,6 +483,8 @@ function setPageAvatar(photo){
 }
 function applyPageIdentity(page){
   if(!page) return;
+  if(page.give){ GIVE=page.give; const g=document.querySelector('.top .give'); if(g) g.href=page.give; }
+  const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+page.name+' has shared — live from Co-Labr. Share it with anyone who wants to follow along.';
   const t=document.getElementById('mtitle'); if(t&&page.name) t.textContent=page.name;
   const l=document.getElementById('mloctext'); if(l&&page.location) l.textContent=page.location;
   const sn=document.getElementById('subctaname'); if(sn&&page.name) sn.textContent=page.name;
@@ -857,7 +859,7 @@ async function openReader(i){
     ${bodyHtml(uu, !emb&&!!u.cover)}
     ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
     ${respondHTML(u)}
-    <div class="give"><div class="t">Partner with the Ellenwoods</div><div class="d">Stand with us in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
+    <div class="give"><div class="t">Partner with ${esc(PAGEM||'the Ellenwoods')}</div><div class="d">Stand with ${PAGEM?'them':'us'} in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
   if(ME){
