@@ -74,7 +74,7 @@ function render(){
   else if(filter==='replied') rows=RESP.filter(r=>r.replied);
   if(!rows.length){ list.innerHTML='<div class="state">'+(filter==='new'?'Nothing new — you\'re all caught up.':(filter==='replied'?'No replies sent yet.':'No responses yet.'))+'</div>'; return; }
   list.innerHTML=rows.map(r=>{
-    let when=''; try{ when=r.created?new Date(r.created).toLocaleDateString():''; }catch(e){}
+    let when=''; try{ when=r.created?new Date(r.created).toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):''; }catch(e){}
     const canReply=!!r.email;
     const msg=(r.type==='Prayer'&&!r.message)?'<i>is praying for you</i>':esc(r.message);
     const sent=r.replied&&r.reply?`<div class="sent"><b>You replied</b>${esc(r.reply)}</div>`:'';
