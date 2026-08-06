@@ -37,7 +37,7 @@
   .locdot{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--acc,#FF6600);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none}
   .locdot:after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--acc,#FF6600);animation:locping 1.6s ease-out infinite}
   @keyframes locping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.1);opacity:0}}
-  @media(max-width:560px){.locmap{width:min(300px,86vw)}}
+  @media(max-width:560px){.locmap{width:min(300px,86vw);left:auto;right:0}}
   .mloc svg{width:14px;height:14px}
   .mh-r{padding-bottom:5px}
   .mmission{font-size:clamp(16px,2.1vw,18px);line-height:1.45;font-weight:700;color:var(--text)}
