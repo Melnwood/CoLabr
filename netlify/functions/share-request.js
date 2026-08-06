@@ -32,7 +32,7 @@ exports.handler = async function (event) {
 
     // The president's notes are already public JV stories — no approval needed,
     // they land on the requester's wall immediately.
-    const autoApproved = author === 'Dave Patty';
+    const autoApproved = author === 'Josiah Venture';   // the President's Monthly archive — already public JV stories
     // His cards wear the series name, not his job title.
     if (autoApproved) country = "President's Monthly";
     const fields = {
