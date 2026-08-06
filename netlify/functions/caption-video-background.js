@@ -5,6 +5,8 @@
 const crypto = require('crypto');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
+const TARGETS = ['en', 'cs', 'pl', 'uk', 'sk', 'ro', 'bg', 'sl', 'lv', 'et', 'hu'];
+const LNAME = { en:'English', cs:'Czech', pl:'Polish', uk:'Ukrainian', sk:'Slovak', ro:'Romanian', bg:'Bulgarian', sl:'Slovenian', lv:'Latvian', et:'Estonian', hu:'Hungarian', ru:'Russian', de:'German', es:'Spanish', fr:'French' };
 
 exports.handler = async function (event) {
   let scratch = 'start';
