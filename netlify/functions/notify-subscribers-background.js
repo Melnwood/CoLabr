@@ -11,8 +11,12 @@ const UF = { title: 'fldhkHAXyvqtrx3cu', status: 'fldV9l8rl1XNK0OjS', blocks: 'f
 const SF = { name: 'fld95CZHX6o0uNKEb', email: 'fldzhY8nJPjWLKjUK', pref: 'fldI3ED38BzW05kzQ', missionary: 'fldz4NfdnkTC9dw3t', token: 'fldUS2VRksgaVipcC' };
 const SITE_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 
+// EMAILS PAUSED while Mel tests with real subscribers imported. Flip to false to resume.
+const EMAILS_PAUSED = true;
+
 exports.handler = async function (event) {
   try {
+    if (EMAILS_PAUSED) return { statusCode: 200 };
     if (event.httpMethod !== 'POST') return { statusCode: 405 };
     const token = process.env.AIRTABLE_TOKEN; if (!token) return { statusCode: 200 };
     let b; try { b = JSON.parse(event.body || '{}'); } catch { return { statusCode: 200 }; }

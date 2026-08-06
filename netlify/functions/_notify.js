@@ -1,8 +1,12 @@
 // Co-Labr — fire the background subscriber-send for a freshly published update.
 // Best-effort: we POST to the -background function and return immediately (it runs async,
 // up to 15 min, and is idempotent via the update's "Sent" flag). Never throws to the caller.
+// EMAILS PAUSED while Mel tests with real subscribers imported. Flip to false to resume.
+const EMAILS_PAUSED = true;
+
 async function fireNotify(updateId) {
   try {
+    if (EMAILS_PAUSED) return;
     if (!updateId) return;
     const secret = process.env.SESSION_SECRET;
     const site = process.env.SITE_BASE;
