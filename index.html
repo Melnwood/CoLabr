@@ -297,6 +297,9 @@
   .sheet .rvidcc b{background:#f0ece6;color:#b0704a;font-weight:800;font-size:10px;padding:2px 6px;border-radius:5px}
   .sheet .rvidcc.proc{color:var(--acc)}
   .sheet .rvidcc .ccspin{width:12px;height:12px;border:2px solid #f0d8c4;border-top-color:var(--acc);border-radius:50%;display:inline-block;animation:bootspin .8s linear infinite;flex:none}
+  .subgen{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:9px;background:rgba(14,11,8,.82);color:#fff;font-size:13px;font-weight:700;border-radius:22px;padding:9px 16px;pointer-events:none;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .subgen .ccspin{width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:bootspin .8s linear infinite;flex:none}
+  @media(max-width:600px){.subgen{font-size:11.5px;padding:7px 12px;top:8px}}
   .sheet .rquote{border-left:3px solid var(--acc);margin:0 0 16px;padding:2px 0 2px 16px;font-size:16px;font-style:italic;color:#241f1b;line-height:1.5}
   .sheet .rquote span{display:block;font-style:normal;font-size:12.5px;color:var(--acc);font-weight:700;margin-top:6px}
   .sheet .rprayer{background:#eef3fe;border-left:3px solid #2f6df0;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:14px;color:#3c3733;line-height:1.55}
@@ -860,7 +863,8 @@ function renderVideo(bk,recId,idx){
     const pollable=!caps.length&&recId!=null&&(bk.captionStatus==='processing'||(ourUpload&&bk.lang));
     if(caps.length) badge=`<div class="rvidcc" id="${cid}"><b>CC</b> AI‑translated${bk.lang?' from '+esc(langName(bk.lang)):''}</div>`;
     else if(pollable){ badge=`<div class="rvidcc proc" id="${cid}"><span class="ccspin"></span>Generating English subtitles… they'll appear here automatically</div>`; pollAttr=` data-cappoll="${esc(String(recId))}|${idx}|${esc(bk.lang||'')}"`; }
-    return `<div class="rvid rvidf"><video controls playsinline preload="metadata" data-cap="1" data-ov="vcap${idx}"${pollAttr}><source src="${esc(url)}">${tracks}</video><div class="vcap" id="vcap${idx}"></div></div>${badge}`;
+    const gen=pollAttr?`<div class="subgen" id="sg${idx}"><span class="ccspin"></span>Subtitles are being generated…</div>`:'';
+    return `<div class="rvid rvidf"><video controls playsinline preload="metadata" data-cap="1" data-ov="vcap${idx}"${pollAttr}><source src="${esc(url)}">${tracks}</video><div class="vcap" id="vcap${idx}"></div>${gen}</div>${badge}`;
   }
   const e=embedURL(url); return e?`<div class="rvid"><iframe src="${e}" allow="fullscreen" allowfullscreen></iframe></div>`:'';
 }
@@ -918,7 +922,8 @@ function pollCaptions(root){
     if(!u){return;}
     const badge=document.getElementById('cc'+b);
     const vttUrl='/.netlify/functions/vtt?u='+encodeURIComponent(u)+'&b='+b+'&l='+encodeURIComponent((typeof READERLANG!=='undefined'&&READERLANG)?READERLANG:'en');
-    let tries=0; const MAX=30; // ~7.5 min at 15s
+    let tries=0; const MAX=40; // quick checks early (6s), then 15s — English lands ~a minute in
+    const sg=document.getElementById('sg'+b);
     const show=()=>{try{const t=v.textTracks;for(let i=0;i<t.length;i++)t[i].mode=(i===0?'showing':'disabled');}catch(_){}};
     const tick=async()=>{
       tries++;
@@ -932,14 +937,15 @@ function pollCaptions(root){
             try{const t=v.textTracks;for(let i=0;i<t.length;i++)t[i].mode='disabled';}catch(_){}
             const ov=document.getElementById('vcap'+b); if(ov)attachOverlay(v,ov,txt);   // draw our own captions
             if(badge){ badge.className='rvidcc'; badge.innerHTML='<b>CC</b> AI‑translated'+(srcLang?' from '+esc(langName(srcLang)):''); }
+            if(sg)sg.remove();
             return;
           }
         }
       }catch(_){}
-      if(tries<MAX) setTimeout(tick,15000);
-      else if(badge){ badge.className='rvidcc'; badge.innerHTML='<b>CC</b> Subtitles are taking longer than usual — please reload'; }
+      if(tries<MAX) setTimeout(tick, tries<12?6000:15000);   // every 6s for the first minute+, then 15s
+      else { if(badge){ badge.className='rvidcc'; badge.innerHTML='<b>CC</b> Subtitles are taking longer than usual — they\u2019ll be here next time you open this update'; } if(sg)sg.remove(); }
     };
-    setTimeout(tick,8000);   // first check ~8s after the update opens
+    setTimeout(tick,5000);   // first check just seconds in
   });
 }
 function blockColor(bk){return (bk.color&&/^#[0-9a-fA-F]{6}$/.test(bk.color))?bk.color:'';}
