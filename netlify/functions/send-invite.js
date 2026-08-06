@@ -89,8 +89,8 @@ exports.handler = async function (event) {
       .split(/\n{2,}/).map(p => `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#241f1b">${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
     const cta = chooseUrl
       ? `<p style="margin:6px 0 10px"><a href="${chooseUrl}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;font-size:15px;text-decoration:none;padding:12px 26px;border-radius:10px">Choose how you'd like to follow →</a></p>
-         <p style="margin:0 0 18px;font-size:12.5px;color:#7a756f">One click — we already know it's you.${site ? ` Or just <a href="${site}" style="color:#FF6600">browse the updates</a> first.` : ''}</p>`
-      : (site ? `<p style="margin:6px 0 18px"><a href="${site}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;font-size:15px;text-decoration:none;padding:12px 26px;border-radius:10px">See our updates →</a></p>` : '');
+         <p style="margin:0 0 18px;font-size:12.5px;color:#7a756f">One click — we already know it's you.${site ? ` Or just <a href="${site}/index.html?m=${encodeURIComponent(missionary)}" style="color:#FF6600">browse the updates</a> first.` : ''}</p>`
+      : (site ? `<p style="margin:6px 0 18px"><a href="${site}/index.html?m=${encodeURIComponent(missionary)}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;font-size:15px;text-decoration:none;padding:12px 26px;border-radius:10px">See our updates →</a></p>` : '');
     const html = `<div style="font-family:-apple-system,Arial,sans-serif;max-width:540px">${bodyHtml}${cta}
       <p style="font-size:12px;color:#7a756f;margin-top:18px">You choose how you hear from us — full email, a quick link, a monthly summary, or a text — and can change it or stop anytime.</p></div>`;
     const res = await sendMail({ to: email, subject, html, replyTo, fromName });

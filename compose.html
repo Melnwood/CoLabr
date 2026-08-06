@@ -327,7 +327,7 @@ async function guard(){
     // Give blocks default to this missionary's own designated fund when they have one.
     if(me.miss&&me.miss.give) DEF.give.url=me.miss.give;
     ME_LIVE=!!(me.miss&&me.miss.live);
-    if(me.miss&&me.miss.name&&me.miss.name!=='The Ellenwood Family') ME_WALL='index.html?m='+encodeURIComponent(me.miss.name);
+    if(me.miss&&me.miss.name) ME_WALL='index.html?m='+encodeURIComponent(me.miss.name);
     const vs=document.querySelector('.nav a[href="index.html"]'); if(vs) vs.href=ME_WALL;
     const ls=document.getElementById('livestrip');
     if(ls){ ls.style.display='flex';

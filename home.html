@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Co-Labr — one beautiful home for your ministry updates</title>
+<meta name="description" content="Write your ministry updates once — your supporters choose how they follow, every reader gets their own language, and giving routes through your organization.">
+<style>
+  :root{--acc:#FF6600;--bg:#f4f1ec;--card:#fff;--line:#e7e4e0;--muted:#7a756f;--text:#241f1b;--green:#2f9e63}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:860px;margin:0 auto;padding:0 22px}
+  header{display:flex;align-items:center;gap:12px;padding:20px 0}
+  .mark{font-size:15px;font-weight:800;letter-spacing:.14em;color:var(--acc);text-transform:uppercase}
+  header nav{margin-left:auto;display:flex;gap:10px;align-items:center}
+  header nav a{font-size:13.5px;font-weight:600;text-decoration:none;color:var(--text);border:1px solid var(--line);background:#fff;border-radius:22px;padding:9px 16px}
+  header nav a.acc{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .hero{text-align:center;padding:46px 0 34px}
+  .hero h1{font-size:clamp(30px,5.5vw,44px);font-weight:800;letter-spacing:-.025em;line-height:1.12;margin:0 0 14px}
+  .hero h1 em{font-style:normal;color:var(--acc)}
+  .hero p{font-size:16.5px;color:var(--muted);line-height:1.6;max-width:560px;margin:0 auto 26px}
+  .cta{display:inline-flex;align-items:center;gap:9px;background:var(--acc);color:#fff;font-weight:800;font-size:16px;padding:15px 30px;border-radius:12px;text-decoration:none;box-shadow:0 8px 22px rgba(255,102,0,.25)}
+  .subcta{display:block;margin-top:14px;font-size:13px;color:var(--muted)}
+  .subcta a{color:var(--acc);font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;padding:26px 0 8px}
+  .f{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .f svg{width:26px;height:26px;stroke:var(--acc);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;margin-bottom:10px}
+  .f b{display:block;font-size:15px;margin-bottom:5px}
+  .f p{font-size:13px;color:var(--muted);line-height:1.55;margin:0}
+  .trust{display:flex;gap:12px;align-items:flex-start;background:#fff8f2;border:1px solid #ffd9bd;border-radius:14px;padding:16px 18px;margin:22px 0;font-size:13.5px;line-height:1.55;color:#5a5048}
+  .trust b{color:var(--acc)}
+  .orgs{background:var(--text);color:#fff;border-radius:18px;padding:28px 26px;margin:26px 0;text-align:center}
+  .orgs h2{font-size:20px;font-weight:800;margin:0 0 8px}
+  .orgs p{font-size:14px;color:#cfc8c0;line-height:1.6;max-width:560px;margin:0 auto 16px}
+  .orgs a{display:inline-block;background:#fff;color:var(--text);font-weight:700;font-size:14px;padding:11px 22px;border-radius:10px;text-decoration:none}
+  footer{padding:26px 0 46px;font-size:12px;color:var(--muted);text-align:center;line-height:1.7}
+  footer a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark">Co-Labr</div>
+    <nav><a href="login.html">Sign in</a><a class="acc" href="/.netlify/functions/auth-start?join=1">Create your page</a></nav>
+  </header>
+
+  <div class="hero">
+    <h1>Your ministry has a story.<br>Give it <em>a home</em>.</h1>
+    <p>Co-Labr is one beautiful place for your ministry updates. Write once — your supporters choose how they follow along, every reader gets their own language, and giving flows through your organization.</p>
+    <a class="cta" href="/.netlify/functions/auth-start?join=1">Create your page — it's free to start</a>
+    <span class="subcta">Serving with Josiah Venture? <a href="login.html">Sign in with your JV account</a></span>
+  </div>
+
+  <div class="grid">
+    <div class="f">
+      <svg viewBox="0 0 24 24"><path d="M4 20h16M6 16l9.5-9.5a2.1 2.1 0 0 1 3 3L9 19l-4 1z"/></svg>
+      <b>Write once, beautifully</b>
+      <p>A guided composer — banner, photos, video, numbers, prayer &amp; praise, your personal sign-off. Every update looks like it took a designer.</p>
+    </div>
+    <div class="f">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21M12 3C9.5 5.6 8.2 8.7 8.2 12s1.3 6.4 3.8 9"/></svg>
+      <b>Every heart language</b>
+      <p>Write in your own language — readers get theirs. Updates translate into eleven languages automatically, and videos get subtitles.</p>
+    </div>
+    <div class="f">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <b>Supporters choose</b>
+      <p>Full email, a quick link, a monthly summary, or just the web — each person picks, changes anytime, and leaves gently if they need to.</p>
+    </div>
+    <div class="f">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.2-9A5.4 5.4 0 0 1 12 6.6 5.4 5.4 0 0 1 21.2 12C19 16.4 12 21 12 21z"/></svg>
+      <b>Giving done right</b>
+      <p>Your Give button routes to your organization's designated fund for your ministry — receipting and accountability intact.</p>
+    </div>
+  </div>
+
+  <div class="trust"><div><b>You start in test mode.</b> Build your page, publish, preview, import your people — nothing emails anyone until you deliberately go live. And your supporter list belongs to you and your organization, never to us: one click lets any supporter change how they follow or erase their details completely.</div></div>
+
+  <div class="orgs">
+    <h2>Bring your whole organization</h2>
+    <p>When a team joins together, Co-Labr becomes more: your branding on every page, stories featured across the movement, and leadership that actually keeps up with its people through what they write.</p>
+    <a href="mailto:mellenwood@josiahventure.com?subject=Co-Labr%20for%20our%20organization">Talk to us about an organization account</a>
+  </div>
+
+  <footer>
+    Co-Labr is an app by Tov-ell LLC. · <a href="privacy.html">How we care for your details</a><br>
+    The organization whose updates you follow is responsible for its own supporter list.
+  </footer>
+</div>
+</body>
+</html>

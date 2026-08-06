@@ -95,7 +95,7 @@ exports.handler = async function (event) {
       } else {
         html = wrap(`${coverHtml}<h1 style="font-size:22px;font-weight:800;color:#241f1b;margin:0 0 10px">${esc(title)}</h1>
           <p style="font-size:15px;line-height:1.6;color:#3c3733;margin:0 0 16px">${esc(excerpt)}…</p>
-          ${site ? `<p><a href="${site}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage, missName);
+          ${site ? `<p><a href="${site}/index.html?m=${encodeURIComponent(missName)}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage, missName);
       }
       try { await sendMail({ to: email, subject: title, html, replyTo, fromName: missName }); } catch (e) {}
     }

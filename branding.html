@@ -274,5 +274,11 @@ $('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeEditor();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEditor();});
 (async()=>{ if(await guard()) load(); })();
 </script>
+<script>
+// "View site" should mean YOUR site — the bare root is Co-Labr's front page now.
+fetch('/.netlify/functions/me?full=1').then(r=>r.ok?r.json():null).then(me=>{
+  if(me&&me.miss&&me.miss.name){document.querySelectorAll('a[href="index.html"]').forEach(a=>a.href='index.html?m='+encodeURIComponent(me.miss.name));}
+});
+</script>
 </body>
 </html>

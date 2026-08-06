@@ -395,7 +395,9 @@
 
 <script>
 let GIVE='https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969';
-const PAGEM=(new URLSearchParams(location.search)).get('m')||'';   // whose page (teammate) — empty = the Ellenwoods
+const PAGEM=(new URLSearchParams(location.search)).get('m')||'';   // whose page — every wall carries ?m= now
+// The bare root is Co-Labr's front page, not anyone's wall.
+if(!PAGEM && !(new URLSearchParams(location.search)).get('style')){ location.replace('home.html'); throw new Error('redirect'); }
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const ROT=[-2.5,2,-1.5,2.5,-2,1.5];
 const STYLE_MAP={'Field Notes':'fieldnotes','Cover Grid':'grid','Timeline':'timeline','Gallery Wall':'wall'};
