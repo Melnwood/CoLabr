@@ -117,7 +117,8 @@ const STYLE_DEFS=[
   {name:'Gallery Wall',key:'wall',ds:'A photo mosaic'},
   {name:'Panorama',key:'pano',ds:'Full-screen cinematic chapters'}
 ];
-let me=null, curStyle='Field Notes';
+let me=null, curStyle='Field Notes', HIDE_FN=true;
+fetch('/.netlify/functions/platform').then(r=>r.ok?r.json():null).then(p=>{ if(p){HIDE_FN=!!p.hideFieldnotes; if(document.getElementById('styles').innerHTML) renderStyles();} });
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 async function api(action,extra){
   const r=await fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...extra})});
@@ -160,7 +161,7 @@ async function init(){
   progress();
 }
 function renderStyles(){
-  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(x=>!x.adminOnly).map(s=>`
+  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(x=>!(x.adminOnly&&HIDE_FN)).map(s=>`
     <div class="scard ${s.name===curStyle?'on':''}" data-style="${s.name}">
       <div class="thumb">${THUMB[s.key]}</div>
       <div class="nm">${s.name}${s.name===curStyle?' ✓':''}</div>

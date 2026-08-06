@@ -396,13 +396,14 @@ const STYLE_DEFS=[
   {name:'Gallery Wall',key:'wall',ds:'A photo wall / mosaic of moments'},
   {name:'Panorama',key:'pano',ds:'Full-screen cinematic chapters'}
 ];
-let curStyle='Field Notes', IS_ADMIN=false;
+let curStyle='Field Notes', IS_ADMIN=false, HIDE_FN=true;
 async function loadStyle(){
   try{ const d=await api('getStyle'); if(d.style) curStyle=d.style; }catch(e){}
+  try{ const p=await fetch('/.netlify/functions/platform').then(r=>r.json()); HIDE_FN=!!p.hideFieldnotes; }catch(e){}
   renderStyles();
 }
 function renderStyles(){
-  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(s=>!s.adminOnly).map(s=>`
+  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(s=>!(s.adminOnly&&HIDE_FN)).map(s=>`
     <div class="scard ${s.name===curStyle?'on':''}" data-style="${s.name}">
       <span class="cur">Current</span>
       <div class="thumb">${THUMB[s.key]}</div>

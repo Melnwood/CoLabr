@@ -29,6 +29,7 @@
 <div class="wrap">
   <a class="back" href="/manage.html">← Back to dashboard</a>
   <div id="killpanel" style="display:none;border-radius:14px;padding:14px 18px;margin:16px 0 4px;font-size:13.5px;line-height:1.5"></div>
+  <div id="fnpanel" style="display:none;border-radius:14px;padding:12px 18px;margin:10px 0 4px;font-size:13px;line-height:1.5"></div>
   <h1>Organizations forming</h1>
   <p class="lede">Individual missionaries clustered by the organization they serve with. When one crosses <b>3</b>, it lights up — that's your cue for a human conversation about an organization account. Nothing here ever emails anyone.</p>
   <div id="list"><div class="empty">Loading…</div></div>
@@ -51,6 +52,13 @@ function killPanel(){
       const q=confirm(to?'Pause ALL outbound email, platform-wide?\n\nNo supporter emails will go out from any page until you resume.':'Resume outbound email platform-wide?\n\nLive pages will email their subscribers again when they publish. Anything published while paused stays unsent.');
       if(!q)return;
       const r=await fetch('/.netlify/functions/platform',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pause:to})});
+      if(r.ok) killPanel(); else alert('Could not change the switch.');
+    });
+    const fn=document.getElementById('fnpanel'); fn.style.display='block';
+    fn.style.background='#fff'; fn.style.border='1px solid var(--line)';
+    fn.innerHTML='<b>Field Notes style:</b> '+(d.hideFieldnotes?'hidden from the style pickers.':'available in the style pickers.')+' <a id="fntoggle" style="cursor:pointer;font-weight:800;color:var(--acc)">'+(d.hideFieldnotes?'Make it available →':'Hide it →')+'</a><span style="color:var(--muted)"> Existing walls always keep rendering it.</span>';
+    document.getElementById('fntoggle').addEventListener('click',async()=>{
+      const r=await fetch('/.netlify/functions/platform',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hideFieldnotes:!d.hideFieldnotes})});
       if(r.ok) killPanel(); else alert('Could not change the switch.');
     });
   });
