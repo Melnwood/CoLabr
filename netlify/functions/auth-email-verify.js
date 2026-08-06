@@ -15,9 +15,11 @@ exports.handler = async function (event) {
     const p = verify(t, secret);
     if (!p || p.p !== 'alink' || !p.email) return deny(base, 'That sign-in link has expired or already changed — request a fresh one.');
     const dest = await destFor(p.email);
+    // The explicit query stops Netlify's CDN from appending the original ?t= token
+    // to the redirect — the sign-in token must not linger in the address bar.
     return {
       statusCode: 302,
-      headers: { Location: base + dest, 'Set-Cookie': sessionFor(p.email), 'Cache-Control': 'no-store' },
+      headers: { Location: base + dest + '?in=1', 'Set-Cookie': sessionFor(p.email), 'Cache-Control': 'no-store' },
       body: ''
     };
   }
