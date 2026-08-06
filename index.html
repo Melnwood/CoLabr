@@ -781,10 +781,12 @@ function prayerText(u){ if(!u||!u.blocks)return ''; for(const b of u.blocks){ if
       return c;
     }catch(_){ return null; }
   }
+  let over=false;
   async function show(){
-    clearTimeout(hideT);
+    clearTimeout(hideT); over=true;
     if(pop){ pop.classList.add('on'); return; }
     const c=await coords(); if(!c) return;
+    if(!over){ return; }   // pointer already left while we were geocoding — don't pop up late
     // Draw the map from raw OSM tiles — no zoom buttons, no embed chrome, just the place.
     // Zoomed to region scale: the point is "where they sit in Central & Eastern Europe",
     // not their street — the whole neighborhood of countries with one brand dot.
@@ -803,7 +805,7 @@ function prayerText(u){ if(!u||!u.blocks)return ''; for(const b of u.blocks){ if
     pop.innerHTML=html+'<div class="locdot"></div><div class="osmcredit">© OpenStreetMap</div>';
     el.appendChild(pop);
   }
-  function hide(){ hideT=setTimeout(()=>{ if(pop) pop.classList.remove('on'); },250); }
+  function hide(){ over=false; hideT=setTimeout(()=>{ if(pop) pop.classList.remove('on'); },200); }
   el.addEventListener('mouseenter',show);
   el.addEventListener('mouseleave',hide);
   el.addEventListener('click',ev=>{ ev.stopPropagation(); (pop&&pop.classList.contains('on'))?pop.classList.remove('on'):show(); });
