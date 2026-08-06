@@ -898,7 +898,8 @@ function wireOverlays(root,uu){
   uu.blocks.forEach((bk,i)=>{
     if(!bk||bk.type!=='video')return;
     const caps=Array.isArray(bk.captions)?bk.captions:[];
-    const cap=caps.find(c=>c&&c.vtt); if(!cap)return;   // not ready yet — pollCaptions will wire it
+    const rl=(typeof READERLANG!=='undefined'&&READERLANG)?READERLANG:'en';
+    const cap=caps.find(c=>c&&c.vtt&&c.lang===rl)||caps.find(c=>c&&c.vtt&&c.lang==='en')||caps.find(c=>c&&c.vtt); if(!cap)return;   // not ready yet — pollCaptions will wire it
     const ov=(root||document).querySelector('#vcap'+i);
     const v=ov&&ov.parentElement?ov.parentElement.querySelector('video'):null;
     if(ov&&v)attachOverlay(v,ov,cap.vtt);
@@ -912,7 +913,7 @@ function pollCaptions(root){
     const u=parts[0], b=parts[1], srcLang=parts[2]||'';
     if(!u){return;}
     const badge=document.getElementById('cc'+b);
-    const vttUrl='/.netlify/functions/vtt?u='+encodeURIComponent(u)+'&b='+b+'&l=en';
+    const vttUrl='/.netlify/functions/vtt?u='+encodeURIComponent(u)+'&b='+b+'&l='+encodeURIComponent((typeof READERLANG!=='undefined'&&READERLANG)?READERLANG:'en');
     let tries=0; const MAX=30; // ~7.5 min at 15s
     const show=()=>{try{const t=v.textTracks;for(let i=0;i<t.length;i++)t[i].mode=(i===0?'showing':'disabled');}catch(_){}};
     const tick=async()=>{

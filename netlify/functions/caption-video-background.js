@@ -55,27 +55,35 @@ exports.handler = async function (event) {
     if (!words.length) { await log('ERROR no speech recognized (lang ' + srcLang + ')'); if (b.recordId) await setStatus(b.recordId, b.blockIndex, 'failed'); return j(200, {}); }
     const cues = groupCues(words);
 
-    // 4) Translate the cue texts to English with Claude (fallback: keep source).
+    // 4) Translate the cues into EVERY site language — the heart-language promise
+    // applies to subtitles too. Native transcript rides along as its own track.
+    const srcShort = srcLang.split('-')[0];
+    const mkVtt = texts => 'WEBVTT\n\n' + cues.map((c, i) => `${i + 1}\n${vt(c.s)} --> ${vt(c.e)}\n${texts[i]}`).join('\n\n') + '\n';
+    const tracks = [];
     let enTexts = cues.map(c => c.text);
-    try { const t = await translate(cues.map(c => c.text), srcLang); if (t && t.length === cues.length) enTexts = t; } catch (e) { await log('WARN translate ' + String(e.message || e)); }
+    try { const t = await translate(cues.map(c => c.text), srcLang, 'en', 'English'); if (t && t.length === cues.length) enTexts = t; } catch (e) { await log('WARN translate en ' + String(e.message || e)); }
+    tracks.push({ lang: 'en', label: 'English', vtt: mkVtt(enTexts) });
+    if (srcShort !== 'en') tracks.push({ lang: srcShort, label: LNAME[srcShort] || srcShort, vtt: mkVtt(cues.map(c => c.text)) });
+    for (const tgt of TARGETS) {
+      if (tgt === 'en' || tgt === srcShort) continue;
+      try {
+        const t = await translate(cues.map(c => c.text), srcLang, tgt, LNAME[tgt] || tgt);
+        if (t && t.length === cues.length) tracks.push({ lang: tgt, label: LNAME[tgt] || tgt, vtt: mkVtt(t) });
+      } catch (e) { await log('WARN translate ' + tgt + ' ' + String(e.message || e)); }
+    }
 
-    // 5) Build a WebVTT track.
-    const vtt = 'WEBVTT\n\n' + cues.map((c, i) => `${i + 1}\n${vt(c.s)} --> ${vt(c.e)}\n${enTexts[i]}`).join('\n\n') + '\n';
-
-    // 6) Attach to a published update so it plays captioned on the page.
+    // 5-6) Attach every track in one write.
     const httpUrl = b.gsUri.replace(/^gs:\/\//, 'https://storage.googleapis.com/');
-    const track = { lang: 'en', label: 'English', vtt };
     if (b.recordId) {
-      // Attach captions onto an existing update's video block, in place.
-      await attachToRecord(b.recordId, parseInt(b.blockIndex || '0', 10), srcLang.split('-')[0], track);
+      await attachAllToRecord(b.recordId, parseInt(b.blockIndex || '0', 10), srcShort, tracks);
     } else {
       const blocks = [
-        { type: 'video', url: httpUrl, lang: (srcLang.split('-')[0]), captions: [track] },
+        { type: 'video', url: httpUrl, lang: srcShort, captions: tracks, captionStatus: 'ready' },
         { type: 'text', text: 'Captions were generated automatically (Google transcription + Claude translation) and may contain small errors.' }
       ];
       await createUpdate(b.title || '🎬 Video caption test (safe to delete)', blocks);
     }
-    await log(JSON.stringify({ ok: true, cues: cues.length, srcLang, sample: enTexts.slice(0, 3) }));
+    await log(JSON.stringify({ ok: true, cues: cues.length, srcLang, tracks: tracks.map(t => t.lang), sample: enTexts.slice(0, 2) }));
     return j(200, { ok: true });
   } catch (e) {
     try { await log('EXCEPTION ' + String(e && e.message || e)); } catch {}
@@ -96,7 +104,7 @@ function groupCues(words) {
   return cues;
 }
 
-async function translate(lines, srcLang) {
+async function translate(lines, srcLang, tgtCode, tgtName) {
   const key = process.env.ANTHROPIC_API_KEY; if (!key) return null;
   // Give the model the WHOLE transcript for context, ask it to translate faithfully AND to
   // correct obvious speech-recognition slips using that context — then return one English
@@ -104,7 +112,7 @@ async function translate(lines, srcLang) {
   // back to a fast one so a bad/unknown model id never breaks captioning.
   const full = lines.join(' ');
   const numbered = lines.map((t, i) => `${i + 1}. ${t}`).join('\n');
-  const prompt = `You are translating a Christian missionary's spoken video into natural, warm, accurate English (source language code: ${srcLang}). The source text was produced by automatic speech recognition and may contain small errors — read the WHOLE transcript first and use the overall meaning to infer intent, quietly fixing obvious mis-hearings so the English reads true to what was said.\n\nFull transcript (context only):\n"""\n${full}\n"""\n\nNow translate it as exactly ${lines.length} caption segments that line up with these numbered source lines (same order, same count, each English segment corresponding to its numbered source line so the on-screen timing matches). Keep names, places, and Scripture references accurate. Return ONLY a JSON array of ${lines.length} English strings — no numbering, no commentary.\n\n${numbered}`;
+  const prompt = `You are translating a Christian missionary's spoken video into natural, warm, accurate ${tgtName} (source language code: ${srcLang}, target: ${tgtName}). The source text was produced by automatic speech recognition and may contain small errors — read the WHOLE transcript first and use the overall meaning to infer intent, quietly fixing obvious mis-hearings so the English reads true to what was said.\n\nFull transcript (context only):\n"""\n${full}\n"""\n\nNow translate into ${tgtName} as exactly ${lines.length} caption segments that line up with these numbered source lines (same order, same count, each English segment corresponding to its numbered source line so the on-screen timing matches). Keep names, places, and Scripture references accurate. Return ONLY a JSON array of ${lines.length} ${tgtName} strings — no numbering, no commentary.\n\n${numbered}`;
   const models = [process.env.ANTHROPIC_TRANSLATE_MODEL || 'claude-sonnet-4-5', 'claude-haiku-4-5'];
   for (const model of models) {
     try {
@@ -131,7 +139,7 @@ async function createUpdate(title, blocks) {
   }).catch(() => {});
 }
 
-async function attachToRecord(recordId, blockIndex, srcLangShort, track) {
+async function attachAllToRecord(recordId, blockIndex, srcLangShort, tracks) {
   const token = process.env.AIRTABLE_TOKEN; if (!token) return;
   const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
   const gr = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}/${recordId}`, { headers: auth });
@@ -143,9 +151,7 @@ async function attachToRecord(recordId, blockIndex, srcLangShort, track) {
   if (!(blocks[idx] && blocks[idx].type === 'video')) idx = blocks.findIndex(x => x && x.type === 'video');
   if (idx < 0 || !blocks[idx]) return;
   blocks[idx].lang = blocks[idx].lang || srcLangShort;
-  const caps = Array.isArray(blocks[idx].captions) ? blocks[idx].captions.filter(x => x && x.lang !== track.lang) : [];
-  caps.push(track);
-  blocks[idx].captions = caps;
+  blocks[idx].captions = tracks;
   blocks[idx].captionStatus = 'ready';
   await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
     body: JSON.stringify({ records: [{ id: recordId, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) }).catch(() => {});
