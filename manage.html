@@ -402,7 +402,7 @@ async function loadStyle(){
   renderStyles();
 }
 function renderStyles(){
-  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(s=>!s.adminOnly||IS_ADMIN||s.name===curStyle).map(s=>`
+  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(s=>!s.adminOnly).map(s=>`
     <div class="scard ${s.name===curStyle?'on':''}" data-style="${s.name}">
       <span class="cur">Current</span>
       <div class="thumb">${THUMB[s.key]}</div>

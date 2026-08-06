@@ -160,7 +160,7 @@ async function init(){
   progress();
 }
 function renderStyles(){
-  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(x=>!x.adminOnly||(me&&me.admin)||x.name===curStyle).map(s=>`
+  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(x=>!x.adminOnly).map(s=>`
     <div class="scard ${s.name===curStyle?'on':''}" data-style="${s.name}">
       <div class="thumb">${THUMB[s.key]}</div>
       <div class="nm">${s.name}${s.name===curStyle?' ✓':''}</div>
