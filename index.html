@@ -855,7 +855,7 @@ function renderVideo(bk,recId,idx){
       if(c.vtt&&recId!=null){ src='/.netlify/functions/vtt?u='+encodeURIComponent(recId)+'&b='+idx+'&l='+encodeURIComponent(c.lang||'en'); }
       else if(c.vtt){ src='data:text/vtt;charset=utf-8,'+encodeURIComponent(c.vtt); }
       else src=esc(c.url);
-      return `<track kind="subtitles" src="${src}" srclang="${esc(c.lang||'en')}" label="${esc(c.label||langName(c.lang))}"${i===0?' default':''}>`;
+      return `<track kind="subtitles" src="${src}" srclang="${esc(c.lang||'en')}" label="${esc(c.label||langName(c.lang))}">`;
     }).join('');
     let badge='',pollAttr='';
     const cid='cc'+idx;
@@ -898,6 +898,10 @@ function attachOverlay(v,ov,vtt){
   const upd=()=>{const t=v.currentTime||0;let cur='';for(let i=0;i<cues.length;i++){if(t>=cues[i].s&&t<cues[i].e){cur=cues[i].t;break;}}if(cur!==last){ov.textContent=cur;ov.style.opacity=cur?'1':'0';last=cur;}};
   v.addEventListener('timeupdate',upd); v.addEventListener('seeked',upd); v.addEventListener('play',upd); upd();
   ov.dataset.wired='1';
+  // Inline, the overlay is the one renderer: park every native track so the browser
+  // can't paint a second line under ours.
+  const park=()=>{try{const T=v.textTracks;for(let i=0;i<T.length;i++)T[i].mode='disabled';}catch(_){}};
+  park(); setTimeout(park,300); v.addEventListener('loadedmetadata',park);
   // Fullscreen (esp. iPhone) swaps in the NATIVE player, which can't see our overlay —
   // hand the captions to the native text tracks for the duration, take them back after.
   const rl=(typeof READERLANG!=='undefined'&&READERLANG)?READERLANG:'en';
