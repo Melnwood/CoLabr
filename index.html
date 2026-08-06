@@ -110,6 +110,13 @@
   .seg button{border:none;background:none;font-size:12.5px;font-weight:700;padding:9px 13px;color:var(--muted);cursor:pointer}
   .seg button.on{background:var(--acc);color:#fff}
   select#yearsel{background:#fff;border:1px solid #ddd2b8;border-radius:9px;padding:9px 11px;font-size:12.5px;color:var(--text);font-weight:700;cursor:pointer}
+  #monthrow{display:flex;flex-wrap:wrap;gap:7px;padding:2px 0 14px}
+  .mchip{border:1px solid #ddd2b8;background:#fff;border-radius:18px;padding:6px 13px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--font)}
+  .mchip small{font-weight:600;opacity:.6;margin-left:4px}
+  .mchip.on{background:var(--acc);border-color:var(--acc);color:var(--acc-text,#fff)}
+  body.pano #monthrow{max-width:860px;margin:0 auto;padding-left:22px;padding-right:22px}
+  body.pano .mchip{background:#191411;border-color:rgba(255,255,255,.16);color:#e7e0d6}
+  body.pano .mchip.on{background:var(--acc);border-color:var(--acc)}
   .state{text-align:center;color:#8a7550;padding:60px 20px;font-size:14px}
   .foot{text-align:center;color:#8a7550;font-size:12px;padding:22px 10px 30px;line-height:1.7}
   .yearrow{text-align:center;font-size:15px;color:#8a7550;letter-spacing:.3em;margin:26px 0 22px;position:relative;font-weight:700}
@@ -413,6 +420,7 @@
       <div class="seg" id="sortseg"><button data-s="new" class="on">Newest</button><button data-s="old">Oldest</button></div>
       <select id="yearsel"><option value="all">All years</option></select>
     </div>
+    <div id="monthrow" style="display:none"></div>
     <div id="stream"><div class="state">Loading updates…</div></div>
     <div class="foot">Every update the Ellenwoods have shared since 2012 — live from Co-Labr. Share it with anyone who wants to follow along.<br><a href="privacy.html" style="color:#8a7550">How we care for your details</a></div>
   </div>
@@ -464,11 +472,23 @@ const MAST={
   wall:{t:'The wall',s:'Every moment we’ve shared, all in one place.'},
   pano:{t:'The panorama',s:'Scroll the story, floor to ceiling — every update a chapter.'}
 };
-let U=[],qs='',sortDir='new',yearFilter='all',STYLE='fieldnotes',HEROID='';
+let U=[],qs='',sortDir='new',yearFilter='all',monthFilter='all',STYLE='fieldnotes',HEROID='';
 const urlStyle=new URLSearchParams(location.search).get('style');
 document.getElementById('q').addEventListener('input',e=>{qs=e.target.value.toLowerCase().trim();render();});
 document.querySelectorAll('#sortseg button').forEach(b=>b.addEventListener('click',()=>{sortDir=b.dataset.s;document.querySelectorAll('#sortseg button').forEach(x=>x.classList.toggle('on',x===b));render();}));
-document.getElementById('yearsel').addEventListener('change',e=>{yearFilter=e.target.value;render();});
+document.getElementById('yearsel').addEventListener('change',e=>{yearFilter=e.target.value;monthFilter='all';renderMonthRow();render();});
+function renderMonthRow(){
+  const row=document.getElementById('monthrow');
+  if(yearFilter==='all'){ row.style.display='none'; row.innerHTML=''; return; }
+  const counts={};
+  U.forEach(u=>{ if(String(u.y)===yearFilter){ const m=(u.rawdate||'').slice(5,7); if(m) counts[m]=(counts[m]||0)+1; } });
+  const months=Object.keys(counts).sort();
+  if(!months.length){ row.style.display='none'; row.innerHTML=''; return; }
+  row.style.display='flex';
+  row.innerHTML=`<button class="mchip${monthFilter==='all'?' on':''}" data-m="all">All of ${esc(yearFilter)}</button>`+
+    months.map(m=>`<button class="mchip${monthFilter===m?' on':''}" data-m="${m}">${MON[parseInt(m,10)-1]}<small>${counts[m]}</small></button>`).join('');
+  row.querySelectorAll('.mchip').forEach(b=>b.addEventListener('click',()=>{ monthFilter=b.dataset.m; renderMonthRow(); render(); }));
+}
 function buildYears(){
   const yrs=[...new Set(U.map(u=>u.y).filter(Boolean))].sort((a,b)=>b-a);
   const sel=document.getElementById('yearsel');
@@ -634,7 +654,7 @@ function caption(u){const t=(u.type||'').toLowerCase();const yy=u.y?("'"+String(
 function getItems(){
   const cleanView=!qs&&yearFilter==='all';   // the default archive view — hide the update that's in the hero
   let items=U.map((u,idx)=>({u,idx}))
-    .filter(o=>(!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs)) && (yearFilter==='all'||String(o.u.y)===yearFilter) && !(cleanView&&HEROID&&o.u.id===HEROID));
+    .filter(o=>(!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs)) && (yearFilter==='all'||String(o.u.y)===yearFilter) && (monthFilter==='all'||(o.u.rawdate||'').slice(5,7)===monthFilter) && !(cleanView&&HEROID&&o.u.id===HEROID));
   items.sort((a,b)=> sortDir==='new' ? (b.u.rawdate||'').localeCompare(a.u.rawdate||'') : (a.u.rawdate||'').localeCompare(b.u.rawdate||''));
   return items;
 }
