@@ -341,7 +341,10 @@ document.getElementById('statusfilter').querySelectorAll('button').forEach(b=>b.
 async function liveStrip(){
   try{
     const r=await fetch('/.netlify/functions/me?full=1'); if(!r.ok) return; const me=await r.json();
-    if(!me.miss) return;
+    if(!me.miss){ location.replace('join.html'); return; }
+    // Point "View site" at THIS person's own wall, not the site default.
+    const vs=document.querySelector('.nav a[href="index.html"]');
+    if(vs&&me.miss.name&&me.miss.name!=='The Ellenwood Family') vs.href='index.html?m='+encodeURIComponent(me.miss.name);
     const el=document.getElementById('livestrip'); el.style.display='flex';
     if(me.miss.live){
       el.style.background='#eafaf1'; el.style.border='1px solid #bfe6cf';

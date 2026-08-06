@@ -22,10 +22,14 @@ exports.handler = async function (event) {
   if (!session && !(editKey && b.key === editKey)) return resp(401, { error: 'Please sign in.' });
   if (!b.title || !b.title.trim()) return resp(400, { error: 'A title is required.' });
 
-  // Tag the update to the signed-in staff member's own page (by email), not a hardcoded family.
+  // Tag the update to the signed-in member's OWN page. No page, no publishing —
+  // the old fallback silently posted to the Ellenwoods' site.
   let missionaryName = 'The Ellenwood Family';
   if (session) {
-    try { const me = await missByEmail({ Authorization: 'Bearer ' + token }, session.email); if (me && me.name) missionaryName = me.name; } catch (e) {}
+    let me = null;
+    try { me = await missByEmail({ Authorization: 'Bearer ' + token }, session.email); } catch (e) {}
+    if (!me || !me.name) return resp(403, { error: 'Your page isn\'t set up yet — create it first.', join: true });
+    missionaryName = me.name;
   }
 
   const blocks = Array.isArray(b.blocks) ? b.blocks : [];

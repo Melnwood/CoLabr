@@ -31,14 +31,13 @@ exports.handler = async function (event) {
     if (!claims.email_verified) {
       return deny(base, 'Google could not verify that email address. Please try again.');
     }
-    // Where to next: staff and anyone with a page go to the dashboard;
-    // a brand-new individual missionary goes to the join page to create theirs.
+    // Where to next: anyone with a page goes to their dashboard; anyone WITHOUT one —
+    // JV staff included — goes to the join page to create theirs. Nobody lands in
+    // someone else's site.
     let dest = '/manage.html';
-    if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
-      let existing = null;
-      try { if (process.env.AIRTABLE_TOKEN) existing = await missByEmail({ Authorization: 'Bearer ' + process.env.AIRTABLE_TOKEN }, email); } catch (_) {}
-      if (!existing) dest = '/join.html';
-    }
+    let existing = null;
+    try { if (process.env.AIRTABLE_TOKEN) existing = await missByEmail({ Authorization: 'Bearer ' + process.env.AIRTABLE_TOKEN }, email); } catch (_) {}
+    if (!existing) dest = '/join.html';
     const session = { email, name: claims.name || email, pic: claims.picture || '', exp: Date.now() + 7*24*60*60*1000 };
     return {
       statusCode: 302,

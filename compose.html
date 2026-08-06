@@ -327,6 +327,8 @@ async function guard(){
     // Give blocks default to this missionary's own designated fund when they have one.
     if(me.miss&&me.miss.give) DEF.give.url=me.miss.give;
     ME_LIVE=!!(me.miss&&me.miss.live);
+    if(me.miss&&me.miss.name&&me.miss.name!=='The Ellenwood Family') ME_WALL='index.html?m='+encodeURIComponent(me.miss.name);
+    const vs=document.querySelector('.nav a[href="index.html"]'); if(vs) vs.href=ME_WALL;
     const ls=document.getElementById('livestrip');
     if(ls){ ls.style.display='flex';
       if(ME_LIVE){ ls.style.background='#eafaf1'; ls.style.border='1px solid #bfe6cf'; ls.innerHTML='<b style="color:#2f9e63">Live</b><span>Publishing can email your subscribers — you choose at publish time.</span>'; }
@@ -732,7 +734,7 @@ sg.addEventListener('click',async()=>{
 });
 
 // ---- save ----
-let ME_LIVE=false;
+let ME_LIVE=false, ME_WALL='index.html';
 async function followerCount(){
   try{ const p=await fetch('/.netlify/functions/people',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})}).then(r=>r.json());
     return (p.people||[]).filter(x=>x.active).length; }catch(e){ return null; }
@@ -772,9 +774,9 @@ async function submit(publish){
     const hasVid=clean.some(b=>b.type==='video'&&/storage\.googleapis\.com\/.+\/videos\//.test(b.url||'')&&b.lang);
     const subNote=hasVid?' Your video’s English subtitles are generating now and will appear on it within a minute or two — nothing more for you to do.':'';
     if(editId){
-      show('ok', (publish?'Changes published — <a href="index.html">view on your site →</a>':'Changes saved as a draft.')+subNote);
+      show('ok', (publish?'Changes published — <a href="'+ME_WALL+'">view on your site →</a>':'Changes saved as a draft.')+subNote);
     } else {
-      show('ok', (publish?(payload.emailChoice==='send'?'Published and emailed to your supporters! <a href="index.html">View it on your site →</a>':payload.emailChoice==='wall'?'Published to your wall — no emails sent. <a href="index.html">View it →</a>':'Published! It’s live now — <a href="index.html">view it on your site →</a>')+'':'Saved as a draft. Publish it from Manage when you’re ready.')+subNote);
+      show('ok', (publish?(payload.emailChoice==='send'?'Published and emailed to your supporters! <a href="'+ME_WALL+'">View it on your site →</a>':payload.emailChoice==='wall'?'Published to your wall — no emails sent. <a href="'+ME_WALL+'">View it →</a>':'Published! It’s live now — <a href="'+ME_WALL+'">view it on your site →</a>')+'':'Saved as a draft. Publish it from Manage when you’re ready.')+subNote);
       document.getElementById('title').value=''; blocks=[]; add('text');
     }
   }catch(e){ show('err', e.message); }

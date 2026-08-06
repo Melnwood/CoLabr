@@ -43,8 +43,9 @@ exports.handler = async function (event) {
   const api = `https://api.airtable.com/v0/${BASE}/${SUBS}`;
 
   // Whose page is inviting — that's the Missionary these people belong to.
-  let missionary = 'The Ellenwood Family', missId = null;
+  let missionary = null, missId = null;
   try { const me = await missByEmail(auth, session.email); if (me && me.name) { missionary = me.name; missId = me.id; } } catch (_) {}
+  if (!missionary) return r(403, { error: 'Your page isn\'t set up yet — create it first.', join: true });
 
   // A bulk import of existing supporters must never silently arm the cannon:
   // real audience arriving puts the page (back) into test mode. Going live again

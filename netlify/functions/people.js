@@ -21,8 +21,9 @@ exports.handler = async function (event) {
   const api = `https://api.airtable.com/v0/${BASE}/${SUBS}`;
   let b; try { b = JSON.parse(event.body || '{}'); } catch { return r(400, { error: 'Bad request.' }); }
 
-  let missionary = 'The Ellenwood Family';
+  let missionary = null;
   try { const me = await missByEmail(auth, session.email); if (me && me.name) missionary = me.name; } catch (_) {}
+  if (!missionary) return r(403, { error: 'Your page isn\'t set up yet — create it first.', join: true });
 
   try {
     if (b.action === 'list') {
