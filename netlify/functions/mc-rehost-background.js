@@ -58,10 +58,25 @@ exports.handler = async function (event) {
       } catch (e) { failed++; return null; }
     }
 
+    // Scrub mode: {killUrl} removes photo blocks referencing an image that is dead
+    // everywhere (e.g. retired Mailchimp graphics that 403 even on the new CDN).
+    const killUrl = (b.killUrl || '').toString();
+
     for (const rec of recs) {
       const flds = rec.fields || {};
       const cover = flds['Cover Image URL'] || '';
       const blocks = flds['Blocks'] || '';
+      if (killUrl && String(blocks).includes(killUrl)) {
+        try {
+          const arr = JSON.parse(blocks);
+          const kept = arr.filter(bk => !(bk && typeof bk.url === 'string' && bk.url.includes(killUrl)));
+          const patch = { [BLOCKS]: JSON.stringify(kept) };
+          if (cover.includes(killUrl)) patch[COVER] = '';
+          const pr = await fetch(`${api}/${UPDATES}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: [{ id: rec.id, fields: patch }] }) });
+          if (pr.ok) patched++;
+        } catch (e) {}
+        continue;
+      }
       const urls = new Set();
       (cover.match(MC_URL) || []).forEach(u => urls.add(u));
       (String(blocks).match(MC_URL) || []).forEach(u => urls.add(u));
