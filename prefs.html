@@ -65,9 +65,11 @@ async function load(){
         </div>
         <button class="orgo" id="orgo">No, continue to unsubscribe</button>
       </div>
+      <button class="unsub" id="erase" style="margin-top:6px">Delete my details completely</button>
       <div class="msg" id="msg"></div>`;
     document.getElementById('save').addEventListener('click',save);
     document.getElementById('unsub').addEventListener('click',unsub);
+    document.getElementById('erase').addEventListener('click',erase);
     if(!d.active){ const m=document.getElementById('msg'); m.className='msg'; m.textContent='You are currently unsubscribed — pick an option above to start again.'; }
   }catch(e){ card.innerHTML='<div class="state">'+esc(e.message)+'</div>'; }
 }
@@ -91,6 +93,14 @@ function unsub(){
     document.getElementById('orgo').addEventListener('click',doUnsub);
     return;
   }
+}
+async function erase(){
+  if(!confirm('Delete your details completely? This removes your name, email, and any messages you\u2019ve sent \u2014 permanently. There is no undo.'))return;
+  const m=document.getElementById('msg'); m.className='msg'; m.textContent='Deleting\u2026';
+  try{
+    await api('erase');
+    document.getElementById('card').innerHTML='<div class="state">Your details have been deleted. Thank you for the time you walked with us.</div>';
+  }catch(e){ m.className='msg err'; m.textContent=e.message; }
 }
 async function doUnsub(){
   const m=document.getElementById('msg'); m.className='msg'; m.textContent='Updating…';

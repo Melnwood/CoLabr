@@ -65,6 +65,15 @@
 
     <div class="mailhead">
       <div class="mh-row"><span class="mh-lab">To</span><textarea id="recips" rows="1" placeholder="Paste from anywhere — names optional.  e.g.  Grandma Ruth &lt;ruth@example.com&gt;,  ruth@example.com"></textarea></div>
+      <div class="mh-row"><span class="mh-lab"></span><div>
+        <button type="button" class="csvbtn" id="csvBtn">Upload a CSV instead</button>
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
+        <details class="csvhow"><summary>How do I get a CSV of my supporters?</summary>
+          <p><b>Google Contacts:</b> contacts.google.com → select your supporters (or a label) → Export → Google CSV.</p>
+          <p><b>Mailchimp:</b> Audience → All contacts → Export audience → download the CSV.</p>
+          <p><b>Excel / Sheets:</b> one row per person, with a column for email (a name column helps) → File → Save as CSV.</p>
+        </details>
+      </div></div>
       <div class="mh-row"><span class="mh-lab">From</span><input id="fromName" value="Amy &amp; Mel Ellenwood"></div>
       <div class="mh-row"><span class="mh-lab">Subject</span><input id="subject" value="Come follow our family's journey"></div>
     </div>
@@ -98,6 +107,11 @@ Amy &amp; Mel</textarea>
     <div id="ppl"><div class="ppl-state">Loading…</div></div>
   </div>
   <style>
+    .csvbtn{background:#fff;border:1px solid var(--line);border-radius:18px;font-size:12.5px;font-weight:700;color:var(--text);padding:8px 15px;cursor:pointer;font-family:inherit}
+    .csvbtn:hover{border-color:var(--acc);color:var(--acc)}
+    .csvhow{margin-top:8px;font-size:12.5px;color:var(--muted)}
+    .csvhow summary{cursor:pointer;font-weight:600}
+    .csvhow p{margin:7px 0 0;line-height:1.5}
     .ppl-h{font-size:20px;font-weight:800;margin:34px 0 4px}
     .ppl-h span{font-size:12.5px;color:var(--muted);font-weight:600}
     .ppl-lede{font-size:13px;color:var(--muted);margin:0 0 12px;max-width:62ch;line-height:1.5}
@@ -118,6 +132,55 @@ Amy &amp; Mel</textarea>
 <script>
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 async function guard(){ try{ const r=await fetch('/.netlify/functions/me'); if(!r.ok) throw 0; return true; }catch{ location.replace('login.html'); return false; } }
+function parseCSV(text){
+  const rows=[]; let row=[],field='',inQ=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inQ){ if(ch==='"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; } else field+=ch; }
+    else if(ch==='"') inQ=true;
+    else if(ch===','){ row.push(field); field=''; }
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n')i++; row.push(field); field=''; if(row.some(c=>c.trim()))rows.push(row); row=[]; }
+    else field+=ch;
+  }
+  if(field||row.length){ row.push(field); if(row.some(c=>c.trim()))rows.push(row); }
+  return rows;
+}
+function csvToRecipients(text){
+  const rows=parseCSV(text); if(!rows.length) return [];
+  const head=rows[0].map(h=>h.toLowerCase());
+  let emailCol=head.findIndex(h=>/e-?mail/.test(h));
+  const looksLikeHeader=emailCol>=0||head.some(h=>/name/.test(h));
+  let nameCol=head.findIndex(h=>/^name$|full ?name/.test(h));
+  const firstCol=head.findIndex(h=>/first ?name|given name/.test(h));
+  const lastCol=head.findIndex(h=>/last ?name|family name|surname/.test(h));
+  const body=looksLikeHeader?rows.slice(1):rows;
+  const out=[];
+  body.forEach(r2=>{
+    let email='';
+    if(emailCol>=0) email=(r2[emailCol]||'').trim();
+    if(!email){ const hit=r2.find(c=>/[^\s<>,;]+@[^\s<>,;]+\.[^\s<>,;]+/.test(c||'')); if(hit){ const m=hit.match(/[^\s<>,;]+@[^\s<>,;]+\.[^\s<>,;]+/); email=m?m[0]:''; } }
+    if(!email) return;
+    let name='';
+    if(nameCol>=0) name=(r2[nameCol]||'').trim();
+    if(!name&&(firstCol>=0||lastCol>=0)) name=[(firstCol>=0?r2[firstCol]:''),(lastCol>=0?r2[lastCol]:'')].map(x=>(x||'').trim()).filter(Boolean).join(' ');
+    name=name.replace(/[,;<>]/g,' ').replace(/\s+/g,' ').trim();
+    out.push(name?name+' <'+email+'>':email);
+  });
+  return out;
+}
+document.getElementById('csvBtn').addEventListener('click',()=>document.getElementById('csvFile').click());
+document.getElementById('csvFile').addEventListener('change',async()=>{
+  const f=document.getElementById('csvFile').files[0]; if(!f)return;
+  const text=await f.text();
+  const lines=csvToRecipients(text);
+  const msg=document.getElementById('msg');
+  if(!lines.length){ msg.className='msg err'; msg.textContent='Couldn\u2019t find any email addresses in that file.'; return; }
+  const t2=document.getElementById('recips');
+  t2.value=(t2.value.trim()?t2.value.trim()+'\n':'')+lines.join('\n');
+  updateCount(); growTo();
+  msg.className='msg ok'; msg.textContent='Loaded '+lines.length+' from '+f.name+' \u2014 review the list, then send.';
+  document.getElementById('csvFile').value='';
+});
 function parseRecips(){
   const raw=document.getElementById('recips').value||'';
   const out=[]; const seen=new Set();

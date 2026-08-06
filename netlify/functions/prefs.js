@@ -30,6 +30,27 @@ exports.handler = async function (event) {
     if (b.action === 'get') {
       return r(200, { ok: true, name: c[F.name] || '', email: c[F.email] || '', preference: pref, active: !!c[F.active], missionary: c[F.missionary] || '' });
     }
+    if (b.action === 'erase') {
+      // GDPR right to erasure: delete the subscriber row AND any responses they sent.
+      const email = (c[F.email] || '').toLowerCase();
+      if (email) {
+        try {
+          const RESP = 'tblVNMG5VnOnFFeto';
+          const rf = encodeURIComponent(`LOWER({Email})='${email.replace(/'/g, "")}'`);
+          const rr = await fetch(`https://api.airtable.com/v0/${BASE}/${RESP}?pageSize=100&filterByFormula=${rf}`, { headers: auth });
+          if (rr.ok) {
+            const ids = ((await rr.json()).records || []).map(x => x.id);
+            for (let i = 0; i < ids.length; i += 10) {
+              const qs = ids.slice(i, i + 10).map(id => 'records[]=' + id).join('&');
+              await fetch(`https://api.airtable.com/v0/${BASE}/${RESP}?${qs}`, { method: 'DELETE', headers: auth });
+            }
+          }
+        } catch (_) {}
+      }
+      const dr = await fetch(`${api}/${rec.id}`, { method: 'DELETE', headers: auth });
+      if (!dr.ok) return r(502, { error: 'Could not delete. Please contact us and we will remove you by hand.' });
+      return r(200, { ok: true, erased: true });
+    }
     if (b.action === 'update' || b.action === 'unsubscribe') {
       const fields = {};
       if (b.action === 'unsubscribe') fields[F.active] = false;
