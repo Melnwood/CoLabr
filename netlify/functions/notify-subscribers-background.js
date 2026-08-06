@@ -43,7 +43,7 @@ exports.handler = async function (event) {
 
     // Whose update is this? Resolve the linked missionary — their name keys the subscriber
     // list, their Live flag arms the send, their email is the reply-to.
-    let missName = SITE_MISSIONARY, replyTo = process.env.GMAIL_SENDER || '', missLive = false;
+    let missName = SITE_MISSIONARY, missFirst = '', replyTo = process.env.GMAIL_SENDER || '', missLive = false;
     try {
       const link = c['fldpNShY6OSQBSbx0'];
       const missId = Array.isArray(link) && link[0] ? (typeof link[0] === 'string' ? link[0] : link[0].id) : null;
@@ -52,6 +52,7 @@ exports.handler = async function (event) {
         if (mr.ok) {
           const mfld = (await mr.json()).fields || {};
           if (mfld['Name']) missName = mfld['Name'];
+          if (mfld['Sign-off']) missFirst = String(mfld['Sign-off']).trim();
           if (mfld['Email']) replyTo = String(mfld['Email']).split(',')[0].trim();
           missLive = !!mfld['Live'];
         }
@@ -91,11 +92,11 @@ exports.handler = async function (event) {
       const coverHtml = cover ? `<img src="${esc(cover)}" alt="" style="width:100%;max-width:560px;border-radius:12px;margin:0 0 16px">` : '';
       let html;
       if (pref === 'Full email') {
-        html = wrap(`${coverHtml}<h1 style="font-size:24px;font-weight:800;color:#241f1b;margin:0 0 14px">${esc(title)}</h1>${fullBody}`, site, manage, missName);
+        html = wrap(`${coverHtml}<h1 style="font-size:24px;font-weight:800;color:#241f1b;margin:0 0 14px">${esc(title)}</h1>${fullBody}`, site, manage, missName, missFirst);
       } else {
         html = wrap(`${coverHtml}<h1 style="font-size:22px;font-weight:800;color:#241f1b;margin:0 0 10px">${esc(title)}</h1>
           <p style="font-size:15px;line-height:1.6;color:#3c3733;margin:0 0 16px">${esc(excerpt)}…</p>
-          ${site ? `<p><a href="${site}/index.html?m=${encodeURIComponent(missName)}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage, missName);
+          ${site ? `<p><a href="${site}/index.html?m=${encodeURIComponent(missName)}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage, missName, missFirst);
       }
       try { await sendMail({ to: email, subject: title, html, replyTo, fromName: missName }); } catch (e) {}
     }
@@ -105,8 +106,8 @@ exports.handler = async function (event) {
   }
 };
 
-function wrap(inner, site, manage, missName) {
-  const who = esc(missName || 'this missionary');
+function wrap(inner, site, manage, missName, missFirst) {
+  const who = esc(missFirst || missName || 'this missionary');
   return `<div style="font-family:-apple-system,Arial,sans-serif;max-width:560px;margin:0 auto;color:#241f1b">
     <p style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#FF6600;font-weight:800;margin:0 0 10px">${who} · Ministry Update</p>
     ${inner}

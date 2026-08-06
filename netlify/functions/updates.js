@@ -11,6 +11,7 @@ const MIS_LOC = 'fld0mx3Sp4JnNnIfc';
 const MIS_ORG = 'fldCQ8c1Eu6SXmY98';
 const MIS_PHOTO = 'fldiXSCuELTQiiT08';
 const MIS_GIVE = 'fldKf7jxzKIQQ0S6d';
+const MIS_SIGN = 'fldYKpzH4jjV8SN09';   // personal first names, e.g. "Mel and Amy" 
 const MIS_NATIONAL = 'fld4WE8NRwSrNj7ih';        // National staff (checkbox) — authoritative co-brand switch
 const ORGS_TABLE = 'tbl152sVfqGyrqpJQ';        // National Orgs (brand)
 const ORG_CODE = 'fldYMMDdsP2DgNzmZ', ORG_NAME = 'fldsyU3dpzLdkXI7t';
@@ -83,7 +84,7 @@ exports.handler = async function (event) {
         const mfields = (rec && rec.fields) || {};
         const s = mfields[MIS_STYLE]; if (s) style = (s && s.name) ? s.name : s;
         native = !!mfields[MIS_NATIONAL];
-        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', give: mfields[MIS_GIVE] || '', country: '', orgName: '', native };
+        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', give: mfields[MIS_GIVE] || '', first: (mfields[MIS_SIGN] || '').trim(), country: '', orgName: '', native };
       }
     } catch (e) { /* fall back */ }
 

@@ -399,7 +399,7 @@
         <div class="mvis" id="msub"></div>
       </div>
     </div>
-    <div class="subcta"><p>Follow <span id="subctaname">the Ellenwoods</span> — choose how you’d like to hear from us.</p><button id="followBtn2">Get updates</button></div>
+    <div class="subcta"><p>Follow <span id="subctaname">Mel and Amy</span> — choose how you’d like to hear from us.</p><button id="followBtn2">Get updates</button></div>
 
     <div class="hero" id="hero" style="display:none">
       <div class="heroimg" id="heroimg"></div><div class="heroveil"></div>
@@ -568,10 +568,13 @@ function applyPageIdentity(page){
   // even if their record carries a country org by mistake.
   ORGD=(page.native&&(page.orgName||page.org))?(page.orgName||page.org):'Josiah Venture';
   if(page.give){ GIVE=page.give; const g=document.querySelector('.top .give'); if(g) g.href=page.give; }
-  const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+page.name+' has shared — live from Co-Labr. Share it with anyone who wants to follow along.';
+  // The personal voice: first names from the sign-off ("Mel and Amy") wherever the
+  // page speaks person-to-person; the full family name stays on the masthead title.
+  PAGE_FIRST=(page.first||'').trim()||page.name||'';
+  const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+(PAGE_FIRST||page.name)+' have shared — live from Co-Labr. Share it with anyone who wants to follow along.';
   const t=document.getElementById('mtitle'); if(t&&page.name) t.textContent=page.name;
   const l=document.getElementById('mloctext'); if(l&&page.location) l.textContent=page.location;
-  const sn=document.getElementById('subctaname'); if(sn&&page.name) sn.textContent=page.name;
+  const sn=document.getElementById('subctaname'); if(sn&&PAGE_FIRST) sn.textContent=PAGE_FIRST;
   try{ document.title=(page.name||'Updates')+' — Josiah Venture'; }catch(_){}
 }
 function setMasthead(){
@@ -1010,7 +1013,7 @@ async function openReader(i){
     ${bodyHtml(uu, !emb&&!!u.cover)}
     ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
     ${respondHTML(u)}
-    <div class="give"><div class="t">Partner with ${esc(ORGD)} for ${PAGEM?esc(PAGEM)+'\u2019s':'the Ellenwoods\u2019'} ministry</div><div class="d">Every gift is designated for ${PAGEM?'their':'our'} work.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
+    <div class="give"><div class="t">Partner with ${esc(ORGD)} for ${PAGE_FIRST?esc(PAGE_FIRST)+'\u2019s':(PAGEM?esc(PAGEM)+'\u2019s':'the Ellenwoods\u2019')} ministry</div><div class="d">Every gift is designated for ${PAGEM?'their':'our'} work.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
   if(ME){
@@ -1025,6 +1028,7 @@ async function openReader(i){
   wireRespond(u);
 }
 const FAMILY=PAGEM||'The Ellenwood Family', FAMSHORT=PAGEM||'Ellenwoods';
+let PAGE_FIRST='';
 function respondHTML(u){
   return `<div class="eng">
     <h4>Respond to the ${FAMSHORT}</h4>
@@ -1099,7 +1103,7 @@ function openSub(){SUBFOR='';showSub();}
 function openSubFor(name){SUBFOR=(name||'').trim();showSub();}
 function showSub(){
   const h=document.querySelector('#subform h3'),p=document.querySelector('#subform p');
-  if(h)h.textContent=SUBFOR?('Follow '+SUBFOR):(PAGEM?('Follow '+PAGEM):'Follow the Ellenwoods');
+  if(h)h.textContent=SUBFOR?('Follow '+SUBFOR):('Follow '+(PAGE_FIRST||PAGEM||'along'));
   if(p)p.textContent=SUBFOR?('Get '+SUBFOR+'’s updates too. You can change it or stop anytime.'):'Choose how you’d like to hear from us. You can change it or stop anytime.';
   document.getElementById('subform').style.display='block';
   document.getElementById('subdone').style.display='none';
