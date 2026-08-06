@@ -374,7 +374,7 @@ document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
 function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.stringify(DEF[t]))}; if(at==null||at>blocks.length)blocks.push(nb); else blocks.splice(at,0,nb); render(); }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fieldHtml(b){
-  if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${+b.fx||50}% ${+b.fy||50}%"><div class="focband" style="top:${((+b.fy||50)*0.4074).toFixed(1)}%"><span class="focbandlab">The wall banner shows this strip</span></div><span class="focushint">Drag the photo up or down to place it</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
+  if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${(b.fx!=null?+b.fx:50)}% ${(b.fy!=null?+b.fy:50)}%"><div class="focband" style="top:${((b.fy!=null?+b.fy:50)*0.4074).toFixed(1)}%"><span class="focbandlab">The wall banner shows this strip</span></div><span class="focushint">Drag the photo up or down to place it</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
   if(b.type==='praise') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="Something to praise God for…">${esc(b.text)}</textarea>`+colorRow(b);
   if(b.type==='heading') return `<input data-id="${b.id}" data-f="text" placeholder="Section heading" value="${esc(b.text)}">`+colorRow(b);
   if(b.type==='divider') return `<div style="color:var(--muted);font-size:12.5px;padding:2px 0">A divider bar will appear here between sections.</div>`;
@@ -445,7 +445,7 @@ function setupFocus(el){
   const id=el.dataset.focus;
   let drag=false,sx,sy,bx,by;
   el.addEventListener('pointerdown',e=>{const b=blocks.find(x=>String(x.id)===id);if(!b)return;
-    drag=true;sx=e.clientX;sy=e.clientY;bx=+b.fx||50;by=+b.fy||50;try{el.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
+    drag=true;sx=e.clientX;sy=e.clientY;bx=(b.fx!=null?+b.fx:50);by=(b.fy!=null?+b.fy:50);try{el.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
   el.addEventListener('pointermove',e=>{if(!drag)return;const b=blocks.find(x=>String(x.id)===id);if(!b)return;
     const r=el.getBoundingClientRect();
     b.fx=Math.round(Math.max(0,Math.min(100,bx-(e.clientX-sx)/r.width*100)));
@@ -805,7 +805,7 @@ function pvFmt(t){
 }
 function pvBlockHtml(bk){
   const C=bk.color&&/^#[0-9a-fA-F]{6}$/.test(bk.color)?bk.color:'';
-  if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}');background-position:${(+bk.fx||50)}% ${(+bk.fy||50)}%"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+  if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}');background-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
   if(bk.type==='praise') return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${pvFmt(bk.text)}</div>`;
   if(bk.type==='heading') return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;
   if(bk.type==='divider') return `<hr class="rhr">`;
@@ -833,7 +833,7 @@ document.getElementById('previewBtn').addEventListener('click',()=>{
   // Same rule as the live page: the first photo/hero becomes the cover and isn't repeated in the body.
   const ci=clean.findIndex(b=>(b.type==='photo'||b.type==='hero')&&b.url);
   const cover=ci>-1?clean[ci].url:'';
-  const cfoc=ci>-1?((+clean[ci].fx||50)+'% '+(+clean[ci].fy||50)+'%'):'50% 50%';
+  const cfoc=ci>-1?((clean[ci].fx!=null?+clean[ci].fx:50)+'% '+(clean[ci].fy!=null?+clean[ci].fy:50)+'%'):'50% 50%';
   const body=clean.map((bk,i)=>{
     if(i===ci&&cover){
       if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';

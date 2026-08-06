@@ -978,7 +978,7 @@ function fmt(t){
 // Where the banner's focal point sits (set by dragging in the composer).
 function coverFocus(u){
   const b=(u.blocks||[]).find(x=>x&&(x.type==='hero'||x.type==='photo')&&x.url);
-  return b&&(b.fx!=null||b.fy!=null)?((+b.fx||50)+'% '+(+b.fy||50)+'%'):'';
+  return b&&(b.fx!=null||b.fy!=null)?((b.fx!=null?+b.fx:50)+'% '+(b.fy!=null?+b.fy:50)+'%'):'';
 }
 function bodyHtml(u,dedupeCover){
   if(u.blocks && u.blocks.length){
@@ -993,7 +993,7 @@ function bodyHtml(u,dedupeCover){
         if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';
         return (bk.heading||bk.sub)?`<div class="rhero"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:'';
       }
-      if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}');background-position:${(+bk.fx||50)}% ${(+bk.fy||50)}%"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+      if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}');background-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
       if(bk.type==='praise'){const C=blockColor(bk);return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${fmt(bk.text)}</div>`;}
       if(bk.type==='heading'){const C=blockColor(bk);return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;}
       if(bk.type==='divider') return `<hr class="rhr">`;
