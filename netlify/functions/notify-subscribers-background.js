@@ -11,12 +11,10 @@ const UF = { title: 'fldhkHAXyvqtrx3cu', status: 'fldV9l8rl1XNK0OjS', blocks: 'f
 const SF = { name: 'fld95CZHX6o0uNKEb', email: 'fldzhY8nJPjWLKjUK', pref: 'fldI3ED38BzW05kzQ', missionary: 'fldz4NfdnkTC9dw3t', token: 'fldUS2VRksgaVipcC' };
 const SITE_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 
-// EMAILS PAUSED while Mel tests with real subscribers imported. Flip to false to resume.
-const EMAILS_PAUSED = true;
+const SETTINGS = 'tblnAJuAOg7pmlVFR';   // Platform Settings — admin kill switch lives here
 
 exports.handler = async function (event) {
   try {
-    if (EMAILS_PAUSED) return { statusCode: 200 };
     if (event.httpMethod !== 'POST') return { statusCode: 405 };
     const token = process.env.AIRTABLE_TOKEN; if (!token) return { statusCode: 200 };
     let b; try { b = JSON.parse(event.body || '{}'); } catch { return { statusCode: 200 }; }
@@ -24,6 +22,16 @@ exports.handler = async function (event) {
     if (!b.updateId) return { statusCode: 200 };
     const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
     const api = `https://api.airtable.com/v0/${BASE}`;
+
+    // Platform kill switch: if the admin has paused all email — or we can't read the
+    // switch at all — send nothing. Checked before Sent is claimed, so a paused update
+    // can still go out after the pause lifts. Fail closed: no answer means no email.
+    try {
+      const st = await fetch(`${api}/${SETTINGS}?maxRecords=1&filterByFormula=${encodeURIComponent(`{Name}='Platform'`)}`, { headers: auth });
+      if (!st.ok) { console.log('notify skipped — settings unreadable'); return { statusCode: 200 }; }
+      const rec = (((await st.json()).records) || [])[0];
+      if (!rec || rec.fields['Pause all email']) { console.log('notify skipped — platform paused'); return { statusCode: 200 }; }
+    } catch (e) { console.log('notify skipped — settings check failed'); return { statusCode: 200 }; }
 
     // Load the update.
     const ur = await fetch(`${api}/${UPDATES}/${b.updateId}?returnFieldsByFieldId=true`, { headers: auth });

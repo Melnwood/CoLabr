@@ -130,6 +130,7 @@
     <div id="form">
       <h1>Build your update</h1>
       <p class="sub">Add blocks, drag to reorder, and it saves as a real update — text, photos, and video in the order you choose.</p>
+      <div id="livestrip" style="display:none;align-items:center;gap:10px;border-radius:12px;padding:10px 14px;margin:10px 0 2px;font-size:13px;line-height:1.45"></div>
 
       <div class="win">
       <div class="winlab">Update details</div>
@@ -325,6 +326,11 @@ async function guard(){
     if(signNames) DEF.signoff.text='With love,\n'+signNames;
     // Give blocks default to this missionary's own designated fund when they have one.
     if(me.miss&&me.miss.give) DEF.give.url=me.miss.give;
+    ME_LIVE=!!(me.miss&&me.miss.live);
+    const ls=document.getElementById('livestrip');
+    if(ls){ ls.style.display='flex';
+      if(ME_LIVE){ ls.style.background='#eafaf1'; ls.style.border='1px solid #bfe6cf'; ls.innerHTML='<b style="color:#2f9e63">Live</b><span>Publishing can email your subscribers — you choose at publish time.</span>'; }
+      else { ls.style.background='#fff8f2'; ls.style.border='1px solid #ffd9bd'; ls.innerHTML='<b style="color:#FF6600">Test mode</b><span>Publish and experiment freely — nothing emails anyone.</span>'; } }
     loadBrandPal();
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
     document.getElementById('form').style.display='block';
@@ -726,6 +732,11 @@ sg.addEventListener('click',async()=>{
 });
 
 // ---- save ----
+let ME_LIVE=false;
+async function followerCount(){
+  try{ const p=await fetch('/.netlify/functions/people',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})}).then(r=>r.json());
+    return (p.people||[]).filter(x=>x.active).length; }catch(e){ return null; }
+}
 async function submit(publish){
   syncFromDOM();
   const msg=document.getElementById('msg'); msg.className='msg';
@@ -737,6 +748,21 @@ async function submit(publish){
   const audiences=[...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a);
   const payload={publish,title,date:document.getElementById('date').value,type:document.getElementById('type').value,audiences,blocks:clean};
   if(editId) payload.id=editId;
+  // Publishing puts it on your wall. Emailing supporters is its own explicit choice,
+  // with the number in your face — and a tripwire for test-looking content.
+  if(publish&&ME_LIVE){
+    const n=await followerCount();
+    const bodyText=clean.filter(b=>b.type==='text').map(b=>b.text||'').join(' ').trim();
+    const testy=/\btest\b/i.test(title)||bodyText.length<30;
+    const warn=testy?'\n\n⚠ This update looks like a test ('+(/\btest\b/i.test(title)?'the title contains \u201ctest\u201d':'it has almost no text')+') — real supporters would receive it.':'';
+    const c=window.confirm('This will email '+(n===null?'your':String(n))+' supporter'+(n===1?'':'s')+'.'+warn+'\n\nOK = publish AND send the email.\nCancel = choose again (you can publish to your wall only).');
+    if(c){ payload.emailChoice='send'; }
+    else {
+      const wallOnly=window.confirm('Publish to your wall WITHOUT emailing anyone?\n\nOK = publish quietly (no email, ever, for this update).\nCancel = don\u2019t publish yet.');
+      if(!wallOnly) return;
+      payload.emailChoice='wall';
+    }
+  }
   const bp=document.getElementById('publish'),bd=document.getElementById('saveDraft');
   bp.disabled=bd.disabled=true; bp.textContent=publish?'Publishing…':'Publish now';
   try{
@@ -748,7 +774,7 @@ async function submit(publish){
     if(editId){
       show('ok', (publish?'Changes published — <a href="index.html">view on your site →</a>':'Changes saved as a draft.')+subNote);
     } else {
-      show('ok', (publish?'Published! It’s live now — <a href="index.html">view it on your site →</a>':'Saved as a draft. Publish it from Manage when you’re ready.')+subNote);
+      show('ok', (publish?(payload.emailChoice==='send'?'Published and emailed to your supporters! <a href="index.html">View it on your site →</a>':payload.emailChoice==='wall'?'Published to your wall — no emails sent. <a href="index.html">View it →</a>':'Published! It’s live now — <a href="index.html">view it on your site →</a>')+'':'Saved as a draft. Publish it from Manage when you’re ready.')+subNote);
       document.getElementById('title').value=''; blocks=[]; add('text');
     }
   }catch(e){ show('err', e.message); }

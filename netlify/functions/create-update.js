@@ -77,7 +77,14 @@ exports.handler = async function (event) {
     // Translate the written update into every field language (best-effort, async).
     if (recId && fields.Status === 'Published') { try { await fireTranslate(recId); } catch (e) {} }
     // If this update just went out as Published, notify subscribers (best-effort, async).
-    if (fields.Status === 'Published' && recId) { try { await fireNotify(recId); } catch (e) {} }
+    if (fields.Status === 'Published' && recId) {
+      if (b.emailChoice === 'wall') {
+        // Wall-only publish: claim Sent so no send path (now or later) ever emails this update.
+        try { await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ records: [{ id: recId, fields: { 'fldLIEGYuHv5G1iC2': true } }] }) }); } catch (e) {}
+      } else {
+        try { await fireNotify(recId); } catch (e) {}
+      }
+    }
     return resp(200, { ok: true, id: recId, status: fields.Status });
   } catch (e) {
     return resp(502, { error: 'Could not reach Airtable.' });
