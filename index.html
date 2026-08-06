@@ -804,7 +804,9 @@ function prayerText(u){ if(!u||!u.blocks)return ''; for(const b of u.blocks){ if
       const tx=Math.floor(xt)+dx, ty=Math.floor(yt)+dy;
       if(ty<0||ty>=N) continue;
       const left=Math.round(W/2-((xt-tx)*256)), top=Math.round(H/2-((yt-ty)*256));
-      html+='<img class="tl" alt="" style="left:'+left+'px;top:'+top+'px" src="https://tile.openstreetmap.org/'+Z+'/'+(((tx%N)+N)%N)+'/'+ty+'.png">';
+      const px=(((tx%N)+N)%N), sub='abc'[(px+ty)%3], path=Z+'/'+px+'/'+ty+'.png';
+      // Spread across OSM mirrors; if a tile drops, retry once on the main host.
+      html+='<img class="tl" alt="" style="left:'+left+'px;top:'+top+'px" src="https://'+sub+'.tile.openstreetmap.org/'+path+'" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=\'https://tile.openstreetmap.org/'+path+'\';}">';
     }
     pop=document.createElement('div'); pop.className='locmap on';
     pop.innerHTML=html+'<div class="locdot"></div><div class="osmcredit">© OpenStreetMap</div>';
