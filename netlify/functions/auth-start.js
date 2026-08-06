@@ -4,7 +4,9 @@ const { CLIENT_ID, ALLOWED_DOMAIN, siteBase } = require('./_auth');
 
 exports.handler = async function (event) {
   const redirectUri = siteBase(event) + '/.netlify/functions/auth-callback';
-  const state = crypto.randomBytes(16).toString('hex');
+  // ?join=1 = an individual missionary creating their page: any Google account welcome.
+  const join = ((event.queryStringParameters || {}).join === '1');
+  const state = crypto.randomBytes(16).toString('hex') + (join ? '.join' : '');
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     redirect_uri: redirectUri,
@@ -13,9 +15,9 @@ exports.handler = async function (event) {
     access_type: 'offline',
     include_granted_scopes: 'true',
     prompt: 'select_account',
-    hd: ALLOWED_DOMAIN,
     state
   });
+  if (!join) params.set('hd', ALLOWED_DOMAIN);
   return {
     statusCode: 302,
     headers: {

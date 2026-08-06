@@ -1,5 +1,6 @@
 // Handles Google's redirect back: verifies the user, then sets a Co-Labr session.
 const { CLIENT_ID, ALLOWED_DOMAIN, parseCookies, makeSessionCookie, siteBase } = require('./_auth');
+const { missByEmail } = require('./_shares');
 
 exports.handler = async function (event) {
   const q = event.queryStringParameters || {};
@@ -27,14 +28,22 @@ exports.handler = async function (event) {
 
     const claims = decodeJwt(tok.id_token);
     const email = (claims.email || '').toLowerCase();
-    if (!claims.email_verified || !email.endsWith('@' + ALLOWED_DOMAIN)) {
-      return deny(base, 'Please sign in with your Josiah Venture (@' + ALLOWED_DOMAIN + ') account.');
+    if (!claims.email_verified) {
+      return deny(base, 'Google could not verify that email address. Please try again.');
+    }
+    // Where to next: staff and anyone with a page go to the dashboard;
+    // a brand-new individual missionary goes to the join page to create theirs.
+    let dest = '/manage.html';
+    if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+      let existing = null;
+      try { if (process.env.AIRTABLE_TOKEN) existing = await missByEmail({ Authorization: 'Bearer ' + process.env.AIRTABLE_TOKEN }, email); } catch (_) {}
+      if (!existing) dest = '/join.html';
     }
     const session = { email, name: claims.name || email, pic: claims.picture || '', exp: Date.now() + 7*24*60*60*1000 };
     return {
       statusCode: 302,
       headers: {
-        Location: base + '/manage.html',
+        Location: base + dest,
         'Set-Cookie': makeSessionCookie(session),
         'Cache-Control': 'no-store'
       },

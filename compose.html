@@ -323,6 +323,8 @@ async function guard(){
     // Personal sign-off default: the missionary's chosen first names, or a best guess.
     const signNames=(me.miss&&me.miss.signoff)||signGuess((me.miss&&me.miss.name)||'',me.name||'');
     if(signNames) DEF.signoff.text='With love,\n'+signNames;
+    // Give blocks default to this missionary's own designated fund when they have one.
+    if(me.miss&&me.miss.give) DEF.give.url=me.miss.give;
     loadBrandPal();
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
     document.getElementById('form').style.display='block';

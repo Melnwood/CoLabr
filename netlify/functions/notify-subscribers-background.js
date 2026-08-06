@@ -33,19 +33,32 @@ exports.handler = async function (event) {
     if (statusName !== 'Published') return { statusCode: 200 };
     if (c[UF.sent]) return { statusCode: 200 }; // already sent — idempotent
 
+    // Whose update is this? Resolve the linked missionary — their name keys the subscriber
+    // list, their Live flag arms the send, their email is the reply-to.
+    let missName = SITE_MISSIONARY, replyTo = process.env.GMAIL_SENDER || '', missLive = false;
+    try {
+      const link = c['fldpNShY6OSQBSbx0'];
+      const missId = Array.isArray(link) && link[0] ? (typeof link[0] === 'string' ? link[0] : link[0].id) : null;
+      if (missId) {
+        const mr = await fetch(`${api}/${MIS}/${missId}`, { headers: auth });
+        if (mr.ok) {
+          const mfld = (await mr.json()).fields || {};
+          if (mfld['Name']) missName = mfld['Name'];
+          if (mfld['Email']) replyTo = String(mfld['Email']).split(',')[0].trim();
+          missLive = !!mfld['Live'];
+        }
+      }
+    } catch (e) {}
+
+    // TEST MODE: page not live → publishing emails no one. Sent stays unset so the
+    // update can still go out later (e.g. re-published after going live).
+    if (!missLive) { console.log('notify skipped — page not live', missName); return { statusCode: 200 }; }
+
     // Claim it immediately so a duplicate trigger can't double-send.
     await fetch(`${api}/${UPDATES}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: [{ id: b.updateId, fields: { [UF.sent]: true } }], typecast: true }) });
 
-    // Missionary reply-to.
-    let replyTo = process.env.GMAIL_SENDER || '';
-    try {
-      const mf = encodeURIComponent(`{Name}='${SITE_MISSIONARY.replace(/'/g, "")}'`);
-      const mr = await fetch(`${api}/${MIS}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${mf}`, { headers: auth });
-      if (mr.ok) { const md = await mr.json(); const rec = (md.records || [])[0]; const em = rec && rec.fields && rec.fields['fld65nJ51ewtIWTxj']; if (em) replyTo = em; }
-    } catch (e) {}
-
     // Active subscribers for this missionary who want an email each update.
-    const sf = encodeURIComponent(`AND({Active}=1,{Missionary}='${SITE_MISSIONARY.replace(/'/g, "")}',OR({Preference}='Full email',{Preference}='Link email'))`);
+    const sf = encodeURIComponent(`AND({Active}=1,{Missionary}='${missName.replace(/'/g, "")}',OR({Preference}='Full email',{Preference}='Link email'))`);
     let subs = [], url = `${api}/${SUBS}?pageSize=100&returnFieldsByFieldId=true&filterByFormula=${sf}`;
     while (url) {
       const sr = await fetch(url, { headers: auth }); if (!sr.ok) break;
@@ -70,13 +83,13 @@ exports.handler = async function (event) {
       const coverHtml = cover ? `<img src="${esc(cover)}" alt="" style="width:100%;max-width:560px;border-radius:12px;margin:0 0 16px">` : '';
       let html;
       if (pref === 'Full email') {
-        html = wrap(`${coverHtml}<h1 style="font-size:24px;font-weight:800;color:#241f1b;margin:0 0 14px">${esc(title)}</h1>${fullBody}`, site, manage);
+        html = wrap(`${coverHtml}<h1 style="font-size:24px;font-weight:800;color:#241f1b;margin:0 0 14px">${esc(title)}</h1>${fullBody}`, site, manage, missName);
       } else {
         html = wrap(`${coverHtml}<h1 style="font-size:22px;font-weight:800;color:#241f1b;margin:0 0 10px">${esc(title)}</h1>
           <p style="font-size:15px;line-height:1.6;color:#3c3733;margin:0 0 16px">${esc(excerpt)}…</p>
-          ${site ? `<p><a href="${site}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage);
+          ${site ? `<p><a href="${site}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage, missName);
       }
-      try { await sendMail({ to: email, subject: title, html, replyTo, fromName: SITE_MISSIONARY }); } catch (e) {}
+      try { await sendMail({ to: email, subject: title, html, replyTo, fromName: missName }); } catch (e) {}
     }
     return { statusCode: 200 };
   } catch (e) {
@@ -84,12 +97,13 @@ exports.handler = async function (event) {
   }
 };
 
-function wrap(inner, site, manage) {
+function wrap(inner, site, manage, missName) {
+  const who = esc(missName || 'this missionary');
   return `<div style="font-family:-apple-system,Arial,sans-serif;max-width:560px;margin:0 auto;color:#241f1b">
-    <p style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#FF6600;font-weight:800;margin:0 0 10px">The Ellenwoods · Ministry Update</p>
+    <p style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#FF6600;font-weight:800;margin:0 0 10px">${who} · Ministry Update</p>
     ${inner}
     <hr style="border:none;border-top:1px solid #e7e4e0;margin:22px 0 12px">
-    <p style="font-size:11.5px;color:#7a756f;line-height:1.5">You're receiving this because you chose to follow the Ellenwoods.${manage ? ` <a href="${manage}" style="color:#FF6600">Change how you hear from us or unsubscribe</a>.` : ''}</p>
+    <p style="font-size:11.5px;color:#7a756f;line-height:1.5">You're receiving this because you chose to follow ${who}.${manage ? ` <a href="${manage}" style="color:#FF6600">Change how you hear from us or unsubscribe</a>.` : ''}</p>
   </div>`;
 }
 // Render Co-Labr blocks to simple, email-safe HTML.
