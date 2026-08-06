@@ -159,7 +159,7 @@
   .noteonly:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(60,40,20,.2)}
   @media(max-width:680px){
     body.fieldnotes .pl,body.fieldnotes .pl.rev{flex-direction:column;gap:14px;align-items:center}
-    .polaroid{width:100%;max-width:300px}.polaroid .imgwrap{height:200px}
+    .polaroid{width:min(300px,86vw)}.polaroid .imgwrap{height:200px}
     .note{width:100%}
   }
 
@@ -499,7 +499,10 @@ function setPageAvatar(photo){
 var ORGD='Josiah Venture';
 function applyPageIdentity(page){
   if(!page) return;
-  ORGD=page.orgName||((page.org&&page.org!=='JV')?page.org:'Josiah Venture');
+  // The give box follows the page's BRANDING rule: only nationally co-branded pages
+  // (National staff) name their national org — JV-direct staff partner with Josiah Venture,
+  // even if their record carries a country org by mistake.
+  ORGD=(page.native&&(page.orgName||page.org))?(page.orgName||page.org):'Josiah Venture';
   if(page.give){ GIVE=page.give; const g=document.querySelector('.top .give'); if(g) g.href=page.give; }
   const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+page.name+' has shared — live from Co-Labr. Share it with anyone who wants to follow along.';
   const t=document.getElementById('mtitle'); if(t&&page.name) t.textContent=page.name;
