@@ -786,7 +786,9 @@ function prayerText(u){ if(!u||!u.blocks)return ''; for(const b of u.blocks){ if
     if(pop){ pop.classList.add('on'); return; }
     const c=await coords(); if(!c) return;
     // Draw the map from raw OSM tiles — no zoom buttons, no embed chrome, just the place.
-    const Z=11,N=Math.pow(2,Z),W=300,H=190;
+    // Zoomed to region scale: the point is "where they sit in Central & Eastern Europe",
+    // not their street — the whole neighborhood of countries with one brand dot.
+    const Z=5,N=Math.pow(2,Z),W=300,H=190;
     const latr=c.lat*Math.PI/180;
     const xt=(c.lon+180)/360*N;
     const yt=(1-Math.log(Math.tan(latr)+1/Math.cos(latr))/Math.PI)/2*N;
