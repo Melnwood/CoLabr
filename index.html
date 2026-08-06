@@ -898,6 +898,14 @@ function attachOverlay(v,ov,vtt){
   const upd=()=>{const t=v.currentTime||0;let cur='';for(let i=0;i<cues.length;i++){if(t>=cues[i].s&&t<cues[i].e){cur=cues[i].t;break;}}if(cur!==last){ov.textContent=cur;ov.style.opacity=cur?'1':'0';last=cur;}};
   v.addEventListener('timeupdate',upd); v.addEventListener('seeked',upd); v.addEventListener('play',upd); upd();
   ov.dataset.wired='1';
+  // Fullscreen (esp. iPhone) swaps in the NATIVE player, which can't see our overlay —
+  // hand the captions to the native text tracks for the duration, take them back after.
+  const rl=(typeof READERLANG!=='undefined'&&READERLANG)?READERLANG:'en';
+  const pickNative=()=>{try{const T=v.textTracks;let hit=-1;for(let i=0;i<T.length;i++){if(T[i].language===rl){hit=i;break;}}if(hit<0)for(let i=0;i<T.length;i++){if(T[i].language==='en'){hit=i;break;}}for(let i=0;i<T.length;i++)T[i].mode=(i===hit?'showing':'disabled');}catch(_){}};
+  const backToOverlay=()=>{try{const T=v.textTracks;for(let i=0;i<T.length;i++)T[i].mode='disabled';}catch(_){}};
+  v.addEventListener('webkitbeginfullscreen',pickNative);
+  v.addEventListener('webkitendfullscreen',backToOverlay);
+  document.addEventListener('fullscreenchange',()=>{ (document.fullscreenElement===v)?pickNative():backToOverlay(); });
   return true;
 }
 // Wire overlays for any video blocks whose captions are already available at open time.
