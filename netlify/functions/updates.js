@@ -57,6 +57,7 @@ exports.handler = async function (event) {
         id:      rec.id,
         title:   c[F.title] || '',
         rawdate: c[F.date] || '',
+        created: rec.createdTime || '',
         opens:   c[F.opens] || 0,
         cover:   https(c[F.cover] || ''),
         video:   c[F.video] || '',
@@ -67,7 +68,7 @@ exports.handler = async function (event) {
         src:     (trObj && trObj.src) || '',            // original language, if not English
         tr:      (trObj && trObj.tr) || null            // inline { en: {title, blocks}, ... }
       };
-    }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate));
+    }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate) || (b.created || '').localeCompare(a.created || ''));
 
     // A page is "national" when the person's "National staff" toggle is on (set by an admin in the
     // console). That authoritatively turns on the reader-language brand switch + co-brand mark.

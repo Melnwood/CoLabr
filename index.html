@@ -621,7 +621,7 @@ async function load(){
 // Feature the newest update as a full-width hero above everything else.
 function renderHero(){
   if(!U.length) return;
-  const latest=[...U].sort((a,b)=>(b.rawdate||'').localeCompare(a.rawdate||''))[0];
+  const latest=[...U].sort((a,b)=>(b.rawdate||'').localeCompare(a.rawdate||'')||(b.created||'').localeCompare(a.created||''))[0];
   if(!latest) return;
   HEROID=latest.id;
   const h=document.getElementById('hero'), img=document.getElementById('heroimg');
@@ -663,7 +663,9 @@ function getItems(){
   const cleanView=!qs&&yearFilter==='all';   // the default archive view — hide the update that's in the hero
   let items=U.map((u,idx)=>({u,idx}))
     .filter(o=>(!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs)) && (yearFilter==='all'||String(o.u.y)===yearFilter) && (monthFilter==='all'||(o.u.rawdate||'').slice(5,7)===monthFilter) && !(cleanView&&HEROID&&o.u.id===HEROID));
-  items.sort((a,b)=> sortDir==='new' ? (b.u.rawdate||'').localeCompare(a.u.rawdate||'') : (a.u.rawdate||'').localeCompare(b.u.rawdate||''));
+  items.sort((a,b)=> sortDir==='new'
+    ? ((b.u.rawdate||'').localeCompare(a.u.rawdate||'')||(b.u.created||'').localeCompare(a.u.created||''))
+    : ((a.u.rawdate||'').localeCompare(b.u.rawdate||'')||(a.u.created||'').localeCompare(b.u.created||'')));
   return items;
 }
 
