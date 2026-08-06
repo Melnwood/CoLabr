@@ -61,11 +61,27 @@ exports.handler = async function (event) {
     // applies to subtitles too. Native transcript rides along as its own track.
     const srcShort = srcLang.split('-')[0];
     const mkVtt = texts => 'WEBVTT\n\n' + cues.map((c, i) => `${i + 1}\n${vt(c.s)} --> ${vt(c.e)}\n${texts[i]}`).join('\n\n') + '\n';
+    // English first, FAST: viewers get working subtitles the moment they exist;
+    // the other languages fill in quietly behind them.
     const tracks = [];
     let enTexts = cues.map(c => c.text);
     try { const t = await translate(cues.map(c => c.text), srcLang, 'en', 'English'); if (t && t.length === cues.length) enTexts = t; } catch (e) { await log('WARN translate en ' + String(e.message || e)); }
     tracks.push({ lang: 'en', label: 'English', vtt: mkVtt(enTexts) });
     if (srcShort !== 'en') tracks.push({ lang: srcShort, label: LNAME[srcShort] || srcShort, vtt: mkVtt(cues.map(c => c.text)) });
+
+    const httpUrl = b.gsUri.replace(/^gs:\/\//, 'https://storage.googleapis.com/');
+    let recId = b.recordId || null;
+    if (recId) {
+      await attachAllToRecord(recId, parseInt(b.blockIndex || '0', 10), srcShort, tracks.slice());
+    } else {
+      const blocks = [
+        { type: 'video', url: httpUrl, lang: srcShort, captions: tracks.slice(), captionStatus: 'ready' },
+        { type: 'text', text: 'Captions were generated automatically (Google transcription + Claude translation) and may contain small errors.' }
+      ];
+      recId = await createUpdate(b.title || '🎬 Video caption test (safe to delete)', blocks);
+    }
+
+    // The long tail: remaining field languages, attached as one refresh at the end.
     for (const tgt of TARGETS) {
       if (tgt === 'en' || tgt === srcShort) continue;
       try {
@@ -73,18 +89,7 @@ exports.handler = async function (event) {
         if (t && t.length === cues.length) tracks.push({ lang: tgt, label: LNAME[tgt] || tgt, vtt: mkVtt(t) });
       } catch (e) { await log('WARN translate ' + tgt + ' ' + String(e.message || e)); }
     }
-
-    // 5-6) Attach every track in one write.
-    const httpUrl = b.gsUri.replace(/^gs:\/\//, 'https://storage.googleapis.com/');
-    if (b.recordId) {
-      await attachAllToRecord(b.recordId, parseInt(b.blockIndex || '0', 10), srcShort, tracks);
-    } else {
-      const blocks = [
-        { type: 'video', url: httpUrl, lang: srcShort, captions: tracks, captionStatus: 'ready' },
-        { type: 'text', text: 'Captions were generated automatically (Google transcription + Claude translation) and may contain small errors.' }
-      ];
-      await createUpdate(b.title || '🎬 Video caption test (safe to delete)', blocks);
-    }
+    if (recId && tracks.length > 2) await attachAllToRecord(recId, parseInt(b.blockIndex || '0', 10), srcShort, tracks);
     await log(JSON.stringify({ ok: true, cues: cues.length, srcLang, tracks: tracks.map(t => t.lang), sample: enTexts.slice(0, 2) }));
     return j(200, { ok: true });
   } catch (e) {
@@ -134,11 +139,15 @@ async function translate(lines, srcLang, tgtCode, tgtName) {
 }
 
 async function createUpdate(title, blocks) {
-  const token = process.env.AIRTABLE_TOKEN; if (!token) return;
-  await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, {
-    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ records: [{ fields: { Title: title, Status: 'Published', Blocks: JSON.stringify(blocks), Source: 'video-caption', Missionary: ['The Ellenwood Family'], Date: new Date().toISOString().slice(0, 10) } }], typecast: true })
-  }).catch(() => {});
+  const token = process.env.AIRTABLE_TOKEN; if (!token) return null;
+  try {
+    const r = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ records: [{ fields: { Title: title, Status: 'Published', Blocks: JSON.stringify(blocks), Source: 'video-caption', Missionary: ['The Ellenwood Family'], Date: new Date().toISOString().slice(0, 10) } }], typecast: true })
+    });
+    const d = await r.json();
+    return (((d.records || [])[0]) || {}).id || null;
+  } catch (e) { return null; }
 }
 
 async function attachAllToRecord(recordId, blockIndex, srcLangShort, tracks) {
