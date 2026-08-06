@@ -481,8 +481,10 @@ function setPageAvatar(photo){
   const a=document.getElementById('mavatar'); if(!a||!photo)return;
   a.style.backgroundImage=`url('${String(photo).replace(/'/g,"%27")}')`; a.style.display='';
 }
+var ORGD='Josiah Venture';
 function applyPageIdentity(page){
   if(!page) return;
+  ORGD=page.orgName||((page.org&&page.org!=='JV')?page.org:'Josiah Venture');
   if(page.give){ GIVE=page.give; const g=document.querySelector('.top .give'); if(g) g.href=page.give; }
   const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+page.name+' has shared — live from Co-Labr. Share it with anyone who wants to follow along.';
   const t=document.getElementById('mtitle'); if(t&&page.name) t.textContent=page.name;
@@ -859,7 +861,7 @@ async function openReader(i){
     ${bodyHtml(uu, !emb&&!!u.cover)}
     ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
     ${respondHTML(u)}
-    <div class="give"><div class="t">Partner with ${esc(PAGEM||'the Ellenwoods')}</div><div class="d">Stand with ${PAGEM?'them':'us'} in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
+    <div class="give"><div class="t">Partner with ${esc(ORGD)} for ${PAGEM?esc(PAGEM)+'\u2019s':'the Ellenwoods\u2019'} ministry</div><div class="d">Every gift is designated for ${PAGEM?'their':'our'} work.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
   if(ME){
