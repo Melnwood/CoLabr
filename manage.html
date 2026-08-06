@@ -220,6 +220,7 @@ function fmtD(d){ try{ const x=new Date(d+'T12:00:00'); if(!isNaN(x)) return x.t
 async function guard(){
   try{ const r=await fetch('/.netlify/functions/me'); if(!r.ok) throw 0; const me=await r.json();
     document.getElementById('who').innerHTML=(me.pic?`<img src="${me.pic}" alt="">`:'')+`<span>${me.email}</span>`;
+    IS_ADMIN=!!me.admin;
     if(me.admin){ ['adminLink','careLink','orgsLink'].forEach(id=>{const a=document.getElementById(id); if(a)a.style.display='';}); } return true;
   }catch{ location.replace('login.html'); return false; }
 }
@@ -385,21 +386,23 @@ const THUMB={
   fieldnotes:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#efe7d4"/><g transform="rotate(-6 42 32)"><rect x="20" y="14" width="44" height="40" fill="#fff" stroke="#e0d6c0"/><rect x="24" y="18" width="36" height="24" fill="#e8a24b"/><rect x="34" y="10" width="18" height="7" fill="#ffd68f" opacity=".8"/></g><rect x="72" y="20" width="34" height="4" rx="2" fill="#b04a1f"/><rect x="72" y="30" width="40" height="3" rx="1.5" fill="#c9bfa8"/><rect x="72" y="37" width="40" height="3" rx="1.5" fill="#c9bfa8"/><rect x="72" y="44" width="26" height="3" rx="1.5" fill="#c9bfa8"/></svg>`,
   grid:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#f4f1ec"/><g fill="#fff" stroke="#e2ddd3"><rect x="8" y="8" width="32" height="22" rx="3"/><rect x="44" y="8" width="32" height="22" rx="3"/><rect x="80" y="8" width="32" height="22" rx="3"/><rect x="8" y="34" width="32" height="22" rx="3"/><rect x="44" y="34" width="32" height="22" rx="3"/><rect x="80" y="34" width="32" height="22" rx="3"/></g><g fill="#e8a24b"><rect x="10" y="10" width="28" height="12" rx="2"/><rect x="46" y="10" width="28" height="12" rx="2" fill="#5f8fb0"/><rect x="82" y="10" width="28" height="12" rx="2" fill="#5fae7d"/><rect x="10" y="36" width="28" height="12" rx="2" fill="#5fae7d"/><rect x="46" y="36" width="28" height="12" rx="2" fill="#e8a24b"/><rect x="82" y="36" width="28" height="12" rx="2" fill="#5f8fb0"/></g></svg>`,
   timeline:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#f4f1ec"/><rect x="17" y="8" width="2" height="48" fill="#e0d9cb"/><g><circle cx="18" cy="16" r="4" fill="#FF6600"/><circle cx="18" cy="34" r="4" fill="#FF6600"/><circle cx="18" cy="50" r="4" fill="#FF6600"/></g><g fill="#fff" stroke="#e2ddd3"><rect x="30" y="10" width="80" height="14" rx="3"/><rect x="30" y="28" width="80" height="14" rx="3"/><rect x="30" y="46" width="80" height="12" rx="3"/></g><g fill="#d8c4a0"><rect x="34" y="13" width="20" height="8" rx="2"/><rect x="34" y="31" width="20" height="8" rx="2"/></g></svg>`,
+  pano:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#191512"/><rect x="16" y="12" width="88" height="30" rx="2" fill="#5f8fb0" opacity=".85"/><rect x="12" y="46" width="58" height="6" rx="2" fill="#fff"/><rect x="12" y="55" width="36" height="3" rx="1.5" fill="#cbc4bb"/></svg>`,
   wall:`<svg viewBox="0 0 120 64"><rect width="120" height="64" fill="#f4f1ec"/><g><rect x="8" y="8" width="32" height="30" rx="3" fill="#e8a24b"/><rect x="8" y="42" width="32" height="14" rx="3" fill="#5f8fb0"/><rect x="44" y="8" width="32" height="16" rx="3" fill="#5fae7d"/><rect x="44" y="28" width="32" height="28" rx="3" fill="#c99a3f"/><rect x="80" y="8" width="32" height="24" rx="3" fill="#5f8fb0"/><rect x="80" y="36" width="32" height="20" rx="3" fill="#5fae7d"/></g></svg>`
 };
 const STYLE_DEFS=[
-  {name:'Field Notes',key:'fieldnotes',ds:'Handmade scrapbook — taped photos & typed letters'},
+  {name:'Field Notes',key:'fieldnotes',ds:'Handmade scrapbook — taped photos & typed letters',adminOnly:true},
   {name:'Cover Grid',key:'grid',ds:'A clean gallery of cover cards'},
   {name:'Timeline',key:'timeline',ds:'A vertical journey, year by year'},
-  {name:'Gallery Wall',key:'wall',ds:'A photo wall / mosaic of moments'}
+  {name:'Gallery Wall',key:'wall',ds:'A photo wall / mosaic of moments'},
+  {name:'Panorama',key:'pano',ds:'Full-screen cinematic chapters'}
 ];
-let curStyle='Field Notes';
+let curStyle='Field Notes', IS_ADMIN=false;
 async function loadStyle(){
   try{ const d=await api('getStyle'); if(d.style) curStyle=d.style; }catch(e){}
   renderStyles();
 }
 function renderStyles(){
-  document.getElementById('styles').innerHTML=STYLE_DEFS.map(s=>`
+  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(s=>!s.adminOnly||IS_ADMIN||s.name===curStyle).map(s=>`
     <div class="scard ${s.name===curStyle?'on':''}" data-style="${s.name}">
       <span class="cur">Current</span>
       <div class="thumb">${THUMB[s.key]}</div>

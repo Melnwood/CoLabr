@@ -111,7 +111,7 @@ const THUMB={
   wall:`<svg viewBox="0 0 120 56"><rect width="120" height="56" fill="#f4f1ec"/><rect x="8" y="8" width="30" height="26" rx="3" fill="#e8a24b"/><rect x="8" y="38" width="30" height="10" rx="3" fill="#5f8fb0"/><rect x="45" y="8" width="30" height="14" rx="3" fill="#5fae7d"/><rect x="45" y="26" width="30" height="22" rx="3" fill="#c99a3f"/><rect x="82" y="8" width="30" height="20" rx="3" fill="#5f8fb0"/><rect x="82" y="32" width="30" height="16" rx="3" fill="#5fae7d"/></svg>`
 };
 const STYLE_DEFS=[
-  {name:'Field Notes',key:'fieldnotes',ds:'Handmade scrapbook feel'},
+  {name:'Field Notes',key:'fieldnotes',ds:'Handmade scrapbook feel',adminOnly:true},
   {name:'Cover Grid',key:'grid',ds:'A clean gallery of covers'},
   {name:'Timeline',key:'timeline',ds:'A vertical journey'},
   {name:'Gallery Wall',key:'wall',ds:'A photo mosaic'},
@@ -160,7 +160,7 @@ async function init(){
   progress();
 }
 function renderStyles(){
-  document.getElementById('styles').innerHTML=STYLE_DEFS.map(s=>`
+  document.getElementById('styles').innerHTML=STYLE_DEFS.filter(x=>!x.adminOnly||(me&&me.admin)||x.name===curStyle).map(s=>`
     <div class="scard ${s.name===curStyle?'on':''}" data-style="${s.name}">
       <div class="thumb">${THUMB[s.key]}</div>
       <div class="nm">${s.name}${s.name===curStyle?' ✓':''}</div>
