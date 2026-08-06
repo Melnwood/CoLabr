@@ -30,9 +30,10 @@
   .mavatar{width:78px;height:78px;border-radius:50%;background-size:cover;background-position:center;background-color:#e9e2d5;border:3px solid #fff;box-shadow:0 5px 16px rgba(60,40,20,.2);margin:0;flex:none}
   .mh-l h1{font-size:clamp(38px,6.4vw,56px);font-weight:800;letter-spacing:-.02em;line-height:.98;margin:0;color:var(--text)}
   .mloc{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--muted);margin-top:12px;position:relative;cursor:pointer}
-  .locmap{position:absolute;top:calc(100% + 10px);left:0;width:300px;height:200px;border-radius:14px;overflow:hidden;border:1px solid var(--line,#e7e4e0);box-shadow:0 18px 44px rgba(24,21,18,.22);display:none;z-index:60;background:#fff}
+  .locmap{position:absolute;top:calc(100% + 10px);left:0;width:300px;height:190px;border-radius:14px;overflow:hidden;border:1px solid var(--line,#e7e4e0);box-shadow:0 18px 44px rgba(24,21,18,.22);display:none;z-index:60;background:#e8ecef}
   .locmap.on{display:block}
-  .locmap iframe{width:100%;height:100%;border:0;pointer-events:none}
+  .locmap .tl{position:absolute;width:256px;height:256px;pointer-events:none}
+  .locmap .osmcredit{position:absolute;right:5px;bottom:3px;font-size:9px;color:rgba(40,45,50,.55);background:rgba(255,255,255,.65);border-radius:4px;padding:1px 5px;pointer-events:none}
   .locdot{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--acc,#FF6600);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none}
   .locdot:after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--acc,#FF6600);animation:locping 1.6s ease-out infinite}
   @keyframes locping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.1);opacity:0}}
@@ -712,16 +713,27 @@ function prayerText(u){ if(!u||!u.blocks)return ''; for(const b of u.blocks){ if
     clearTimeout(hideT);
     if(pop){ pop.classList.add('on'); return; }
     const c=await coords(); if(!c) return;
-    const dLon=.06,dLat=.035;
-    const bbox=[c.lon-dLon,c.lat-dLat,c.lon+dLon,c.lat+dLat].join(',');
+    // Draw the map from raw OSM tiles — no zoom buttons, no embed chrome, just the place.
+    const Z=11,N=Math.pow(2,Z),W=300,H=190;
+    const latr=c.lat*Math.PI/180;
+    const xt=(c.lon+180)/360*N;
+    const yt=(1-Math.log(Math.tan(latr)+1/Math.cos(latr))/Math.PI)/2*N;
+    let html='';
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+      const tx=Math.floor(xt)+dx, ty=Math.floor(yt)+dy;
+      if(ty<0||ty>=N) continue;
+      const left=Math.round(W/2-((xt-tx)*256)), top=Math.round(H/2-((yt-ty)*256));
+      html+='<img class="tl" alt="" style="left:'+left+'px;top:'+top+'px" src="https://tile.openstreetmap.org/'+Z+'/'+(((tx%N)+N)%N)+'/'+ty+'.png">';
+    }
     pop=document.createElement('div'); pop.className='locmap on';
-    pop.innerHTML='<iframe loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent(bbox)+'&layer=mapnik" title="Map"></iframe><div class="locdot"></div>';
+    pop.innerHTML=html+'<div class="locdot"></div><div class="osmcredit">© OpenStreetMap</div>';
     el.appendChild(pop);
   }
   function hide(){ hideT=setTimeout(()=>{ if(pop) pop.classList.remove('on'); },250); }
   el.addEventListener('mouseenter',show);
   el.addEventListener('mouseleave',hide);
-  el.addEventListener('click',()=>{ (pop&&pop.classList.contains('on'))?pop.classList.remove('on'):show(); });
+  el.addEventListener('click',ev=>{ ev.stopPropagation(); (pop&&pop.classList.contains('on'))?pop.classList.remove('on'):show(); });
+  document.addEventListener('click',()=>{ if(pop) pop.classList.remove('on'); });
 })();
 let _praypop=null;
 function ensurePrayPop(){ if(_praypop)return _praypop; _praypop=document.createElement('div'); _praypop.id='praypop'; document.body.appendChild(_praypop); return _praypop; }
