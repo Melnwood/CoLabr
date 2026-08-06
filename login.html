@@ -19,15 +19,16 @@
   h1{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px}
   .sub{font-size:14px;color:var(--muted);line-height:1.55;margin:0 0 28px}
   .err{background:#fdecea;color:#b0342b;border:1px solid #f5c6c0;border-radius:11px;padding:12px 15px;font-size:13px;line-height:1.5;margin-bottom:22px;display:none;text-align:left}
-  .door{display:block;text-align:left;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:12px;text-decoration:none;transition:.14s;background:#fff}
+  .door{display:block;text-align:left;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:12px;text-decoration:none;transition:.14s;background:#fff;color:var(--ink)}
+  .door:visited{color:var(--ink)}
   .door:hover{border-color:var(--acc);box-shadow:0 10px 26px rgba(255,107,91,.14);transform:translateY(-1px)}
   .door b{display:block;font-size:15.5px;margin-bottom:4px}
   .door p{font-size:12.5px;color:var(--muted);line-height:1.5;margin:0}
   .door.new{background:var(--acc);border-color:var(--acc)}
   .door.new b,.door.new p{color:#fff}
   .door.new p{opacity:.92}
-  .g{display:inline-flex;align-items:center;gap:8px}
-  .g svg{width:16px;height:16px;flex:0 0 auto}
+  .g{display:flex;align-items:center}
+  .g svg{width:17px;height:17px;flex:0 0 auto;margin-right:9px}
   .note{font-size:11.5px;color:var(--muted);margin-top:22px;line-height:1.6}
   .note a{color:var(--acc)}
 </style>
@@ -37,7 +38,7 @@
     <div class="mark"><a href="home.html">Co<span class="d"></span>labr</a></div>
     <div class="tagline">In it together</div>
     <h1>Welcome</h1>
-    <p class="sub">One beautiful home for your ministry updates.</p>
+    <p class="sub">Sign in to your page, or start a new one.</p>
     <div class="err" id="err"></div>
 
     <a class="door new" href="/.netlify/functions/auth-start?join=1">
