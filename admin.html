@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D1B2A'/%3E%3Ccircle cx='32' cy='34' r='9' fill='%23FF6B5B'/%3E%3C/svg%3E">
+<title>Co·labr — Super admin</title>
+<style>
+  /* The super-admin zone deliberately looks different from the everyday dashboard:
+     navy console, coral accents — you always know which hat you're wearing. */
+  :root{--acc:#FF6B5B;--teal:#00C2B3;--ink:#0D1B2A;--panel:#152638;--panel2:#1c3049;--line:#27405c;--text:#eef2f6;--muted:#8fa1b5;--green:#4fd08e;--red:#ff8a7d;--serif:Georgia,'Times New Roman',serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:760px;margin:0 auto;padding:26px 20px 90px}
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .mark{font-family:var(--serif);font-size:21px;font-weight:600}
+  .mark .d{display:inline-block;width:.34em;height:.34em;background:var(--acc);border-radius:50%;margin:0 .13em;vertical-align:.06em}
+  .zone{font-size:10px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--acc);border:1px solid rgba(255,107,91,.45);border-radius:12px;padding:4px 11px}
+  .top nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .top nav a{font-size:12.5px;font-weight:600;text-decoration:none;border:1px solid var(--line);border-radius:20px;padding:8px 14px;color:var(--text);background:var(--panel)}
+  .top nav a:hover{border-color:var(--acc)}
+  h1{font-family:var(--serif);font-size:27px;font-weight:600;letter-spacing:-.01em;margin:26px 0 6px}
+  .lede{font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 26px}
+  .sect{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin:28px 0 10px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;font-size:13.5px;line-height:1.6}
+  .panel b.t{display:block;font-size:14.5px;margin-bottom:4px}
+  .panel .sub{color:var(--muted);font-size:12.5px}
+  .switch{display:flex;align-items:flex-start;gap:14px}
+  .switch .body{flex:1}
+  .light{width:11px;height:11px;border-radius:50%;flex:none;margin-top:5px}
+  .light.red{background:var(--red);box-shadow:0 0 10px rgba(255,138,125,.6)}
+  .light.green{background:var(--green);box-shadow:0 0 10px rgba(79,208,142,.5)}
+  .act{cursor:pointer;font-weight:800;color:var(--acc);white-space:nowrap}
+  .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .tool{display:block;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;text-decoration:none;transition:.13s}
+  .tool:hover{border-color:var(--acc);transform:translateY(-2px)}
+  .tool svg{width:22px;height:22px;stroke:var(--teal);stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round;margin-bottom:9px}
+  .tool b{display:block;font-size:14.5px;margin-bottom:4px}
+  .tool p{font-size:12px;color:var(--muted);line-height:1.55;margin:0}
+  ul.recipes{margin:8px 0 12px;padding-left:18px;color:var(--text)}
+  ul.recipes li{margin-bottom:6px;font-size:13px;line-height:1.55}
+  ul.recipes code{background:var(--panel2);border-radius:5px;padding:1px 6px;font-size:12px;color:#ffd9d4}
+  .mrow{display:flex;gap:8px;flex-wrap:wrap}
+  .mrow input{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13px;color:var(--text)}
+  .mrow input::placeholder{color:var(--muted)}
+  .mrow button{background:var(--acc);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-weight:800;font-size:13px;cursor:pointer}
+  #tdmsg{margin-top:8px;font-size:12.5px}
+  .foot{margin-top:30px;font-size:12px;color:var(--muted);line-height:1.7}
+  .state{color:var(--muted);padding:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="mark">Co<span class="d"></span>labr</div>
+    <span class="zone">Super admin</span>
+    <nav><a href="manage.html">← Your dashboard</a><a href="/.netlify/functions/logout">Sign out</a></nav>
+  </div>
+
+  <h1>The engine room</h1>
+  <p class="lede">Platform-wide switches and oversight tools. Only super admins can see this page — everyone else's dashboard has no door to it.</p>
+
+  <div class="sect">Platform switches</div>
+  <div class="panel switch" id="killpanel"><div class="state">Checking the email switch…</div></div>
+  <div class="panel switch" id="fnpanel" style="display:none"></div>
+
+  <div class="sect">Oversight</div>
+  <div class="tools">
+    <a class="tool" href="care.html">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.2-9A5.4 5.4 0 0 1 12 6.6 5.4 5.4 0 0 1 21.2 12C19 16.4 12 21 12 21z"/></svg>
+      <b>Care radar</b>
+      <p>Hard news, big changes, and gone-quiet staff surfaced from everyone's recent updates.</p>
+    </a>
+    <a class="tool" href="orgs.html">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.6"/><circle cx="5" cy="18" r="2.6"/><circle cx="19" cy="18" r="2.6"/><path d="M10.5 7.2 6.6 15.6M13.5 7.2l3.9 8.4M7.6 18h8.8"/></svg>
+      <b>Organizations forming</b>
+      <p>Individual sign-ups clustered by organization — lights up at three, your cue to reach out.</p>
+    </a>
+    <a class="tool" href="team.html">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+      <b>Add people</b>
+      <p>Create pages for staff directly — name, email, sign-off, done.</p>
+    </a>
+  </div>
+
+  <div class="sect">Test drive</div>
+  <div class="panel" id="tdpanel">
+    <b class="t">Replay any first-time experience</b>
+    <p class="sub" style="margin:0 0 10px">Use a <b>plus-alias</b> email so nothing real is ever touched, and a <b>private/incognito window</b> so the site forgets you between runs.</p>
+    <ul class="recipes">
+      <li><b>Outsider joining:</b> private window → colabr.netlify.app → Take a tour → Create your page → sign in with the <i>email option</i> as <code>yourname+out1@gmail.com</code>.</li>
+      <li><b>JV staff first run:</b> same, but sign in by email as <code>mellenwood+staff1@josiahventure.com</code> — join page, test mode, the works.</li>
+      <li><b>Supporter's first visit:</b> open your wall with <code>&amp;tourreset=1</code> added to a supporter link — the welcome walkthrough plays again.</li>
+    </ul>
+    <div class="mrow">
+      <input id="tdemail" placeholder="persona+alias@… to wipe and replay">
+      <button id="tdwipe">Wipe persona</button>
+    </div>
+    <div id="tdmsg"></div>
+  </div>
+
+  <div class="foot">Super admins are set by the platform's ADMIN_EMAILS list — right now that's Mel and Noah. Everything on this page acts platform-wide; page-level things (your updates, your people) live on your regular dashboard.</div>
+</div>
+<script>
+async function guard(){
+  try{
+    const r=await fetch('/.netlify/functions/me'); if(!r.ok) throw 0;
+    const me=await r.json();
+    if(!me.admin){ location.replace('manage.html'); return false; }
+    return true;
+  }catch{ location.replace('login.html'); return false; }
+}
+function switches(){
+  fetch('/.netlify/functions/platform').then(r=>r.json()).then(d=>{
+    if(d.error)return;
+    const el=document.getElementById('killpanel');
+    if(d.paused){
+      el.innerHTML='<span class="light red"></span><div class="body"><b class="t" style="color:var(--red)">All outbound email is PAUSED platform-wide.</b>No update emails go to any supporter, on any page, regardless of Live status. <span class="act" id="killtoggle">Resume email →</span></div>';
+    }else{
+      el.innerHTML='<span class="light green"></span><div class="body"><b class="t" style="color:var(--green)">Email is flowing.</b>Live pages email their subscribers when they publish. <span class="act" id="killtoggle">Pause ALL email →</span></div>';
+    }
+    document.getElementById('killtoggle').addEventListener('click',async()=>{
+      const to=!d.paused;
+      const q=confirm(to?'Pause ALL outbound email, platform-wide?\n\nNo supporter emails will go out from any page until you resume.':'Resume outbound email platform-wide?\n\nLive pages will email their subscribers again when they publish. Anything published while paused stays unsent.');
+      if(!q)return;
+      const r=await fetch('/.netlify/functions/platform',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pause:to})});
+      if(r.ok) switches(); else alert('Could not change the switch.');
+    });
+    const fn=document.getElementById('fnpanel'); fn.style.display='flex';
+    fn.innerHTML='<span class="light '+(d.hideFieldnotes?'red':'green')+'"></span><div class="body"><b class="t">Field Notes style: '+(d.hideFieldnotes?'hidden from the style pickers.':'available in the style pickers.')+'</b><span class="sub">Existing walls always keep rendering it. </span><span class="act" id="fntoggle">'+(d.hideFieldnotes?'Make it available →':'Hide it →')+'</span></div>';
+    document.getElementById('fntoggle').addEventListener('click',async()=>{
+      const r=await fetch('/.netlify/functions/platform',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hideFieldnotes:!d.hideFieldnotes})});
+      if(r.ok) switches(); else alert('Could not change the switch.');
+    });
+  });
+}
+document.getElementById('tdwipe').addEventListener('click',async()=>{
+  const email=document.getElementById('tdemail').value.trim();
+  const msg=document.getElementById('tdmsg');
+  if(!email){ msg.style.color='var(--red)'; msg.textContent='Type the plus-alias persona to wipe.'; return; }
+  if(!confirm('Wipe every trace of '+email+'?\n\nTheir test page and any wall subscriptions are deleted so the flow can be replayed fresh.')) return;
+  msg.style.color='var(--muted)'; msg.textContent='Wiping…';
+  try{
+    const r=await fetch('/.netlify/functions/testdrive',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const d=await r.json();
+    if(!r.ok){ msg.style.color='var(--red)'; msg.textContent=d.error||'Could not wipe.'; return; }
+    msg.style.color='var(--green)'; msg.textContent='Clean slate — removed '+d.pages+' page'+(d.pages===1?'':'s')+' and '+d.subs+' subscription'+(d.subs===1?'':'s')+'. That persona is a first-timer again.';
+    document.getElementById('tdemail').value='';
+  }catch(_){ msg.style.color='var(--red)'; msg.textContent='Could not reach the server.'; }
+});
+guard().then(ok=>{ if(ok) switches(); });
+</script>
+</body>
+</html>

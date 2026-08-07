@@ -28,7 +28,8 @@ print('— pages —')
 for path, marker in [('/home.html', 'In it together'), ('/login.html', 'Use any email'),
                      ('/join.html', 'Which organization'), ('/privacy.html', 'Tov-ell'),
                      ('/index.html', 'renderPano'), ('/manage.html', 'livestrip'),
-                     ('/compose.html', 'subtitles arrive'), ('/orgs.html', 'killpanel')]:
+                     ('/compose.html', 'subtitles arrive'), ('/orgs.html', 'Organizations forming'),
+                     ('/admin.html', 'killpanel')]:
     try:
         s, b = get(SITE + path)
         check('page ' + path, s == 200 and marker in b, f'status {s}, marker {"found" if marker in b else "MISSING"}')
