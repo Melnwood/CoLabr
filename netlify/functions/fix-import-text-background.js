@@ -7,14 +7,22 @@
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
 
-const DROP = [
+// Junk is filtered LINE by line — old plain-text campaigns mix real signatures with
+// "[2]Friend us on Facebook" in the same paragraph, so paragraph-level drops lose story.
+const DROPLINE = [
   /^A movement of God among the youth/i,     // newsletter masthead tagline
   /^Equipping young leaders to fulfill/i,    // footer tagline
   /^josiahventure$/i,                        // bare footer logo alt text
   /^This email was sent/i,
   /why did I get this/i,
-  /unsubscribe from this list/i,
+  /unsubscribe/i,
   /update subscription preferences/i,
+  /friend us on facebook/i,
+  /forward this to them/i,
+  /^send to a friend$/i,
+  /^links:$/i,
+  /^\d+\.\s*$/,                              // orphaned "1." link-reference stubs
+  /\(mailto:\)/,
 ];
 
 exports.handler = async function (event) {
@@ -38,16 +46,17 @@ exports.handler = async function (event) {
     for (const rec of recs) {
       const c = rec.fields || {};
       let blocks = []; try { blocks = JSON.parse(c['Blocks'] || '[]'); } catch { skipped++; continue; }
-      if (!blocks.length) { skipped++; continue; }
       const hasText = blocks.some(x => x && ['text', 'heading', 'quote', 'prayer', 'praise', 'numbers'].includes(x.type));
       if (hasText) { skipped++; continue; }   // healthy import — leave alone
 
       const paras = String(c['Body'] || '')
         .replace(/\r/g, '')
         .split(/\n\s*\n/)
-        .map(p => p.trim())
-        .filter(p => p && !DROP.some(rx => rx.test(p)) && !p.includes('(mailto:)'));
-      if (!paras.length) { skipped++; continue; }
+        .map(p => p.split('\n')
+          .filter(l => !DROPLINE.some(rx => rx.test(l.trim())))
+          .join('\n').replace(/\[\d+\]/g, '').trim())
+        .filter(Boolean);
+      if (!paras.length) { skipped++; continue; }   // nothing recoverable (footer-only Body)
 
       // The story leads; the imported photos follow as a gallery (the wall reader
       // already dedupes whichever photo doubles as the cover).
