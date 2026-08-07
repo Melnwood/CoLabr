@@ -6,7 +6,7 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID ||
 const ALLOWED_DOMAIN = 'josiahventure.com';
 const COOKIE = 'cl_session';
 // Super-admins who can add people. Configurable via ADMIN_EMAILS (comma-separated); defaults to Mel.
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'mellenwood@josiahventure.com').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'mellenwood@josiahventure.com,nellenwood@josiahventure.com').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 function isAdmin(email){ return !!email && ADMIN_EMAILS.includes(String(email).toLowerCase()); }
 
 function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }

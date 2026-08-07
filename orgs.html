@@ -30,6 +30,20 @@
   <a class="back" href="/manage.html">← Back to dashboard</a>
   <div id="killpanel" style="display:none;border-radius:14px;padding:14px 18px;margin:16px 0 4px;font-size:13.5px;line-height:1.5"></div>
   <div id="fnpanel" style="display:none;border-radius:14px;padding:12px 18px;margin:10px 0 4px;font-size:13px;line-height:1.5"></div>
+  <div id="tdpanel" style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:10px 0 4px;font-size:13px;line-height:1.6">
+    <b style="font-size:14px">🧪 Test drive — replay any first-time experience</b>
+    <p style="margin:8px 0 10px;color:var(--muted)">Use a <b>plus-alias</b> email so nothing real is ever touched, and a <b>private/incognito window</b> so the site forgets you between runs.</p>
+    <ul style="margin:0 0 12px;padding-left:18px;color:#4a443f">
+      <li><b>Outsider joining:</b> private window → colabr.netlify.app → Take a tour → Create your page → sign in with the <i>email option</i> as <code>yourname+out1@gmail.com</code>.</li>
+      <li><b>JV staff first run:</b> same, but sign in by email as <code>mellenwood+staff1@josiahventure.com</code> — join page, test mode, the works.</li>
+      <li><b>Supporter's first visit:</b> open your wall with <code>&amp;tourreset=1</code> added to a supporter link — the welcome walkthrough plays again.</li>
+    </ul>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="tdemail" placeholder="persona+alias@… to wipe and replay" style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px">
+      <button id="tdwipe" style="background:var(--ink,#241f1b);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer">Wipe persona</button>
+    </div>
+    <div id="tdmsg" style="margin-top:8px;font-size:12.5px"></div>
+  </div>
   <h1>Organizations forming</h1>
   <p class="lede">Individual missionaries clustered by the organization they serve with. When one crosses <b>3</b>, it lights up — that's your cue for a human conversation about an organization account. Nothing here ever emails anyone.</p>
   <div id="list"><div class="empty">Loading…</div></div>

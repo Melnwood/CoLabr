@@ -476,6 +476,7 @@ const PAGEM=(new URLSearchParams(location.search)).get('m')||'';   // whose page
 // which unlocks it. Remember the key per wall so bookmarks stay open on this device.
 const _urlT=(new URLSearchParams(location.search)).get('t')||'';
 if(_urlT){ try{ localStorage.setItem('wallkey:'+(PAGEM||'default'), _urlT); }catch(_){} }
+if((new URLSearchParams(location.search)).get('tourreset')){ try{ localStorage.removeItem('walltour'); }catch(_){} }
 let VIEWTOK=_urlT; if(!VIEWTOK){ try{ VIEWTOK=localStorage.getItem('wallkey:'+(PAGEM||'default'))||''; }catch(_){} }
 let VIEWER=null;
 // Signed-in staff get a "Dashboard" button in the top bar — the way back home when
