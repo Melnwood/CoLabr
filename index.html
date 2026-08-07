@@ -596,6 +596,8 @@ function setMasthead(){
 }
 // A visitor without a key sees the landing: who this is, and how to ask to follow.
 function renderLocked(raw){
+  try{ applyStyle(raw.style||'Field Notes'); }catch(_){}
+  document.body.classList.add('ready');   // reveal the page — the landing is the content
   const boot=document.getElementById('boot'); if(boot)boot.style.display='none';
   ['hero','stream','meta'].forEach(id=>{const el=document.getElementById(id); if(el)el.style.display='none';});
   document.querySelectorAll('.tools,.jvrail,.yearrow,#monthrow,.foot').forEach(el=>el.style.display='none');
