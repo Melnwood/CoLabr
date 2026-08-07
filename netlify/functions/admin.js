@@ -61,7 +61,8 @@ exports.handler = async function (event) {
           aud: c['Audiences'] || [],
           hasCover: !!c['Cover Image URL'],
           hasVideo: !!c['Video URL'],
-          hasCaptions: /"captions":/.test(String(c['Blocks'] || ''))
+          hasCaptions: /"captions":/.test(String(c['Blocks'] || '')),
+          hl: !!c['Highlight']
         };
       })
       // Drop internal system/job markers (e.g. __TRANSLATE__, __VIDEO_CAPTION__, __BACKUP__) so they
@@ -99,6 +100,14 @@ exports.handler = async function (event) {
       if (!b.id) return resp(400, { error: 'Missing id.' });
       const r = await fetch(`${api}/${b.id}`, { method: 'DELETE', headers: auth });
       if (!r.ok) return resp(r.status, { error: 'Delete failed.' });
+      return resp(200, { ok: true });
+    }
+
+    if (b.action === 'highlight') {
+      if (!b.id) return resp(400, { error: 'Which update?' });
+      const r = await fetch(api, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: b.id, fields: { 'Highlight': !!b.on } }], typecast: true }) });
+      if (!r.ok) return resp(r.status, { error: 'Could not update the highlight.' });
       return resp(200, { ok: true });
     }
 

@@ -377,7 +377,7 @@ function renderList(){
     const tags=[r.type,(r.aud||[]).join(' + ')].filter(Boolean).join(' · ');
     return `<div class="item"><span class="st ${r.status}">${r.status}</span>
       <div class="tt"><b>${esc(r.title)}</b><span>${r.date||'—'} · ${tags}${r.opens?(' · '+r.opens.toLocaleString()+' opens'):''}</span></div>
-      <div class="act"><a class="edit" href="compose.html?id=${r.id}">Edit</a>${r.hasCaptions?`<a class="edit" href="subtitles.html?u=${r.id}"${r.status==='Processing'?' style="color:#c96a1e;border-color:#f3c9a6;font-weight:800"':''}>${r.status==='Processing'?'Check subtitles':'Subtitles'}</a>`:''}${toggle}<button class="del" data-act="del" data-id="${r.id}">Delete</button></div></div>`;
+      <div class="act">${r.status==='Published'?`<button data-act="hl" data-id="${r.id}" data-on="${r.hl?'1':''}"${r.hl?' style="color:#b8791b;border-color:#eddcae;font-weight:800;background:#fdf8ec"':''} title="Highlights appear in their own rail on your wall">${r.hl?'★ Highlighted':'☆ Highlight'}</button>`:''}<a class="edit" href="compose.html?id=${r.id}">Edit</a>${r.hasCaptions?`<a class="edit" href="subtitles.html?u=${r.id}"${r.status==='Processing'?' style="color:#c96a1e;border-color:#f3c9a6;font-weight:800"':''}>${r.status==='Processing'?'Check subtitles':'Subtitles'}</a>`:''}${toggle}<button class="del" data-act="del" data-id="${r.id}">Delete</button></div></div>`;
   }).join('');
   list.querySelectorAll('button[data-act]').forEach(btn=>btn.addEventListener('click',()=>act(btn.dataset.act,btn.dataset.id)));
 }
@@ -420,6 +420,7 @@ document.getElementById('listtoggle').addEventListener('click',()=>{
 async function act(a,id){
   try{
     if(a==='pub') await api('setStatus',{id,status:'Published'});
+    else if(a==='hl'){ const cur=ROWS.find(x=>x.id===id); await api('highlight',{id,on:!(cur&&cur.hl)}); }
     else if(a==='unpub') await api('setStatus',{id,status:'Draft'});
     else if(a==='del'){ if(!confirm('Delete this update permanently?'))return; await api('delete',{id}); }
     ROWS=(await api('list')).rows; renderAll();

@@ -30,7 +30,8 @@ const F = {
   arc:    'fldGKATli4f8Kk8d7',
   aud:    'fld6ZpC94Aq43d5ZY',
   blocks: 'fldN9B0v6YU0xptFu',
-  tr:     'fld9BeSNNbZpUAtd0'
+  tr:     'fld9BeSNNbZpUAtd0',
+  hl:     'fldT4O1aeyqmxqqrH'
 };
 
 exports.handler = async function (event) {
@@ -101,6 +102,7 @@ exports.handler = async function (event) {
         excerpt: c[F.excerpt] || '',
         arc:     c[F.arc] || '',
         aud:     (c[F.aud] || []).map(a => (a && a.name) ? a.name : a),
+        hl:      !!c[F.hl],
         blocks:  parseBlocks(c[F.blocks]),
         src:     (trObj && trObj.src) || '',            // original language, if not English
         tr:      (trObj && trObj.tr) || null            // inline { en: {title, blocks}, ... }

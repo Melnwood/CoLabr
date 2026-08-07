@@ -431,6 +431,10 @@
         <button class="heroread" id="heroread">Read the update →</button>
       </div>
     </div>
+    <div class="jvrail" id="hlrail" style="display:none">
+      <div class="jvrailhead"><span class="jvrt" id="hlrt">Our highlights</span></div>
+      <div class="jvrailrow" id="hlrailrow"></div>
+    </div>
     <div class="jvrail" id="jvrail" style="display:none">
       <div class="jvrailhead"><span class="jvrt">Team picks from across Josiah Venture</span></div>
       <div class="jvrailrow" id="jvrailrow"></div>
@@ -693,13 +697,28 @@ async function load(){
       const y=+p[0]||0, mo=MON[(+p[1]||1)-1]||'', d=+p[2]||'';
       return {...u, y, date:`${mo} ${d}`};
     });
-    computeTop10(); renderHero(); buildYears(); render();
+    computeTop10(); renderHero(); buildYears(); render(); renderHighlights();
     document.body.classList.add('ready');   // reveal only now, already in the correct style
     maybeTour();
   }catch(e){
     document.getElementById('stream').innerHTML='<div class="state">Couldn’t load updates right now. Please refresh in a moment.</div>';
     document.body.classList.add('ready');
   }
+}
+// The writer's own hand-picked highlights — a rail above the team picks, filled with
+// the updates they starred on their dashboard. Cards open the normal reader.
+function renderHighlights(){
+  const picks=U.map((u,i)=>({u,i})).filter(x=>x.u.hl)
+    .sort((a,b)=>(b.u.rawdate||'').localeCompare(a.u.rawdate||''));
+  const rail=document.getElementById('hlrail'); if(!rail)return;
+  if(!picks.length){ rail.style.display='none'; return; }
+  const first=(PAGE_FIRST||'').trim();
+  document.getElementById('hlrt').textContent=first?(first+'’s highlights'):'Our highlights';
+  document.getElementById('hlrailrow').innerHTML=picks.map(x=>`<div class="jvcard" data-hi="${x.i}">
+    <div class="jvcov"${x.u.cover?` style="background-image:url('${esc(x.u.cover)}')"`:''}></div>
+    <div class="jvbody"><div class="jvtitle">${esc(x.u.title)}</div><div class="jvex">${esc(x.u.excerpt||'')}</div></div></div>`).join('');
+  document.querySelectorAll('#hlrailrow [data-hi]').forEach(el=>el.addEventListener('click',()=>openReader(+el.dataset.hi)));
+  rail.style.display='block';
 }
 // Feature the newest update as a full-width hero above everything else.
 function renderHero(){
