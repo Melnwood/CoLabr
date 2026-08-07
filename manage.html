@@ -84,6 +84,10 @@
   .tl .trow .op{color:var(--acc);font-weight:750;font-variant-numeric:tabular-nums;flex:none}
 
   .listhead{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  #updatesPanel{margin-bottom:22px}
+  #updatesPanel .listhead{margin-bottom:0}
+  #updatesPanel #list{margin-top:14px}
+  #updatesPanel .item{background:#fbfaf8}
   .listhead h2{font-size:16px;font-weight:750;margin:0}
   .seg{margin-left:auto;display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
   .seg button{border:none;background:none;font-size:12.5px;font-weight:650;padding:8px 13px;color:var(--muted);cursor:pointer}
@@ -207,14 +211,16 @@
       <div class="styles" id="styles"><div class="state" style="padding:10px 0">Loading styles…</div></div>
       <div class="savenote" id="savenote"></div>
     </div>
+    <div class="panel" id="updatesPanel">
+      <div class="listhead"><h2 id="listtoggle" class="acc-h">All updates <span class="chev" id="chev">▸</span> <span class="cnt" id="listcnt"></span> <span class="cnt" id="latestpeek"></span></h2>
+        <div class="seg" id="statusfilter" style="display:none"><button data-s="all" class="on">All</button><button data-s="Published">Published</button><button data-s="Draft">Drafts</button></div>
+      </div>
+      <div id="list" style="display:none"><div class="state">Loading…</div></div>
+    </div>
     <div class="panels">
       <div class="panel"><h2>Opens by year</h2><div class="chart" id="chart"></div></div>
       <div class="panel"><h2>Most opened</h2><div class="tl" id="topu"></div></div>
     </div>
-    <div class="listhead"><h2 id="listtoggle" class="acc-h">All updates <span class="chev" id="chev">▸</span> <span class="cnt" id="listcnt"></span> <span class="cnt" id="latestpeek"></span></h2>
-      <div class="seg" id="statusfilter" style="display:none"><button data-s="all" class="on">All</button><button data-s="Published">Published</button><button data-s="Draft">Drafts</button></div>
-    </div>
-    <div id="list" style="display:none"><div class="state">Loading…</div></div>
 
     <div class="panel insights" id="insightsPanel">
       <h2 id="instoggle" class="acc-h">Insights <span class="aib">AI</span> <span class="chev" id="inschev">▸</span><a id="refreshins">Refresh</a></h2>
