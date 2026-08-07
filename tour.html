@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D1B2A'/%3E%3Ccircle cx='32' cy='34' r='9' fill='%23FF6B5B'/%3E%3C/svg%3E">
+<title>Co·labr — Take the tour</title>
+<style>
+  :root{--acc:#FF6B5B;--acc-soft:#fff0ee;--teal:#00C2B3;--ink:#0D1B2A;--body:#3d4a5c;--muted:#7d8794;--line:#e4e8ec;--soft:#F1F3F5;--serif:Georgia,'Times New Roman',serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px}
+  header{display:flex;align-items:center;gap:12px;padding:22px 0}
+  .mark{font-family:var(--serif);font-size:22px;font-weight:600}
+  .mark a{text-decoration:none}
+  .mark .d{display:inline-block;width:.34em;height:.34em;background:var(--acc);border-radius:50%;margin:0 .13em;vertical-align:.06em}
+  header nav{margin-left:auto}
+  header nav a{font-size:13.5px;font-weight:600;text-decoration:none;border:1px solid var(--line);border-radius:22px;padding:9px 16px;margin-left:8px}
+  header nav a.acc{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .hero{text-align:center;padding:30px 0 14px}
+  .hero h1{font-family:var(--serif);font-size:clamp(28px,5vw,40px);font-weight:600;margin:0 0 10px}
+  .hero p{font-size:15px;color:var(--body);max-width:540px;margin:0 auto;line-height:1.6}
+  .stop{display:grid;grid-template-columns:1fr 1.1fr;gap:34px;align-items:center;padding:44px 0;border-bottom:1px solid var(--line)}
+  .stop:nth-child(even of .stop){direction:rtl}
+  .stop:nth-child(even of .stop)>*{direction:ltr}
+  @media(max-width:720px){.stop{grid-template-columns:1fr;gap:20px}.stop:nth-child(even of .stop){direction:ltr}}
+  .num{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:8px}
+  .stop h2{font-family:var(--serif);font-size:24px;font-weight:600;margin:0 0 10px}
+  .stop p{font-size:14.5px;line-height:1.7;color:var(--body);margin:0}
+  .stop p b{color:var(--ink)}
+  .vis{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:18px;min-height:200px;display:flex;flex-direction:column;justify-content:center;gap:9px}
+  .vis .blk{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:12.5px;color:var(--body);display:flex;align-items:center;gap:9px}
+  .vis .blk b{font-size:12px;color:var(--ink)}
+  .vis .chip{display:inline-block;background:var(--acc);color:#fff;font-size:10.5px;font-weight:800;border-radius:12px;padding:3px 10px}
+  .vis .chip.t{background:var(--teal)}
+  .vis .chip.ghost{background:#fff;color:var(--body);border:1px solid var(--line)}
+  .vis img{width:100%;border-radius:10px;border:1px solid var(--line)}
+  .vis .bar{height:8px;border-radius:5px;background:#e6ebef}
+  .vis .bar i{display:block;height:100%;border-radius:5px;background:var(--teal)}
+  .cta{text-align:center;padding:48px 0 64px}
+  .cta h2{font-family:var(--serif);font-size:26px;font-weight:600;margin:0 0 16px}
+  .cta a{display:inline-block;background:var(--acc);color:#fff;font-weight:800;font-size:15.5px;padding:15px 30px;border-radius:12px;text-decoration:none;box-shadow:0 10px 26px rgba(255,107,91,.32)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><a href="home.html">Co<span class="d"></span>labr</a></div>
+    <nav><a href="login.html">Sign in</a><a class="acc" href="/.netlify/functions/auth-start?join=1">Create your page</a></nav>
+  </header>
+
+  <div class="hero">
+    <h1>Five minutes, the whole story.</h1>
+    <p>Co·labr looks like a beautiful wall of updates — but the magic is everything behind it. Here's the tour, front stage and back.</p>
+  </div>
+
+  <div class="stop">
+    <div>
+      <div class="num">Stop 1 · The composer</div>
+      <h2>Write once, and it looks like you hired a designer</h2>
+      <p>Build each update from blocks — <b>banner photo, story, pictures, video, key numbers, prayer &amp; praise, giving, your personal sign-off</b>. Your organization's real brand colors are built in, a live preview shows exactly what supporters will see, and AI suggests titles people actually open.</p>
+    </div>
+    <div class="vis">
+      <div class="blk">🖼 <b>Banner</b> — drag to place the crop</div>
+      <div class="blk">✍️ <b>Your story</b> — bold, italics, big text</div>
+      <div class="blk">🎬 <b>Video</b> — subtitles generate automatically</div>
+      <div class="blk">🙏 <b>Prayer &amp; praise</b> · ❤ <b>Give</b> · <b>With love, you</b></div>
+    </div>
+  </div>
+
+  <div class="stop">
+    <div>
+      <div class="num">Stop 2 · Every heart language</div>
+      <h2>You write in one language. They read in theirs.</h2>
+      <p>Every published update is translated into <b>fourteen languages</b> — and videos get subtitles in all of them, generated before the update even appears. A Czech staff member's grandmother in Brno and their donor in Texas read the very same story, each in the language of their heart.</p>
+    </div>
+    <div class="vis">
+      <div class="blk">🇨🇿 „A ráno jsem odvezla taťku do nemocnice…"</div>
+      <div class="blk">🇺🇸 "And this morning I took my dad to the hospital…"</div>
+      <div class="blk">🇵🇱 „A rano zawiozłam tatę do szpitala…"</div>
+      <div class="blk"><span class="chip t">14 languages</span> <span class="chip ghost">video subtitles too</span></div>
+    </div>
+  </div>
+
+  <div class="stop">
+    <div>
+      <div class="num">Stop 3 · A wall for your people only</div>
+      <h2>Your supporters, curated by you</h2>
+      <p>The wall isn't the open internet — it belongs to <b>your support team</b>. You invite people, approve anyone who asks, and every email they receive opens the wall like a key: no passwords, no accounts, nothing for your supporters to remember. Strangers see only a warm "ask to follow."</p>
+    </div>
+    <div class="vis">
+      <img src="photos/home-wall-shot.png" alt="A live Co·labr wall">
+    </div>
+  </div>
+
+  <div class="stop">
+    <div>
+      <div class="num">Stop 4 · Two-way, not broadcast</div>
+      <h2>They pray, write back, and give — one tap away</h2>
+      <p>Under every update your people can tap <b>🙏 I'm praying</b>, leave public encouragement, send you a private note, or <b>give</b> — routed through your organization's designated fund. And because everyone on the wall is known, you always know who's standing with you, and every note can be answered.</p>
+    </div>
+    <div class="vis">
+      <div class="blk"><span class="chip">🙏 I'm praying</span> <span class="chip">❤ Give</span> <span class="chip ghost">Send a note</span></div>
+      <div class="blk">💬 "We prayed for the camp all week — thrilled about the four students!" <b>— Sue</b></div>
+      <div class="blk">📥 Private notes land in your dashboard inbox, reply built in</div>
+    </div>
+  </div>
+
+  <div class="stop">
+    <div>
+      <div class="num">Stop 5 · Your people, in one place</div>
+      <h2>Invite, import, and actually know your list</h2>
+      <p>Bring supporters over with personal invitations or a CSV from your old tool — <b>including your whole Mailchimp history, photos and all, so you can cancel that subscription</b>. Then watch the picture: who's following and how, who asked to join, who visited the wall this week.</p>
+    </div>
+    <div class="vis">
+      <div class="blk"><b>Sue Hamm</b> — Following · Full email · visited Aug 7</div>
+      <div class="blk"><b>The Nelsons</b> — Following · Monthly summary</div>
+      <div class="blk"><b>New:</b> David R. — Asked to follow · <span class="chip">Approve</span></div>
+      <div class="blk"><span class="chip t">Import from Mailchimp</span> <span class="chip ghost">CSV upload</span></div>
+    </div>
+  </div>
+
+  <div class="stop">
+    <div>
+      <div class="num">Stop 6 · Safe by default</div>
+      <h2>Nothing sends until you say so</h2>
+      <p>Every new page starts in <b>test mode</b> — write, publish, experiment, import your people, and not a single email goes out until you deliberately flip "Go live." Even then, publishing tells you exactly how many people you're about to reach. No accidental sends, ever. (We learned this one the fun way.)</p>
+    </div>
+    <div class="vis">
+      <div class="blk">🟠 <b>Test mode</b> — publishing emails no one</div>
+      <div class="bar"><i style="width:70%"></i></div>
+      <div class="blk">🟢 <b>Go live</b> → "This will email your 203 supporters."</div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h2>Ready to give your story a home?</h2>
+    <a href="/.netlify/functions/auth-start?join=1">Create your page — free to start</a>
+  </div>
+</div>
+</body>
+</html>

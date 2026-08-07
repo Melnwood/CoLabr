@@ -366,6 +366,18 @@
   .follow{background:#fff;color:var(--acc);border:1px solid var(--acc);font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:var(--font)}
   .dashlink{background:#fff;color:var(--text);border:1px solid var(--line,#ddd2b8);font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;text-decoration:none;font-family:var(--font);white-space:nowrap}
   .dashlink:hover{border-color:var(--acc);color:var(--acc)}
+  .givebtn{background:var(--acc);color:var(--acc-text,#fff);border:1px solid var(--acc);font-size:13px;font-weight:800;padding:9px 16px;border-radius:22px;text-decoration:none;font-family:var(--font);margin-left:8px;white-space:nowrap}
+  /* first-visit walkthrough */
+  .tourov{position:fixed;inset:0;background:rgba(20,14,8,.55);z-index:200;display:flex;align-items:center;justify-content:center;padding:22px}
+  .tourbox{background:#fff;border-radius:18px;max-width:420px;width:100%;padding:26px 24px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.4);font-family:var(--font)}
+  .tourbox .ticon{font-size:34px;margin-bottom:8px}
+  .tourbox h3{margin:0 0 8px;font-size:19px;font-weight:800;color:#241f1b}
+  .tourbox p{margin:0 0 18px;font-size:14px;line-height:1.6;color:#5a5048}
+  .tourbox .tnext{background:var(--acc);color:#fff;border:none;font-weight:800;font-size:14.5px;padding:12px 26px;border-radius:22px;cursor:pointer;font-family:var(--font)}
+  .tourbox .tskip{display:block;margin:12px auto 0;background:none;border:none;font-size:12px;color:#8a8580;cursor:pointer;text-decoration:underline;font-family:var(--font)}
+  .tourdots{display:flex;gap:6px;justify-content:center;margin-bottom:14px}
+  .tourdots span{width:7px;height:7px;border-radius:50%;background:#e3dccf}
+  .tourdots span.on{background:var(--acc)}
   .subcta{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px 10px 16px;margin:12px 0 4px;font-family:var(--font)}
   .subcta p{font-size:13.5px;color:var(--text);margin:0}
   .subcta button{flex:none;background:var(--acc);color:var(--acc-text,#fff);border:none;font-weight:700;font-size:13px;padding:9px 18px;border-radius:18px;cursor:pointer;font-family:var(--font)}
@@ -605,6 +617,32 @@ function setMasthead(){
   const k=document.getElementById('mkicker'); if(k)k.textContent=vm.mission;
   const s=document.getElementById('msub'); if(s)s.textContent=vm.vision;
 }
+// First-visit walkthrough for supporters: three friendly cards, shows on the first
+// two visits (or until dismissed), then never again.
+function maybeTour(){
+  if(!VIEWTOK) return;                                  // team members only
+  let st={}; try{ st=JSON.parse(localStorage.getItem('walltour')||'{}'); }catch(_){}
+  if(st.off || (st.n||0)>=2) return;
+  st.n=(st.n||0)+1; try{ localStorage.setItem('walltour',JSON.stringify(st)); }catch(_){}
+  const F=PAGE_FIRST||FAMSHORT;
+  const steps=[
+    {i:'👋',h:'Welcome — this wall is for you',p:'You\u2019re part of '+esc(F)+'\u2019s support team, so everything they share lives here: every update, photo, and video, going back years. Scroll anytime, from any email.'},
+    {i:'💬',h:'Tap any update to read it',p:'Inside you can do three things: tap 🙏 <b>I\u2019m praying</b> so they know you\u2019re standing with them, <b>write a message</b> — public encouragement or a private note straight to them — and <b>give</b> toward their ministry.'},
+    {i:'🌍',h:'Read in your language',p:'Use the language picker up top and the whole wall — even video subtitles — switches to the language of your heart. Change how you get emails anytime from the link in any update.'}
+  ];
+  let i=0;
+  const ov=document.createElement('div'); ov.className='tourov';
+  function draw(){
+    const s0=steps[i];
+    ov.innerHTML='<div class="tourbox"><div class="tourdots">'+steps.map((_,k)=>'<span class="'+(k===i?'on':'')+'"></span>').join('')+'</div>'+
+      '<div class="ticon">'+s0.i+'</div><h3>'+s0.h+'</h3><p>'+s0.p+'</p>'+
+      '<button class="tnext">'+(i<steps.length-1?'Next':'Start exploring')+'</button>'+
+      '<button class="tskip">Don\u2019t show this again</button></div>';
+    ov.querySelector('.tnext').addEventListener('click',()=>{ if(i<steps.length-1){i++;draw();} else ov.remove(); });
+    ov.querySelector('.tskip').addEventListener('click',()=>{ try{localStorage.setItem('walltour',JSON.stringify({off:true}));}catch(_){} ov.remove(); });
+  }
+  draw(); document.body.appendChild(ov);
+}
 // A visitor without a key sees the landing: who this is, and how to ask to follow.
 function renderLocked(raw){
   try{ applyStyle(raw.style||'Field Notes'); }catch(_){}
@@ -650,6 +688,7 @@ async function load(){
     });
     computeTop10(); renderHero(); buildYears(); render();
     document.body.classList.add('ready');   // reveal only now, already in the correct style
+    maybeTour();
   }catch(e){
     document.getElementById('stream').innerHTML='<div class="state">Couldn’t load updates right now. Please refresh in a moment.</div>';
     document.body.classList.add('ready');
@@ -1090,7 +1129,7 @@ let PAGE_FIRST='';
 function respondHTML(u){
   return `<div class="eng">
     <h4>Respond to the ${FAMSHORT}</h4>
-    <div class="prayrow"><button class="praybtn" id="prayBtn">🙏 I'm praying</button><span class="praycount" id="prayCount"></span></div>
+    <div class="prayrow" id="respondRow"><button class="praybtn" id="prayBtn">🙏 I'm praying</button><a class="givebtn" id="giveBtn2" target="_blank" rel="noopener">❤ Give</a><span class="praycount" id="prayCount"></span></div>
     <div class="rtabs"><button class="rtab on" data-m="Encouragement">Leave encouragement</button><button class="rtab" data-m="Note">Send a private note</button></div>
     <div class="rform">
       <input id="rName" placeholder="Your name">
@@ -1110,6 +1149,7 @@ function wireRespond(u){
   const hint=q('rHint');
   // Known supporter: their name and email come with their key — no retyping.
   if(VIEWER&&VIEWER.name){ if(q('rName')&&!q('rName').value)q('rName').value=VIEWER.name; if(q('rEmail')&&!q('rEmail').value&&VIEWER.email)q('rEmail').value=VIEWER.email; }
+  const gb2=q('giveBtn2'); if(gb2) gb2.href=GIVE;
   q('prayBtn').addEventListener('click',async()=>{
     const btn=q('prayBtn'); if(btn.classList.contains('done'))return;
     try{ await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim(),t:VIEWTOK||undefined});
