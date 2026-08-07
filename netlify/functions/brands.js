@@ -1,6 +1,7 @@
-// Co-Labr — National Org branding (logos + colors). Signed-in staff only.
+// Co-Labr — National Org branding (logos + colors). Signed-in staff can read;
+// save/delete is super-admin only (branding is platform config, not a personal setting).
 // Uses AIRTABLE_TOKEN (read for list; read+write for save/delete).
-const { sessionFromEvent } = require('./_auth');
+const { sessionFromEvent, isAdmin } = require('./_auth');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl152sVfqGyrqpJQ';            // National Orgs
 // Three-color brand system: ink (text/buttons), accent (the single spark/CTA), bg (page background).
@@ -25,8 +26,12 @@ exports.handler = async function (event) {
 
   let b; try { b = JSON.parse(event.body || '{}'); } catch { return resp(400, { error: 'Bad request.' }); }
   const editKey = process.env.EDIT_KEY;
-  const authed = sessionFromEvent(event) || (editKey && b.key === editKey);
-  if (!authed) return resp(401, { error: 'Please sign in.' });
+  const sess = sessionFromEvent(event);
+  const keyed = editKey && b.key === editKey;
+  if (!sess && !keyed) return resp(401, { error: 'Please sign in.' });
+  if ((b.action === 'save' || b.action === 'delete') && !keyed && !(sess && isAdmin(sess.email))) {
+    return resp(403, { error: 'Super admins only — branding is platform-wide.' });
+  }
 
   const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
   const api = `https://api.airtable.com/v0/${BASE}/${TABLE}`;
