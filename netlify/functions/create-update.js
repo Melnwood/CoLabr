@@ -83,6 +83,9 @@ exports.handler = async function (event) {
     const recId = b.id ? (data.records && data.records[0] && data.records[0].id) : data.id;
     // Auto-caption any newly-uploaded (GCS-hosted) videos that don't have captions yet.
     if (recId) { try { await fireCaptions(recId, blocks); } catch (e) {} }
+    // Videos whose English was checked in the composer publish immediately — the other
+    // languages are made from that approved English in the background.
+    if (recId && fields.Status !== 'Draft') { try { await fireTail(recId, blocks); } catch (e) {} }
     // Translate the written update into every field language (best-effort, async).
     if (recId && (fields.Status === 'Published' || fields.Status === 'Processing')) { try { await fireTranslate(recId); } catch (e) {} }
     // If this update just went out as Published, notify subscribers (best-effort, async).
@@ -115,6 +118,24 @@ async function fireCaptions(recId, blocks) {
       await fetch(`${site}/.netlify/functions/caption-video-background`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ secret, gsUri, lang: bk.lang, recordId: recId, blockIndex: i })
+      });
+    } catch (e) {}
+  }
+}
+
+// Composer-approved subtitles: translate the other languages FROM the checked English.
+async function fireTail(recId, blocks) {
+  const secret = process.env.SESSION_SECRET, site = process.env.SITE_BASE;
+  if (!secret || !site) return;
+  for (let i = 0; i < blocks.length; i++) {
+    const bk = blocks[i];
+    if (!bk || bk.type !== 'video' || bk.captionStatus !== 'approved') continue;
+    const caps = Array.isArray(bk.captions) ? bk.captions : [];
+    if (!caps.some(t => t.lang === 'en') || caps.length > 2) continue;   // >2 = full set already
+    try {
+      await fetch(`${site}/.netlify/functions/retranslate-captions-background`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret, u: recId, b: i })
       });
     } catch (e) {}
   }

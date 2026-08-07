@@ -283,6 +283,21 @@
     .pvsheet .rherot{position:relative;padding:20px 22px;color:#fff}
     .pvsheet .rherot h2{color:#fff;margin:0;font-size:24px;font-weight:770;letter-spacing:-.02em}
     .pvsheet .rherot span{display:block;margin-top:6px;font-size:13.5px;opacity:.92}
+  /* subtitle check-before-publish */
+  .subrow{display:flex;align-items:center;gap:10px;margin:8px 0 2px;flex-wrap:wrap}
+  .vtxbtn{background:var(--acc,#FF6600);color:#fff;font-weight:800;font-size:13px;border:none;border-radius:9px;padding:10px 18px;cursor:pointer}
+  .subchip{font-size:12.5px;font-weight:700;border-radius:9px;padding:9px 14px;line-height:1.4}
+  .subchip.ok{background:#eafaf1;color:#2f9e63;border:1px solid #bfe6cf}
+  .subchip.work{background:#fdf6ec;color:#9a6b25;border:1px solid #f0ddc0;font-weight:600}
+  .subchip.errc{background:#fdecea;color:#b0342b;border:1px solid #f5c6c0;font-weight:600}
+  .subchip.ready{background:#2f9e63;color:#fff;border:none;cursor:pointer;box-shadow:0 6px 16px rgba(47,158,99,.35);animation:subpulse 1.6s ease-in-out infinite}
+  @keyframes subpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+  .sublink{background:none;border:none;color:var(--acc,#FF6600);font-weight:700;font-size:12.5px;cursor:pointer;padding:0}
+  .scue{display:flex;gap:12px;align-items:flex-start;border:1px solid #eee9e2;border-radius:11px;padding:9px 12px;margin-bottom:7px}
+  .scue .sts{flex:none;font-size:11px;font-weight:700;color:var(--acc,#FF6600);padding-top:4px;font-variant-numeric:tabular-nums}
+  .scue .sbody{flex:1;min-width:0}
+  .scue .snat{font-size:12.5px;color:#8a847d;line-height:1.45;margin-bottom:3px}
+  .scue textarea{width:100%;border:none;background:none;font-size:14px;font-family:inherit;line-height:1.5;color:#241f1b;resize:none;outline:none;padding:2px 0;min-height:24px}
   </style>
 
   <div class="tov" id="tplpick"><div class="tcard">
@@ -309,6 +324,18 @@
   </div></div>
 
   <input type="color" id="cpickinp" style="position:fixed;left:-9999px;top:0" aria-hidden="true">
+  <div id="subov" style="display:none;position:fixed;inset:0;background:rgba(24,20,16,.55);z-index:120;overflow:auto;padding:24px 14px">
+    <div style="max-width:640px;margin:0 auto;background:#fff;border-radius:18px;padding:22px 22px 16px;box-shadow:0 30px 80px rgba(24,20,16,.35)">
+      <h3 id="subovtitle" style="font-size:19px;font-weight:800;letter-spacing:-.01em;margin:0 0 6px">Check the English</h3>
+      <p id="subovsub" style="font-size:13px;color:#7a756f;line-height:1.55;margin:0 0 16px"></p>
+      <div id="subrows"></div>
+      <div style="position:sticky;bottom:0;background:linear-gradient(to top,#fff 78%,transparent);padding:14px 0 6px;display:flex;gap:10px;align-items:center">
+        <button type="button" id="subok" style="background:#2f9e63;color:#fff;font-weight:800;font-size:14px;border:none;border-radius:10px;padding:12px 22px;cursor:pointer">These are ready ✓</button>
+        <button type="button" id="subcancel" style="background:none;border:1px solid #e7e4e0;color:#241f1b;font-weight:600;font-size:13px;border-radius:10px;padding:11px 16px;cursor:pointer">Close</button>
+        <span style="font-size:12px;color:#7a756f">Nothing publishes until you hit Publish.</span>
+      </div>
+    </div>
+  </div>
   <div class="pvov" id="pvov">
     <div class="pvnote">This is what supporters will see — close to keep editing.</div>
     <div class="pvsheet" id="pvsheet"></div>
@@ -384,7 +411,25 @@ function fieldHtml(b){
   if(b.type==='text') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="Write this section…">${esc(b.text)}</textarea>`;
   if(b.type==='prayer') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="A prayer request…">${esc(b.text)}</textarea>`+colorRow(b);
   if(b.type==='photo') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a photo here, or tap to choose from Photos / desktop</div><input type="file" accept="image/*" hidden></div><input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><div class="two"><input data-id="${b.id}" data-f="caption" placeholder="Caption (optional)" value="${esc(b.caption)}"></div>`;
-  if(b.type==='video'){ const done=b.url&&/storage\.googleapis\.com/.test(b.url); return `<div class="drop" data-vdrop="${b.id}"><div class="dinner">${done?'✓ Video uploaded — English subtitles arrive a few minutes after you publish':'Tap to upload a video file — it gets subtitled automatically'}</div><input type="file" accept="video/*" hidden><div class="vprog" style="display:none;height:6px;background:#eae7e2;border-radius:5px;margin-top:9px;overflow:hidden"><div class="vbar" style="height:100%;width:0;background:var(--acc,#FF6600);transition:width .2s"></div></div></div><select class="urlin" data-id="${b.id}" data-f="lang">${langOpts(b.lang)}</select><input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste a YouTube/Vimeo link (no auto‑captions)" value="${esc(b.url)}">`; }
+  if(b.type==='video'){
+    const done=b.url&&/storage\.googleapis\.com/.test(b.url);
+    const J=JOBS[b.id]||{};
+    let sub='';
+    if(b.captions&&b.captions.length){
+      sub=b.captionStatus==='approved'
+        ?`<div class="subrow"><span class="subchip ok">✓ Subtitles checked — publish when ready</span><button type="button" class="sublink" data-vtx="${b.id}">Edit them</button></div>`
+        :`<div class="subrow"><button type="button" class="subchip ready" data-vtx="${b.id}">● Translation ready — check it</button></div>`;
+    }else if(J.state==='working'){
+      sub=`<div class="subrow"><span class="subchip work">Listening to your video… usually 1–3 minutes. You can keep building — a green button appears here when it’s ready.</span></div>`;
+    }else if(J.state==='ready'){
+      sub=`<div class="subrow"><button type="button" class="subchip ready" data-vtx="${b.id}">● Translation ready — check it</button></div>`;
+    }else if(J.state==='error'){
+      sub=`<div class="subrow"><span class="subchip errc">${esc(J.error||'Something went wrong.')}</span><button type="button" class="sublink" data-vgo="${b.id}">Try again</button></div>`;
+    }else if(done&&b.lang){
+      sub=`<div class="subrow"><button type="button" class="vtxbtn" data-vgo="${b.id}">Translate — check the subtitles</button></div>`;
+    }
+    const hint=done?(b.captions&&b.captions.length?'✓ Video uploaded':(b.lang?'✓ Video uploaded — hit Translate below to check the subtitles':'✓ Video uploaded — choose the spoken language below')):'Tap to upload a video file — it gets subtitled automatically';
+    return `<div class="drop" data-vdrop="${b.id}"><div class="dinner">${hint}</div><input type="file" accept="video/*" hidden><div class="vprog" style="display:none;height:6px;background:#eae7e2;border-radius:5px;margin-top:9px;overflow:hidden"><div class="vbar" style="height:100%;width:0;background:var(--acc,#FF6600);transition:width .2s"></div></div></div><select class="urlin" data-id="${b.id}" data-f="lang">${langOpts(b.lang)}</select>${sub}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste a YouTube/Vimeo link (no auto‑captions)" value="${esc(b.url)}">`; }
   if(b.type==='quote') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="“A quote from someone…”">${esc(b.text)}</textarea><div class="two"><input data-id="${b.id}" data-f="by" placeholder="— who said it" value="${esc(b.by)}"></div>`+colorRow(b);
   return '';
 }
@@ -402,6 +447,8 @@ function render(){
   c.querySelectorAll('[data-grip]').forEach(el=>el.addEventListener('pointerdown',e=>beginDrag(e,'move',{from:+el.dataset.grip,label:NAME[blocks[+el.dataset.grip].type]})));
   c.querySelectorAll('[data-drop]').forEach(setupDrop);
   c.querySelectorAll('[data-vdrop]').forEach(setupVideoDrop);
+  c.querySelectorAll('[data-vgo]').forEach(el=>el.addEventListener('click',()=>startTranslate(el.dataset.vgo)));
+  c.querySelectorAll('[data-vtx]').forEach(el=>el.addEventListener('click',()=>openSubOverlay(el.dataset.vtx)));
   c.querySelectorAll('[data-focus]').forEach(setupFocus);
   c.querySelectorAll('.fbtn').forEach(el=>{
     el.addEventListener('pointerdown',e=>e.preventDefault());   // keep the textarea selection
@@ -509,6 +556,91 @@ function samplePalette(){
 function hexA(c,a){const m=(c||'').replace('#','');if(!/^[0-9a-fA-F]{6}$/.test(m))return '';return `rgba(${parseInt(m.slice(0,2),16)},${parseInt(m.slice(2,4),16)},${parseInt(m.slice(4,6),16)},${a})`;}
 const VLANGS=[['','Spoken language (pick one for subtitles)'],['cs-CZ','Czech'],['pl-PL','Polish'],['uk-UA','Ukrainian'],['sk-SK','Slovak'],['ro-RO','Romanian'],['bg-BG','Bulgarian'],['sl-SI','Slovenian'],['lv-LV','Latvian'],['et-EE','Estonian'],['hu-HU','Hungarian'],['sr-RS','Serbian'],['ru-RU','Russian'],['de-DE','German'],['es-ES','Spanish'],['fr-FR','French'],['en-US','English']];
 function langOpts(sel){ return VLANGS.map(([v,n])=>`<option value="${v}"${v===(sel||'')?' selected':''}>${n}</option>`).join(''); }
+
+/* ---- subtitle check-before-publish: Translate → review overlay → approved captions ride the block ---- */
+const JOBS={};   // per-video-block transcription jobs (transient — never saved with the update)
+let OV=null;     // the open overlay's context {bid, src, rows:[{s,e,nat,en}]}
+function vlangName(code){ const hit=VLANGS.find(([v])=>v.split('-')[0]===code); return hit?hit[1]:code; }
+async function startTranslate(bid){
+  syncFromDOM();
+  const b=blocks.find(x=>String(x.id)===String(bid)); if(!b)return;
+  if(!b.lang){ alert('Choose the spoken language first.'); return; }
+  if(!(b.url&&/storage\.googleapis\.com/.test(b.url))){ alert('Upload the video file first — pasted YouTube/Vimeo links can’t be transcribed.'); return; }
+  JOBS[b.id]={state:'working'}; render();
+  try{
+    const r=await fetch('/.netlify/functions/caption-job',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:b.url,lang:b.lang})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Could not start the transcription.');
+    JOBS[b.id].job=d.job;
+    JOBS[b.id].timer=setInterval(()=>pollJob(b.id),6000);
+  }catch(e){ JOBS[b.id]={state:'error',error:e.message}; render(); }
+}
+async function pollJob(bid){
+  const J=JOBS[bid]; if(!J||!J.job)return;
+  try{
+    const r=await fetch('/.netlify/functions/caption-job?job='+J.job);
+    const d=await r.json();
+    if(d.ready){
+      clearInterval(J.timer);
+      if(d.error){ J.state='error'; J.error=d.error; }
+      else{ J.state='ready'; J.result=d; }
+      render();
+    }
+  }catch(_){}
+}
+function svParseVtt(vtt){
+  const out=[];
+  for(const p of String(vtt||'').replace(/\r/g,'').split(/\n\n+/)){
+    const lines=p.split('\n').filter(x=>x.trim()!=='');
+    const tl=lines.findIndex(x=>x.includes('-->')); if(tl<0)continue;
+    const m=lines[tl].match(/([\d:.]+)\s*-->\s*([\d:.]+)/); if(!m)continue;
+    const sec=ts=>{const a=ts.split(':').map(Number);return a.length===3?a[0]*3600+a[1]*60+a[2]:a[0]*60+a[1];};
+    out.push({s:sec(m[1]),e:sec(m[2]),t:lines.slice(tl+1).join('\n')});
+  }
+  return out;
+}
+function svVt(t){const h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=Math.floor(t%60),ms=Math.round((t-Math.floor(t))*1000);const p=(n,l)=>String(n).padStart(l,'0');return p(h,2)+':'+p(m,2)+':'+p(s,2)+'.'+p(ms,3);}
+function svBuildVtt(rows,key){return 'WEBVTT\n\n'+rows.map((c,i)=>(i+1)+'\n'+svVt(+c.s||0)+' --> '+svVt(+c.e||0)+'\n'+String(c[key]||'').trim()).join('\n\n')+'\n';}
+function openSubOverlay(bid){
+  syncFromDOM();
+  const b=blocks.find(x=>String(x.id)===String(bid)); if(!b)return;
+  const J=JOBS[b.id]||{};
+  let src='',rows=[];
+  if(J.result){
+    src=J.result.srcLang||(b.lang||'').split('-')[0];
+    rows=(J.result.cues||[]).map((c,i)=>({s:c.s,e:c.e,nat:c.t,en:(J.result.en||[])[i]||c.t}));
+  }else if(b.captions&&b.captions.length){
+    src=(b.lang||'').split('-')[0];
+    const en=svParseVtt((b.captions.find(t=>t.lang==='en')||{}).vtt);
+    const nat=src&&src!=='en'?svParseVtt((b.captions.find(t=>t.lang===src)||{}).vtt):[];
+    rows=en.map((c,i)=>({s:c.s,e:c.e,nat:(nat[i]||{}).t||'',en:c.t}));
+  }
+  if(!rows.length){ alert('No transcription yet — hit Translate first.'); return; }
+  OV={bid:b.id,src,rows};
+  const fmt=t=>{const m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+String(s).padStart(2,'0');};
+  const showNat=src&&src!=='en';
+  document.getElementById('subovtitle').textContent=showNat?'Check the English':'Check the subtitles';
+  document.getElementById('subovsub').innerHTML=showNat
+    ?'The gray line is the <b>'+esc(vlangName(src))+'</b> we heard. Fix the English underneath so it says what was really said — every other language is made from your English.'
+    :'Fix any line so it says what was really said — every other language is made from this English.';
+  document.getElementById('subrows').innerHTML=OV.rows.map((c,i)=>
+    '<div class="scue"><div class="sts">'+fmt(c.s)+'</div><div class="sbody">'+(showNat?'<div class="snat">'+esc(c.nat)+'</div>':'')+'<textarea data-si="'+i+'" rows="1">'+esc(c.en)+'</textarea></div></div>').join('');
+  document.getElementById('subov').style.display='block'; document.body.style.overflow='hidden';
+  document.querySelectorAll('#subrows textarea').forEach(ta=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});});
+}
+function closeSubOverlay(){ document.getElementById('subov').style.display='none'; document.body.style.overflow=''; OV=null; }
+function submitSubtitles(){
+  if(!OV)return;
+  document.querySelectorAll('#subrows textarea').forEach(ta=>{const i=+ta.dataset.si;if(OV.rows[i])OV.rows[i].en=ta.value;});
+  const b=blocks.find(x=>String(x.id)===String(OV.bid)); if(!b){closeSubOverlay();return;}
+  const tracks=[{lang:'en',label:'English',vtt:svBuildVtt(OV.rows,'en')}];
+  if(OV.src&&OV.src!=='en') tracks.push({lang:OV.src,label:vlangName(OV.src),vtt:svBuildVtt(OV.rows,'nat')});
+  b.captions=tracks; b.captionStatus='approved';
+  delete JOBS[b.id];
+  closeSubOverlay(); render();
+}
+document.getElementById('subok').addEventListener('click',submitSubtitles);
+document.getElementById('subcancel').addEventListener('click',closeSubOverlay);
 function setupVideoDrop(zone){
   const file=zone.querySelector('input[type=file]');
   const blk=zone.closest('.blk'); const id=zone.dataset.vdrop;
@@ -773,7 +905,9 @@ async function submit(publish){
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.');
     const hasVid=clean.some(b=>b.type==='video'&&/storage\.googleapis\.com\/.+\/videos\//.test(b.url||'')&&b.lang);
     const held=d.status==='Processing';
-    const subNote=held?' We’re writing the English subtitles now — in a few minutes we’ll email you to check them (also under “Check subtitles” on your dashboard). Once you say the English is good, every other language is translated from it and your update goes live.':(hasVid?' Your video’s subtitles are generating and will appear shortly.':'');
+    const vidBlocks=clean.filter(b=>b.type==='video'&&b.url);
+    const approved=vidBlocks.length&&vidBlocks.every(b=>b.captionStatus==='approved'||(b.captions&&b.captions.length));
+    const subNote=held?' We’re writing the English subtitles now — hit Translate on the video block next time to check them before publishing. This one will email you when the English is ready to review.':(approved?' Your checked subtitles are live with it — the other languages are being made from your English and arrive quietly in a few minutes.':(hasVid?' Your video’s subtitles are generating and will appear shortly.':''));
     if(editId){
       show('ok', (publish?(held?'Almost there!':'Changes published — <a href="'+ME_WALL+'">view on your site →</a>'):'Changes saved as a draft.')+subNote);
     } else {
