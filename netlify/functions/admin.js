@@ -60,7 +60,8 @@ exports.handler = async function (event) {
           source: c['Source'] || '',
           aud: c['Audiences'] || [],
           hasCover: !!c['Cover Image URL'],
-          hasVideo: !!c['Video URL']
+          hasVideo: !!c['Video URL'],
+          hasCaptions: /"captions":/.test(String(c['Blocks'] || ''))
         };
       })
       // Drop internal system/job markers (e.g. __TRANSLATE__, __VIDEO_CAPTION__, __BACKUP__) so they

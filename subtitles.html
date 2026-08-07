@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D1B2A'/%3E%3Ccircle cx='32' cy='34' r='9' fill='%23FF6B5B'/%3E%3C/svg%3E">
+<title>Co·labr — Fix the subtitles</title>
+<style>
+  :root{--acc:#FF6600;--bg:#f4f1ec;--card:#fff;--line:#e7e4e0;--muted:#7a756f;--text:#241f1b;--green:#2f9e63;--red:#c0392b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding:26px 20px 90px}
+  .back{font-size:13px;color:var(--muted);text-decoration:none}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.02em;margin:14px 0 4px}
+  .lede{font-size:13.5px;color:var(--muted);line-height:1.55;margin:0 0 18px}
+  video{width:100%;max-height:300px;background:#000;border-radius:14px;margin-bottom:16px}
+  .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+  .pill{font-size:12.5px;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:20px;padding:7px 14px;cursor:pointer}
+  .pill.on{background:var(--text);color:#fff;border-color:var(--text)}
+  .pill .gen{font-weight:500;color:var(--muted);font-size:10.5px}
+  .pill.on .gen{color:#cfc9c2}
+  .cue{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .cue .ts{flex:none;font-size:11.5px;font-weight:700;color:var(--acc);cursor:pointer;padding-top:9px;font-variant-numeric:tabular-nums}
+  .cue textarea{flex:1;border:none;background:none;font-size:14px;font-family:inherit;line-height:1.5;color:var(--text);resize:none;outline:none;padding:6px 0;min-height:32px}
+  .cue.dirty{border-color:#f3c9a6}
+  .bar{position:sticky;bottom:0;background:linear-gradient(to top,var(--bg) 75%,transparent);padding:16px 0 10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .save{background:var(--text);color:#fff;font-weight:700;font-size:13.5px;border:none;border-radius:10px;padding:12px 20px;cursor:pointer}
+  .redo{background:var(--acc);color:#fff;font-weight:800;font-size:13.5px;border:none;border-radius:10px;padding:12px 20px;cursor:pointer;display:none}
+  .save:disabled,.redo:disabled{opacity:.55}
+  .msg{font-size:12.5px;line-height:1.5;flex-basis:100%}
+  .msg.ok{color:var(--green)} .msg.err{color:var(--red)}
+  .state{color:var(--muted);font-size:14px;padding:30px 0;text-align:center}
+  .note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="manage.html">← Back to dashboard</a>
+  <h1>Fix the subtitles</h1>
+  <p class="lede" id="lede">You were there — you know what was said. Fix any line below (tap a time to jump the video there). Correct the <b>English</b>, and every other language can be redone from it.</p>
+  <div id="player"></div>
+  <div class="pills" id="pills"></div>
+  <div id="cues"><div class="state">Loading the subtitle tracks…</div></div>
+  <div class="bar" id="bar" style="display:none">
+    <button class="save" id="save">Save this language</button>
+    <button class="redo" id="redo">Save English &amp; redo all other languages</button>
+    <div class="msg" id="msg"></div>
+  </div>
+  <p class="note" id="note" style="display:none">The speaker's own-language track and English are only ever changed by hand — the other languages are translated from your corrected English.</p>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P=new URLSearchParams(location.search);
+const U=P.get('u')||'', $=id=>document.getElementById(id);
+let DATA=null, CUR='en', VID=null;
+function fmtTs(t){const m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+String(s).padStart(2,'0');}
+async function load(){
+  try{
+    const r=await fetch('/.netlify/functions/captions?u='+encodeURIComponent(U));
+    if(r.status===401){location.href='/login.html';return;}
+    const d=await r.json();
+    if(!r.ok){$('cues').innerHTML='<div class="state">'+esc(d.error||'Could not load.')+'</div>';return;}
+    DATA=d;
+    if(d.title) $('lede').insertAdjacentHTML('beforebegin','<div style="font-size:13px;color:var(--muted);margin:2px 0 8px">'+esc(d.title)+'</div>');
+    if(d.videoUrl){$('player').innerHTML='<video controls preload="metadata" src="'+esc(d.videoUrl)+'"></video>';VID=$('player').querySelector('video');}
+    CUR=d.tracks.some(t=>t.lang==='en')?'en':(d.tracks[0]&&d.tracks[0].lang);
+    renderPills(); renderCues();
+    $('bar').style.display='flex'; $('note').style.display='block';
+  }catch(_){$('cues').innerHTML='<div class="state">Could not reach the server.</div>';}
+}
+function renderPills(){
+  $('pills').innerHTML=DATA.tracks.map(t=>{
+    const hand=(t.lang==='en'||t.lang===DATA.videoLang);
+    return '<button class="pill'+(t.lang===CUR?' on':'')+'" data-l="'+esc(t.lang)+'">'+esc(t.label)+(hand?'':' <span class="gen">auto</span>')+'</button>';
+  }).join('');
+  $('pills').querySelectorAll('.pill').forEach(p=>p.addEventListener('click',()=>{captureEdits();CUR=p.dataset.l;renderPills();renderCues();}));
+  $('redo').style.display=CUR==='en'?'':'none';
+}
+function track(){return DATA.tracks.find(t=>t.lang===CUR);}
+function renderCues(){
+  const t=track(); if(!t){$('cues').innerHTML='<div class="state">No track.</div>';return;}
+  $('cues').innerHTML=t.cues.map((c,i)=>
+    '<div class="cue"><span class="ts" data-s="'+c.s+'">'+fmtTs(c.s)+'</span><textarea data-i="'+i+'" rows="1">'+esc(c.t)+'</textarea></div>').join('');
+  $('cues').querySelectorAll('textarea').forEach(ta=>{
+    fit(ta);
+    ta.addEventListener('input',()=>{fit(ta);ta.closest('.cue').classList.add('dirty');});
+  });
+  $('cues').querySelectorAll('.ts').forEach(el=>el.addEventListener('click',()=>{if(VID){VID.currentTime=+el.dataset.s;VID.play().catch(()=>{});}}));
+  $('redo').style.display=CUR==='en'?'':'none';
+}
+function fit(ta){ta.style.height='auto';ta.style.height=(ta.scrollHeight)+'px';}
+function captureEdits(){
+  const t=track(); if(!t)return;
+  document.querySelectorAll('#cues textarea').forEach(ta=>{const i=+ta.dataset.i;if(t.cues[i])t.cues[i].t=ta.value;});
+}
+async function doSave(retranslate){
+  captureEdits();
+  const t=track(); if(!t)return;
+  if(retranslate&&!confirm('Save your corrected English and redo all the other languages from it?\n\nThe other translations refresh on your wall in a few minutes. Your English and '+(DATA.tracks.find(x=>x.lang===DATA.videoLang)||{label:'native'}).label+' tracks stay exactly as you wrote them.'))return;
+  $('save').disabled=true;$('redo').disabled=true;
+  const msg=$('msg');msg.className='msg';msg.textContent='Saving…';
+  try{
+    const r=await fetch('/.netlify/functions/captions',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({u:U,b:DATA.blockIndex,lang:CUR,cues:t.cues,retranslate:!!retranslate})});
+    const d=await r.json();
+    if(!r.ok){msg.className='msg err';msg.textContent=d.error||'Could not save.';}
+    else{
+      document.querySelectorAll('.cue.dirty').forEach(c=>c.classList.remove('dirty'));
+      msg.className='msg ok';
+      msg.textContent=d.redoing
+        ?'English saved — the other languages are being redone from your corrected words now. They’ll refresh on your wall within a few minutes.'
+        :'Saved. Your wall serves the corrected subtitles immediately.';
+    }
+  }catch(_){msg.className='msg err';msg.textContent='Could not reach the server.';}
+  $('save').disabled=false;$('redo').disabled=false;
+}
+$('save').addEventListener('click',()=>doSave(false));
+$('redo').addEventListener('click',()=>doSave(true));
+load();
+</script>
+</body>
+</html>

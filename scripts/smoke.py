@@ -29,7 +29,7 @@ for path, marker in [('/home.html', 'In it together'), ('/login.html', 'Use any 
                      ('/join.html', 'Which organization'), ('/privacy.html', 'Tov-ell'),
                      ('/index.html', 'renderPano'), ('/manage.html', 'livestrip'),
                      ('/compose.html', 'subtitles arrive'), ('/orgs.html', 'Organizations forming'),
-                     ('/admin.html', 'killpanel')]:
+                     ('/admin.html', 'killpanel'), ('/subtitles.html', 'Fix the subtitles')]:
     try:
         s, b = get(SITE + path)
         check('page ' + path, s == 200 and marker in b, f'status {s}, marker {"found" if marker in b else "MISSING"}')
@@ -37,7 +37,7 @@ for path, marker in [('/home.html', 'In it together'), ('/login.html', 'Use any 
         check('page ' + path, False, str(e)[:80])
 
 print('— auth gates (anonymous must be denied) —')
-for fn in ['org-watch', 'platform', 'me', 'platform-stats']:
+for fn in ['org-watch', 'platform', 'me', 'platform-stats', 'captions']:
     check('gate /' + fn, status(SITE + '/.netlify/functions/' + fn) == 401)
 check('gate /golive POST', status(SITE + '/.netlify/functions/golive', 'POST') == 401)
 
