@@ -35,16 +35,35 @@ exports.handler = async function (event) {
   }
   if (!samples.length) return r(400, { error: 'No published updates to learn your voice from yet.' });
 
+  // Direction chips from the Test Lab — the writer steering the pen.
+  const STEER = {
+    warmer: 'Warmer — lean into affection for the reader; write like a letter to dear friends.',
+    concise: 'More concise — tighter and shorter; keep only what carries weight (this overrides the 3–5× length goal).',
+    longer: 'Longer — give each story more room to breathe; slow down and let moments land.',
+    spiritual: 'More spiritual — draw out more of the God-thread: what He is teaching them, where they see His hand.',
+    scripture: 'More Scripture — reach for a passage or two the author would naturally connect to these events (well-known verses that truly fit; never invent references).',
+    joyful: 'Happier — let the joy and celebration rise to the top; gratitude out loud.',
+    story: 'More storytelling — open scenes with a moment ("It was almost 3am…") the way the author does at their best; stay within the facts given.',
+  };
+  const steering = (Array.isArray(b.styles) ? b.styles : []).map(k => STEER[k]).filter(Boolean);
+  const steerText = steering.length ? `\nTHEIR DIRECTION FOR THIS DRAFT (obey these over defaults):\n- ${steering.join('\n- ')}\n` : '';
   const sampleText = samples.map((x, i) => `--- Sample ${i + 1}: "${x.title}" ---\n${x.body}`).join('\n\n');
-  const prompt = `You are ghostwriting a missionary supporter update for the author of the writing samples below. Study HOW they write — their rhythm, warmth, humor, how they open and close, how they weave Scripture and gratitude, their sentence length, their favorite turns of phrase. Then take their rough notes and write the update THEY would have written, in their voice, first person.
+  const prompt = `You are ghostwriting a missionary supporter update for the author of the writing samples below. Study HOW they write — their rhythm, warmth, humor, how they open and close, how they weave Scripture, gratitude, and reflection, their sentence length, their favorite turns of phrase, how they invite prayer.
 
-Rules:
-- Use ONLY the facts in the notes — never invent events, names, numbers, or Scripture they didn't point to. If the notes are thin, write shorter rather than padding.
-- Match their voice so well they'd barely edit it. Do not imitate any single sample's content — only the voice.
-- 4–9 paragraphs, each 1–4 sentences, ready for a supporter update wall.
-- Do NOT include a sign-off line (the composer adds "${signoff || 'their sign-off'}" automatically) and do not include a greeting like "Dear friends" unless the samples always do.
-- Also write a title in their style: warm, specific, openable.
+Their rough notes are a SEED, not a ceiling. Your job is the part they find costly: turning bullet points into the full update they would have written. Never restate a note verbatim — tell it the way THEY would tell it, with the framing, feeling, and meaning they always wrap around bare facts.
 
+Two different materials — treat them differently:
+1. FACTS are theirs alone. Every event, name, number, place, and quotation must come from the notes — never invent or embellish these. A note that says "4 students followed Jesus" cannot become five, and cannot gain details they didn't give.
+2. TEXTURE is your job, learned from the samples. Compose the things they always add around their facts: a warm opening that draws the reader in, the spiritual reflection they'd draw from these events (in the way THEY reflect — study what they return to: gratitude, God's faithfulness, Scripture they'd naturally reach for), the thread connecting the stories, thanks to their supporters, an invitation to pray about the things the notes name, and a closing with forward motion. This is elaboration in their voice, not fabrication of events.
+
+The finished update should read 3–5× longer than the notes and feel unmistakably like the samples. If they'd barely need to edit it, you succeeded; if it reads like their notes with connective words, you failed.
+
+Also:
+- 5–10 paragraphs, each 1–4 sentences, ready for a supporter update wall.
+- Do NOT include a sign-off line (the composer adds "${signoff || 'their sign-off'}" automatically).
+- Write a title in their style: warm, specific, openable.
+- If the notes include instructions about tone or length ("keep it short", "more reflective"), obey them.
+${steerText}
 WRITING SAMPLES:
 ${sampleText}
 
