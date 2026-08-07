@@ -82,15 +82,18 @@ exports.handler = async function (event) {
     }
 
     // The long tail: remaining field languages, attached as one refresh at the end.
-    for (const tgt of TARGETS) {
-      if (tgt === 'en' || tgt === srcShort) continue;
-      try {
-        const t = await translate(cues.map(c => c.text), srcLang, tgt, LNAME[tgt] || tgt);
-        if (t && t.length === cues.length) tracks.push({ lang: tgt, label: LNAME[tgt] || tgt, vtt: mkVtt(t) });
-      } catch (e) { await log('WARN translate ' + tgt + ' ' + String(e.message || e)); }
-    }
-    if (recId && tracks.length > 2) await attachAllToRecord(recId, parseInt(b.blockIndex || '0', 10), srcShort, tracks);
-    if (recId) await releaseIfHeld(recId);   // subtitles complete in every language — go live
+    // Wrapped so no failure here can ever strand a held update invisible.
+    try {
+      for (const tgt of TARGETS) {
+        if (tgt === 'en' || tgt === srcShort) continue;
+        try {
+          const t = await translate(cues.map(c => c.text), srcLang, tgt, LNAME[tgt] || tgt);
+          if (t && t.length === cues.length) tracks.push({ lang: tgt, label: LNAME[tgt] || tgt, vtt: mkVtt(t) });
+        } catch (e) { await log('WARN translate ' + tgt + ' ' + String(e.message || e)); }
+      }
+      if (recId && tracks.length > 2) await attachAllToRecord(recId, parseInt(b.blockIndex || '0', 10), srcShort, tracks);
+    } catch (e) { await log('WARN tail ' + String(e && e.message || e)); }
+    if (recId) await releaseIfHeld(recId);   // subtitles complete — go live
     await log(JSON.stringify({ ok: true, cues: cues.length, srcLang, tracks: tracks.map(t => t.lang), sample: enTexts.slice(0, 2) }));
     return j(200, { ok: true });
   } catch (e) {
