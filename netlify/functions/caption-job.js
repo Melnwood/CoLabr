@@ -15,12 +15,23 @@ exports.handler = async function (event) {
 
   if (event.httpMethod === 'POST') {
     let b; try { b = JSON.parse(event.body || '{}'); } catch { return r(400, { error: 'Bad request.' }); }
-    const url = (b.url || '').toString();
-    if (!/^https:\/\/storage\.googleapis\.com\/.+\/videos\//.test(url)) return r(400, { error: 'Upload the video first.' });
     if (!b.lang) return r(400, { error: 'Choose the spoken language first.' });
     const secret = process.env.SESSION_SECRET, site = process.env.SITE_BASE;
     if (!secret || !site) return r(500, { error: 'Server not configured.' });
     const job = crypto.randomBytes(12).toString('hex');
+
+    // Lines mode: translate the uploader's corrected native lines to English.
+    if (Array.isArray(b.lines) && b.lines.length) {
+      if (b.lines.length > 600) return r(400, { error: 'Too many lines.' });
+      await fetch(`${site}/.netlify/functions/transcribe-video-background`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret, job, lang: b.lang, lines: b.lines.map(x => String(x || '')) })
+      }).catch(() => {});
+      return r(200, { job });
+    }
+
+    const url = (b.url || '').toString();
+    if (!/^https:\/\/storage\.googleapis\.com\/.+\/videos\//.test(url)) return r(400, { error: 'Upload the video first.' });
     await fetch(`${site}/.netlify/functions/transcribe-video-background`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ secret, job, lang: b.lang, gsUri: url.replace(/^https:\/\/storage\.googleapis\.com\//, 'gs://') })

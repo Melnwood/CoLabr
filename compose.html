@@ -329,10 +329,12 @@
       <h3 id="subovtitle" style="font-size:19px;font-weight:800;letter-spacing:-.01em;margin:0 0 6px">Check the English</h3>
       <p id="subovsub" style="font-size:13px;color:#7a756f;line-height:1.55;margin:0 0 16px"></p>
       <div id="subrows"></div>
-      <div style="position:sticky;bottom:0;background:linear-gradient(to top,#fff 78%,transparent);padding:14px 0 6px;display:flex;gap:10px;align-items:center">
-        <button type="button" id="subok" style="background:#2f9e63;color:#fff;font-weight:800;font-size:14px;border:none;border-radius:10px;padding:12px 22px;cursor:pointer">These are ready ✓</button>
+      <div style="position:sticky;bottom:0;background:linear-gradient(to top,#fff 78%,transparent);padding:14px 0 6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button type="button" id="subnext" style="display:none;background:var(--acc,#FF6600);color:#fff;font-weight:800;font-size:14px;border:none;border-radius:10px;padding:12px 22px;cursor:pointer">Translate to English →</button>
+        <button type="button" id="subok" style="display:none;background:#2f9e63;color:#fff;font-weight:800;font-size:14px;border:none;border-radius:10px;padding:12px 22px;cursor:pointer">These are ready ✓</button>
+        <button type="button" id="subback" style="display:none;background:none;border:1px solid #e7e4e0;color:#241f1b;font-weight:600;font-size:13px;border-radius:10px;padding:11px 16px;cursor:pointer">← Back</button>
         <button type="button" id="subcancel" style="background:none;border:1px solid #e7e4e0;color:#241f1b;font-weight:600;font-size:13px;border-radius:10px;padding:11px 16px;cursor:pointer">Close</button>
-        <span style="font-size:12px;color:#7a756f">Nothing publishes until you hit Publish.</span>
+        <span id="subhint" style="font-size:12px;color:#7a756f">Nothing publishes until you hit Publish.</span>
       </div>
     </div>
   </div>
@@ -616,22 +618,84 @@ function openSubOverlay(bid){
     rows=en.map((c,i)=>({s:c.s,e:c.e,nat:(nat[i]||{}).t||'',en:c.t}));
   }
   if(!rows.length){ alert('No transcription yet — hit Translate first.'); return; }
-  OV={bid:b.id,src,rows};
-  const fmt=t=>{const m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+String(s).padStart(2,'0');};
-  const showNat=src&&src!=='en';
-  document.getElementById('subovtitle').textContent=showNat?'Check the English':'Check the subtitles';
-  document.getElementById('subovsub').innerHTML=showNat
-    ?'The gray line is the <b>'+esc(vlangName(src))+'</b> we heard. Fix the English underneath so it says what was really said — every other language is made from your English.'
-    :'Fix any line so it says what was really said — every other language is made from this English.';
-  document.getElementById('subrows').innerHTML=OV.rows.map((c,i)=>
-    '<div class="scue"><div class="sts">'+fmt(c.s)+'</div><div class="sbody">'+(showNat?'<div class="snat">'+esc(c.nat)+'</div>':'')+'<textarea data-si="'+i+'" rows="1">'+esc(c.en)+'</textarea></div></div>').join('');
+  // Two-step check: 1) make the NATIVE lines right (they were there — it's their words),
+  // 2) translate from the corrected native, 3) check/fix that English, 4) ready.
+  OV={bid:b.id,src,langFull:b.lang||'',rows,step:(src&&src!=='en')?1:2,origNat:rows.map(r=>r.nat)};
   document.getElementById('subov').style.display='block'; document.body.style.overflow='hidden';
+  renderSubStep();
+}
+function subFmt(t){const m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+String(s).padStart(2,'0');}
+function subCapture(){
+  if(!OV)return;
+  const key=OV.step===1?'nat':'en';
+  document.querySelectorAll('#subrows textarea').forEach(ta=>{const i=+ta.dataset.si;if(OV.rows[i])OV.rows[i][key]=ta.value;});
+}
+function renderSubStep(){
+  if(!OV)return;
+  const natName=vlangName(OV.src);
+  const T=document.getElementById('subovtitle'),S=document.getElementById('subovsub');
+  const bn=document.getElementById('subnext'),bo=document.getElementById('subok'),bb=document.getElementById('subback'),hint=document.getElementById('subhint');
+  let rowsHtml='';
+  if(OV.step===1){
+    T.textContent='Step 1 · Check your '+natName;
+    S.innerHTML='You were there — first make the <b>'+esc(natName)+'</b> say exactly what you said. Fix anything we mis-heard, then translate.';
+    rowsHtml=OV.rows.map((c,i)=>'<div class="scue"><div class="sts">'+subFmt(c.s)+'</div><div class="sbody"><textarea data-si="'+i+'" rows="1">'+esc(c.nat)+'</textarea></div></div>').join('');
+    bn.style.display='';bn.textContent='My '+natName+' is right — translate to English →';bo.style.display='none';bb.style.display='none';
+    hint.textContent='Nothing publishes until you hit Publish.';
+  }else if(OV.step===15){
+    T.textContent='Translating your '+natName+' into English…';
+    S.textContent='Usually well under a minute. Your corrected '+natName+' is the source now.';
+    rowsHtml='<div style="text-align:center;color:#7a756f;font-size:14px;padding:36px 0">Translating…</div>';
+    bn.style.display='none';bo.style.display='none';bb.style.display='none';
+    hint.textContent='';
+  }else{
+    const showNat=OV.src&&OV.src!=='en';
+    T.textContent=showNat?'Step 2 · Check the English':'Check the subtitles';
+    S.innerHTML=showNat
+      ?'The gray line is your corrected <b>'+esc(natName)+'</b>. Make sure the English under it says the same thing — every other language is made from this English.'
+      :'Fix any line so it says what was really said — every other language is made from this English.';
+    rowsHtml=OV.rows.map((c,i)=>'<div class="scue"><div class="sts">'+subFmt(c.s)+'</div><div class="sbody">'+(showNat?'<div class="snat">'+esc(c.nat)+'</div>':'')+'<textarea data-si="'+i+'" rows="1">'+esc(c.en)+'</textarea></div></div>').join('');
+    bn.style.display='none';bo.style.display='';bb.style.display=showNat?'':'none';bb.textContent='← Back to '+natName;
+    hint.textContent='Nothing publishes until you hit Publish.';
+  }
+  document.getElementById('subrows').innerHTML=rowsHtml;
   document.querySelectorAll('#subrows textarea').forEach(ta=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});});
 }
-function closeSubOverlay(){ document.getElementById('subov').style.display='none'; document.body.style.overflow=''; OV=null; }
+async function subTranslateNow(){
+  subCapture();
+  const unchanged=OV.rows.every((r,i)=>r.nat===OV.origNat[i]);
+  if(unchanged&&OV.rows.every(r=>r.en)){ OV.step=2; renderSubStep(); return; }   // nothing changed — keep the English we have
+  OV.step=15; renderSubStep();
+  try{
+    const r=await fetch('/.netlify/functions/caption-job',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lines:OV.rows.map(x=>x.nat),lang:OV.langFull||OV.src})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Could not start the translation.');
+    const job=d.job; let tries=0;
+    OV.pollTimer=setInterval(async()=>{
+      if(!OV){return;}
+      tries++;
+      try{
+        const pr=await fetch('/.netlify/functions/caption-job?job='+job);
+        const pd=await pr.json();
+        if(pd.ready){
+          clearInterval(OV.pollTimer);
+          if(pd.error){ OV.step=2; renderSubStep(); document.getElementById('subovsub').innerHTML='<span style="color:#b0342b">'+esc(pd.error)+'</span> The English below is from before your '+esc(vlangName(OV.src))+' fixes.'; return; }
+          (pd.en||[]).forEach((t,i)=>{ if(OV.rows[i]) OV.rows[i].en=t; });
+          OV.origNat=OV.rows.map(r=>r.nat);
+          OV.step=2; renderSubStep();
+        }else if(tries>40){
+          clearInterval(OV.pollTimer);
+          OV.step=2; renderSubStep();
+          document.getElementById('subovsub').innerHTML='<span style="color:#b0342b">Translation is taking too long.</span> The English below is from before your fixes — you can correct it by hand.';
+        }
+      }catch(_){}
+    },3000);
+  }catch(e){ OV.step=2; renderSubStep(); document.getElementById('subovsub').innerHTML='<span style="color:#b0342b">'+esc(e.message)+'</span> You can still fix the English by hand.'; }
+}
+function closeSubOverlay(){ if(OV&&OV.pollTimer)clearInterval(OV.pollTimer); document.getElementById('subov').style.display='none'; document.body.style.overflow=''; OV=null; }
 function submitSubtitles(){
   if(!OV)return;
-  document.querySelectorAll('#subrows textarea').forEach(ta=>{const i=+ta.dataset.si;if(OV.rows[i])OV.rows[i].en=ta.value;});
+  subCapture();
   const b=blocks.find(x=>String(x.id)===String(OV.bid)); if(!b){closeSubOverlay();return;}
   const tracks=[{lang:'en',label:'English',vtt:svBuildVtt(OV.rows,'en')}];
   if(OV.src&&OV.src!=='en') tracks.push({lang:OV.src,label:vlangName(OV.src),vtt:svBuildVtt(OV.rows,'nat')});
@@ -640,6 +704,8 @@ function submitSubtitles(){
   closeSubOverlay(); render();
 }
 document.getElementById('subok').addEventListener('click',submitSubtitles);
+document.getElementById('subnext').addEventListener('click',subTranslateNow);
+document.getElementById('subback').addEventListener('click',()=>{ if(!OV)return; subCapture(); OV.step=1; renderSubStep(); });
 document.getElementById('subcancel').addEventListener('click',closeSubOverlay);
 function setupVideoDrop(zone){
   const file=zone.querySelector('input[type=file]');

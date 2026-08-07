@@ -14,7 +14,24 @@ exports.handler = async function (event) {
     let b; try { b = JSON.parse(event.body || '{}'); } catch { return j(400); }
     if (!b.secret || (b.secret !== process.env.SESSION_SECRET && b.secret !== process.env.IMPORT_SECRET)) return j(401);
     job = String(b.job || '').replace(/[^a-f0-9]/g, '').slice(0, 32);
-    if (!b.gsUri || !job) return j(400);
+    if (!job) return j(400);
+
+    // Lines mode: the uploader corrected their native-language cues in the composer;
+    // translate exactly those corrected lines to English (no transcription involved).
+    if (Array.isArray(b.lines) && b.lines.length) {
+      const lines = b.lines.slice(0, 600).map(x => String(x || ''));
+      const src = b.lang || 'en-US';
+      let en = lines.slice();
+      if (src.split('-')[0] !== 'en') {
+        try { const t = await translate(lines, src, true); if (t && t.length === lines.length) en = t; }
+        catch (e) { await park(job, { error: 'Translation failed — you can still fix the English by hand.' }); return j(200); }
+        if (en === lines || en.length !== lines.length) { await park(job, { error: 'Translation failed — you can still fix the English by hand.' }); return j(200); }
+      }
+      await park(job, { en });
+      return j(200);
+    }
+
+    if (!b.gsUri) return j(400);
 
     let sa; try { sa = JSON.parse(process.env.GCP_SA_KEY || ''); } catch { await park(job, { error: 'Server not configured.' }); return j(200); }
     const srcLang = b.lang || 'en-US';
@@ -83,11 +100,14 @@ function groupCues(words) {
   return cues;
 }
 
-async function translate(lines, srcLang) {
+async function translate(lines, srcLang, trusted) {
   const key = process.env.ANTHROPIC_API_KEY; if (!key) return null;
   const full = lines.join(' ');
   const numbered = lines.map((t, i) => `${i + 1}. ${t}`).join('\n');
-  const prompt = `You are translating a Christian missionary's spoken video into natural, warm, accurate English (source language code: ${srcLang}). The source text came from automatic speech recognition and may contain small errors — read the WHOLE transcript first and use the overall meaning to quietly fix obvious mis-hearings so the English reads true to what was said.\n\nFull transcript (context only):\n"""\n${full}\n"""\n\nTranslate into English as exactly ${lines.length} caption segments matching these numbered source lines (same order, same count, so on-screen timing matches). Keep names, places, and Scripture references accurate. Return ONLY a JSON array of ${lines.length} English strings — no numbering, no commentary.\n\n${numbered}`;
+  const provenance = trusted
+    ? 'The source text was reviewed and corrected by the speaker themselves — treat it as exactly what was said and translate it faithfully; do not second-guess or "fix" it.'
+    : 'The source text came from automatic speech recognition and may contain small errors — read the WHOLE transcript first and use the overall meaning to quietly fix obvious mis-hearings so the English reads true to what was said.';
+  const prompt = `You are translating a Christian missionary's spoken video into natural, warm, accurate English (source language code: ${srcLang}). ${provenance}\n\nFull transcript (context only):\n"""\n${full}\n"""\n\nTranslate into English as exactly ${lines.length} caption segments matching these numbered source lines (same order, same count, so on-screen timing matches). Keep names, places, and Scripture references accurate. Return ONLY a JSON array of ${lines.length} English strings — no numbering, no commentary.\n\n${numbered}`;
   const models = [process.env.ANTHROPIC_TRANSLATE_MODEL || 'claude-sonnet-4-5', 'claude-haiku-4-5'];
   for (const model of models) {
     try {
