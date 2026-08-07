@@ -45,6 +45,11 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 22px}
 .tab{font-size:13.5px;font-weight:700;padding:9px 16px;border-radius:22px;border:1px solid var(--line);background:#fff;color:var(--text);cursor:pointer;font-family:var(--font)}
 .tab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.cfilter{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 16px}
+.cchip{font-size:12px;font-weight:700;padding:7px 13px;border-radius:18px;border:1px solid var(--line);background:#fff;color:var(--text);cursor:pointer;font-family:var(--font)}
+.cchip .n{font-weight:600;color:var(--muted);font-size:11px;margin-left:4px}
+.cchip.on{background:var(--text);color:#fff;border-color:var(--text)}
+.cchip.on .n{color:#cfc9c2}
 .pwall{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .pw{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 16px;border-left:3px solid var(--acc);cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;gap:12px;align-items:flex-start}
 .pw:hover{box-shadow:0 10px 22px rgba(60,40,20,.12);transform:translateY(-2px)}
@@ -104,6 +109,7 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 
   <div id="tab-updates">
     <div id="dirview">
+      <div class="cfilter" id="cfilter"></div>
       <div class="dir" id="dir"><div class="state">Loading teammates…</div></div>
     </div>
     <div id="pageview" style="display:none">
@@ -134,19 +140,39 @@ var _tt=null;function toast(m){const t=document.getElementById('toast');t.textCo
 
 async function guard(){ try{ const r=await fetch('/.netlify/functions/me'); if(!r.ok)throw 0; ME=await r.json(); return true; }catch{ location.replace('login.html'); return false; } }
 
+var LOCF='';   // active country/division filter ('' = everyone)
 async function loadDir(){
   try{
     const r=await fetch('/.netlify/functions/directory'); const d=await r.json();
     const ms=(d&&d.missionaries)||[];
-    const el=document.getElementById('dir');
-    if(!ms.length){ el.innerHTML='<div class="state">No teammate pages yet.</div>'; return; }
-    el.innerHTML=ms.map((m,i)=>`<div class="mcard" data-i="${i}">
+    if(!ms.length){ document.getElementById('dir').innerHTML='<div class="state">No teammate pages yet.</div>'; return; }
+    window._ms=ms;
+    renderLocChips(); renderDir();
+  }catch(e){ document.getElementById('dir').innerHTML='<div class="state">Could not load teammates.</div>'; }
+}
+// One chip per country/division that actually has people — USA, UK, Canada, the
+// divisions, and every field country appear automatically as pages exist for them.
+function renderLocChips(){
+  const ms=window._ms||[];
+  const counts={};
+  ms.forEach(m=>{ const l=(m.location||'').trim(); if(l) counts[l]=(counts[l]||0)+1; });
+  const locs=Object.keys(counts).sort((a,b)=>a.localeCompare(b));
+  const bar=document.getElementById('cfilter');
+  if(locs.length<2){ bar.innerHTML=''; return; }
+  bar.innerHTML=`<button class="cchip${LOCF===''?' on':''}" data-l="">Everyone <span class="n">${ms.length}</span></button>`+
+    locs.map(l=>`<button class="cchip${LOCF===l?' on':''}" data-l="${esc(l)}">${esc(l)} <span class="n">${counts[l]}</span></button>`).join('');
+  bar.querySelectorAll('.cchip').forEach(c=>c.addEventListener('click',()=>{ LOCF=c.dataset.l; renderLocChips(); renderDir(); }));
+}
+function renderDir(){
+  const ms=window._ms||[];
+  const show=LOCF?ms.filter(m=>(m.location||'').trim()===LOCF):ms;
+  const el=document.getElementById('dir');
+  if(!show.length){ el.innerHTML='<div class="state">No teammate pages here yet.</div>'; return; }
+  el.innerHTML=show.map(m=>{const i=ms.indexOf(m);return `<div class="mcard" data-i="${i}">
       <div class="mcov"${m.latest&&m.latest.cover?` style="background-image:url('${esc(m.latest.cover)}')"`:''}><span class="mcount">${m.count} update${m.count===1?'':'s'}</span></div>
       <div class="mbody"><div class="mnamerow">${m.photo?`<div class="mav" style="background-image:url('${esc(m.photo)}')"></div>`:`<div class="mav">${esc((m.name||'?').trim().charAt(0).toUpperCase())}</div>`}<div class="mname">${esc(m.name)}</div></div>${m.org?`<div class="morg">${esc(m.org)}</div>`:''}${m.location?`<div class="mloc">${esc(m.location)}</div>`:''}
-      ${m.latest?`<div class="mlatest">Latest: <b>${esc(m.latest.title)}</b></div>`:''}</div></div>`).join('');
-    window._ms=ms;
-    el.querySelectorAll('[data-i]').forEach(c=>c.addEventListener('click',()=>openTeammate(window._ms[+c.dataset.i])));
-  }catch(e){ document.getElementById('dir').innerHTML='<div class="state">Could not load teammates.</div>'; }
+      ${m.latest?`<div class="mlatest">Latest: <b>${esc(m.latest.title)}</b></div>`:''}</div></div>`;}).join('');
+  el.querySelectorAll('[data-i]').forEach(c=>c.addEventListener('click',()=>openTeammate(window._ms[+c.dataset.i])));
 }
 
 async function openTeammate(m){
