@@ -364,6 +364,8 @@
   }
   .top .topcta .give{margin-left:0}
   .follow{background:#fff;color:var(--acc);border:1px solid var(--acc);font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:var(--font)}
+  .dashlink{background:#fff;color:var(--text);border:1px solid var(--line,#ddd2b8);font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;text-decoration:none;font-family:var(--font);white-space:nowrap}
+  .dashlink:hover{border-color:var(--acc);color:var(--acc)}
   .subcta{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px 10px 16px;margin:12px 0 4px;font-family:var(--font)}
   .subcta p{font-size:13.5px;color:var(--text);margin:0}
   .subcta button{flex:none;background:var(--acc);color:var(--acc-text,#fff);border:none;font-weight:700;font-size:13px;padding:9px 18px;border-radius:18px;cursor:pointer;font-family:var(--font)}
@@ -464,6 +466,14 @@ const _urlT=(new URLSearchParams(location.search)).get('t')||'';
 if(_urlT){ try{ localStorage.setItem('wallkey:'+(PAGEM||'default'), _urlT); }catch(_){} }
 let VIEWTOK=_urlT; if(!VIEWTOK){ try{ VIEWTOK=localStorage.getItem('wallkey:'+(PAGEM||'default'))||''; }catch(_){} }
 let VIEWER=null;
+// Signed-in staff get a "Dashboard" button in the top bar — the way back home when
+// viewing any wall. Supporters (no session) never see it.
+fetch('/.netlify/functions/me').then(r=>r.ok?r.json():null).then(me=>{
+  if(!me)return;
+  const tc=document.querySelector('.top .topcta'); if(!tc)return;
+  const a=document.createElement('a'); a.href='manage.html'; a.className='dashlink'; a.textContent='← Dashboard';
+  tc.insertBefore(a, tc.firstChild);
+}).catch(()=>{});
 // Bare root: signed-in people go to their OWN wall (kills the mobile race where
 // "View site" is tapped before the link rewrite runs); everyone else gets the front page.
 if(!PAGEM && !(new URLSearchParams(location.search)).get('style')){
