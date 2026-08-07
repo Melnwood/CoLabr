@@ -13,7 +13,7 @@ exports.handler = async function (event) {
   if (full && process.env.AIRTABLE_TOKEN) {
     try {
       const m = await missByEmail({ Authorization: 'Bearer ' + process.env.AIRTABLE_TOKEN }, s.email);
-      if (m) out.miss = { name: m.name, signoff: m.signoff || '', live: !!m.live, org: m.org || '', give: m.give || '' };
+      if (m) out.miss = { name: m.name, signoff: m.signoff || '', live: !!m.live, org: m.org || '', country: m.country || '', give: m.give || '' };
     } catch (_) {}
   }
   return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(out) };

@@ -10,7 +10,7 @@ const RTABLE = 'tblVNMG5VnOnFFeto'; // Responses
 const MIS_TABLE = 'tbli1L8AO0JUDL7Wl';          // Missionaries
 const MIS_STYLE = 'fldvLZXckaQVUbD7F';           // Style (single select)
 const MIS_NAME = 'fldPYSQwxoQJGb0Zd', MIS_LOC = 'fld0mx3Sp4JnNnIfc', MIS_PHOTO = 'fldiXSCuELTQiiT08';
-const STYLES = ['Field Notes', 'Cover Grid', 'Timeline', 'Gallery Wall'];
+const STYLES = ['Field Notes', 'Cover Grid', 'Timeline', 'Gallery Wall', 'Panorama'];
 const SITE_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 
 exports.handler = async function (event) {
