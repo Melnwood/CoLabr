@@ -195,6 +195,15 @@
       <h2>Feature requests <span class="ib zero" id="sharecount">0</span></h2>
       <div id="sharelist"></div>
     </div>
+    <div class="panel" id="namePanel">
+      <h2>Your page name <span class="hint">The family name across the top of your wall</span></h2>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+        <input id="pgname" style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14.5px;font-family:inherit" placeholder="e.g. The Ellenwood Family">
+        <button class="photobtn" id="pgnameSave" type="button">Save name</button>
+      </div>
+      <div class="savenote" id="pgnameMsg"></div>
+      <div class="hint" style="margin-top:6px">Renaming is safe — links your supporters already have keep working.</div>
+    </div>
     <div class="panel" id="photoPanel">
       <h2>Your page photo <span class="hint">The portrait in your page header and beside your prayer requests</span></h2>
       <div class="photorow">
@@ -536,8 +545,19 @@ async function loadProfile(){
   try{ const d=await api('getProfile'); const av=document.getElementById('photoAv');
     if(d.photo){ av.style.backgroundImage=`url('${d.photo}')`; av.textContent=''; }
     else { av.textContent=(d.name||'?').trim().charAt(0).toUpperCase(); }
+    const ni=document.getElementById('pgname'); if(ni&&!ni.value) ni.value=d.name||'';
   }catch(e){}
 }
+document.getElementById('pgnameSave').addEventListener('click',async()=>{
+  const ni=document.getElementById('pgname'), msg=document.getElementById('pgnameMsg');
+  const name=ni.value.trim();
+  msg.className='savenote'; msg.textContent='Saving…';
+  try{
+    const d=await api('renamePage',{name});
+    msg.className='savenote ok'; msg.textContent='Saved — your wall now says “'+d.name+'.” Old links still work.';
+    const vs=document.querySelector('.nav a[href^="index.html"]'); if(vs) vs.href='index.html?m='+encodeURIComponent(d.name);
+  }catch(e){ msg.className='savenote err'; msg.textContent=e.message; }
+});
 document.getElementById('photoBtn').addEventListener('click',()=>document.getElementById('photoFile').click());
 document.getElementById('photoFile').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f)return; const msg=document.getElementById('photoMsg');

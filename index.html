@@ -673,6 +673,9 @@ async function load(){
     const styleName=Array.isArray(raw)?'Field Notes':(raw.style||'Field Notes');
     if(PAGEM && raw.page) applyPageIdentity(raw.page);
     if(raw.page && raw.page.photo) setPageAvatar(raw.page.photo);
+    // Adopt the CURRENT page name from the server — an old link may carry a former name,
+    // and every pray/message/subscribe call should use the name that exists today.
+    if(raw.page && raw.page.name) FAMILY=raw.page.name;
     if(raw.locked){ renderLocked(raw); return; }
     VIEWER=raw.viewer||null;
     // Co-brand: national pages (a national-org member writing in their own language) switch brand by
@@ -1134,7 +1137,7 @@ async function openReader(i){
   pollCaptions(sheet);
   wireRespond(u);
 }
-const FAMILY=PAGEM||'The Ellenwood Family', FAMSHORT=PAGEM||'Ellenwoods';
+let FAMILY=PAGEM||'The Ellenwood Family'; const FAMSHORT=PAGEM||'Ellenwoods';
 let PAGE_FIRST='';
 function respondHTML(u){
   return `<div class="eng">

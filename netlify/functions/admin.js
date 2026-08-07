@@ -120,6 +120,30 @@ exports.handler = async function (event) {
       return resp(200, { ok: true, style: b.style });
     }
 
+    if (b.action === 'renamePage') {
+      // Edit the page's display name ("The Ellenwood Family"). The old name is remembered
+      // in Former Names so every wall link already sitting in supporters' inboxes keeps working.
+      const newName = (b.name || '').toString().trim();
+      if (newName.length < 3 || newName.length > 60) return resp(400, { error: 'Give your page a name between 3 and 60 characters.' });
+      if (/['"\\]/.test(newName)) return resp(400, { error: 'Quotes and backslashes can’t be used in a page name.' });
+      const rec = await findMissionary(auth);
+      if (!rec) return resp(404, { error: 'Missionary record not found.' });
+      const oldName = (rec.fields && rec.fields[MIS_NAME]) || '';
+      if (newName === oldName) return resp(200, { ok: true, name: newName });
+      const misApi = `https://api.airtable.com/v0/${BASE}/${MIS_TABLE}`;
+      // The name must be unique — it's the address of the wall.
+      const dupF = encodeURIComponent(`{Name}='${newName.replace(/'/g, "\\'")}'`);
+      const dup = await fetch(`${misApi}?maxRecords=1&filterByFormula=${dupF}`, { headers: auth });
+      if (dup.ok && (((await dup.json()).records || [])[0])) return resp(400, { error: 'Another page already has that name.' });
+      const MIS_FORMER = 'fldoAoDKMmwMULS3l';
+      const former = ((rec.fields && rec.fields[MIS_FORMER]) || '');
+      const formerNew = (former ? former + '\n' : '') + oldName;
+      const r = await fetch(misApi, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: rec.id, fields: { [MIS_NAME]: newName, [MIS_FORMER]: formerNew } }], typecast: true }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); return resp(r.status, { error: (e.error && e.error.message) || 'Could not rename.' }); }
+      return resp(200, { ok: true, name: newName });
+    }
+
     if (b.action === 'getProfile') {
       const rec = await findMissionary(auth);
       if (!rec) return resp(404, { error: 'Missionary record not found.' });

@@ -39,7 +39,18 @@ exports.handler = async function (event) {
   const auth = { Authorization: 'Bearer ' + token };
 
   const q = (event && event.queryStringParameters) || {};
-  const missionary = (q.m && q.m.trim()) || DEFAULT_MISSIONARY;
+  let missionary = (q.m && q.m.trim()) || DEFAULT_MISSIONARY;
+  // Renamed pages: links minted before a rename carry the old name. Resolve it to the
+  // current one via Former Names, so no supporter's saved link ever dies.
+  try {
+    const rf = encodeURIComponent(`{Name}='${missionary.replace(/'/g, "\\'")}'`);
+    const rr = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&filterByFormula=${rf}`, { headers: auth });
+    if (rr.ok && !(((await rr.json()).records || [])[0])) {
+      const ff = encodeURIComponent(`FIND('${missionary.replace(/'/g, "")}', {Former Names})>0`);
+      const fr = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}?maxRecords=1&filterByFormula=${ff}`, { headers: auth });
+      if (fr.ok) { const rec = (((await fr.json()).records) || [])[0]; if (rec && (rec.fields || {})['Name']) missionary = rec.fields['Name']; }
+    }
+  } catch (e) {}
   const isDefault = missionary === DEFAULT_MISSIONARY;
   const nameEsc = missionary.replace(/'/g, "\\'");
 
