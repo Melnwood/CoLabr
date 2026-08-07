@@ -71,7 +71,9 @@
   .hero.textonly .heroread{background:var(--acc);color:#fff}
   @media(max-width:600px){.hero{min-height:clamp(260px,46vh,420px)}.hero .heroinner{padding:26px 22px 28px}}
   /* Across Josiah Venture rail — curated teammate stories */
-  .jvrail{margin:16px 0 10px;padding:18px 18px 10px;border:1.5px solid #d9cba4;border-radius:16px;background:linear-gradient(165deg,#fffdf8,#f6efe0);box-shadow:0 8px 24px rgba(60,40,20,.08)}
+  /* The picks rail breaks out of the reading column: as wide as the screen allows,
+     showing however many cards fit (the row still scrolls for the rest). */
+  .jvrail{width:min(calc(100vw - 24px),1600px);position:relative;left:50%;transform:translateX(-50%);margin:16px 0 10px;padding:18px 18px 10px;border:1.5px solid #d9cba4;border-radius:16px;background:linear-gradient(165deg,#fffdf8,#f6efe0);box-shadow:0 8px 24px rgba(60,40,20,.08)}
   .jvrailhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:13px}
   .jvrt{font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
   .jvrs{font-size:13px;color:var(--muted)}
@@ -176,7 +178,7 @@
   body.pano{background:#0e0c0a}
   body.pano .paper{max-width:none;padding:0;background:transparent;box-shadow:none}
   body.pano .tools{max-width:860px;margin:0 auto;padding-left:22px;padding-right:22px;background:transparent}
-  body.pano .jvrail{max-width:860px;margin-left:auto;margin-right:auto}
+  body.pano .jvrail{margin-top:26px}
   body.pano .yearrow{display:none}
   /* Masthead over the dark canvas: light ink, readable strapline, soft logo chip */
   body.pano .mh-l h1{color:#f7f3ec}
