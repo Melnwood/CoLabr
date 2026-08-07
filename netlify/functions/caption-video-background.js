@@ -81,20 +81,15 @@ exports.handler = async function (event) {
       recId = await createUpdate(b.title || '🎬 Video caption test (safe to delete)', blocks);
     }
 
-    // The long tail: remaining field languages, attached as one refresh at the end.
-    // Wrapped so no failure here can ever strand a held update invisible.
-    try {
-      for (const tgt of TARGETS) {
-        if (tgt === 'en' || tgt === srcShort) continue;
-        try {
-          const t = await translate(cues.map(c => c.text), srcLang, tgt, LNAME[tgt] || tgt);
-          if (t && t.length === cues.length) tracks.push({ lang: tgt, label: LNAME[tgt] || tgt, vtt: mkVtt(t) });
-        } catch (e) { await log('WARN translate ' + tgt + ' ' + String(e.message || e)); }
-      }
-      if (recId && tracks.length > 2) await attachAllToRecord(recId, parseInt(b.blockIndex || '0', 10), srcShort, tracks);
-    } catch (e) { await log('WARN tail ' + String(e && e.message || e)); }
-    if (recId) await releaseIfHeld(recId);   // subtitles complete — go live
-    await log(JSON.stringify({ ok: true, cues: cues.length, srcLang, tracks: tracks.map(t => t.lang), sample: enTexts.slice(0, 2) }));
+    // STOP for human review: the uploader was there — they check and correct the English
+    // before any other language is made from it. The update stays 'Processing' (invisible)
+    // until they approve on subtitles.html; approval triggers the remaining translations
+    // and the release. Failures still release plain so nothing is ever stranded invisible.
+    if (recId) {
+      try { await setStatus(recId, b.blockIndex, 'review'); } catch (e) {}
+      try { await notifyUploader(recId); } catch (e) { await log('WARN review-notify ' + String(e && e.message || e)); }
+    }
+    await log(JSON.stringify({ ok: true, cues: cues.length, srcLang, awaitingReview: true, tracks: tracks.map(t => t.lang), sample: enTexts.slice(0, 2) }));
     return j(200, { ok: true });
   } catch (e) {
     try { await log('EXCEPTION ' + String(e && e.message || e)); } catch {}
@@ -193,6 +188,35 @@ async function releaseIfHeld(recordId) {
       }).catch(() => {});
     }
   } catch (e) {}
+}
+
+// "Your subtitles are ready to check" — goes only to the missionary's own address,
+// never to supporters, so it is exempt from the platform email pause.
+async function notifyUploader(recordId) {
+  const token = process.env.AIRTABLE_TOKEN, site = process.env.SITE_BASE;
+  if (!token || !site) return;
+  const auth = { Authorization: 'Bearer ' + token };
+  const gr = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}/${recordId}`, { headers: auth });
+  if (!gr.ok) return;
+  const f = (await gr.json()).fields || {};
+  const missId = ((f['Missionary'] || [])[0]) || '';
+  if (!missId) return;
+  const mr = await fetch(`https://api.airtable.com/v0/${BASE}/tbli1L8AO0JUDL7Wl/${missId}`, { headers: auth });
+  if (!mr.ok) return;
+  const mf = (await mr.json()).fields || {};
+  const to = String(mf['Email'] || '').split(/[\s,;]+/)[0];
+  if (!to) return;
+  const link = `${site}/subtitles.html?u=${recordId}`;
+  const title = f['Title'] || 'your update';
+  const { sendMail } = require('./_mail');
+  await sendMail({
+    to, subject: `Check the subtitles on “${title}”`,
+    html: `<div style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#241f1b;max-width:520px">
+      <p>The English subtitles for your video are ready to look over.</p>
+      <p>You were there — give them a quick read, fix anything the transcription got wrong, and press approve. Every other language is then translated from your corrected English, and your update goes out.</p>
+      <p><a href="${link}" style="background:#FF6B5B;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:10px;display:inline-block">Check the subtitles →</a></p>
+      <p style="font-size:13px;color:#7a756f">Your update stays off your wall until you approve.</p></div>`
+  });
 }
 
 async function setStatus(recordId, blockIndex, status) {

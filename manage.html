@@ -336,7 +336,7 @@ function renderList(){
     const tags=[r.type,(r.aud||[]).join(' + ')].filter(Boolean).join(' · ');
     return `<div class="item"><span class="st ${r.status}">${r.status}</span>
       <div class="tt"><b>${esc(r.title)}</b><span>${r.date||'—'} · ${tags}${r.opens?(' · '+r.opens.toLocaleString()+' opens'):''}</span></div>
-      <div class="act"><a class="edit" href="compose.html?id=${r.id}">Edit</a>${r.hasCaptions?`<a class="edit" href="subtitles.html?u=${r.id}">Subtitles</a>`:''}${toggle}<button class="del" data-act="del" data-id="${r.id}">Delete</button></div></div>`;
+      <div class="act"><a class="edit" href="compose.html?id=${r.id}">Edit</a>${r.hasCaptions?`<a class="edit" href="subtitles.html?u=${r.id}"${r.status==='Processing'?' style="color:#c96a1e;border-color:#f3c9a6;font-weight:800"':''}>${r.status==='Processing'?'Check subtitles':'Subtitles'}</a>`:''}${toggle}<button class="del" data-act="del" data-id="${r.id}">Delete</button></div></div>`;
   }).join('');
   list.querySelectorAll('button[data-act]').forEach(btn=>btn.addEventListener('click',()=>act(btn.dataset.act,btn.dataset.id)));
 }

@@ -8,28 +8,30 @@ const TARGETS = ['en', 'cs', 'pl', 'uk', 'sk', 'ro', 'bg', 'sl', 'lv', 'et', 'hu
 const LNAME = { en:'English', cs:'Czech', pl:'Polish', uk:'Ukrainian', sk:'Slovak', ro:'Romanian', bg:'Bulgarian', sl:'Slovenian', lv:'Latvian', et:'Estonian', hu:'Hungarian', sr:'Serbian (Latin script)', ru:'Russian', de:'German', es:'Spanish', fr:'French' };
 
 exports.handler = async function (event) {
+  let rel = { need: false, u: '' };
   try {
     if (event.httpMethod !== 'POST') return j(405);
     let b; try { b = JSON.parse(event.body || '{}'); } catch { return j(400); }
     if (!b.secret || (b.secret !== process.env.SESSION_SECRET && b.secret !== process.env.IMPORT_SECRET)) return j(401);
     const token = process.env.AIRTABLE_TOKEN; if (!token || !b.u) return j(400);
+    rel = { need: !!b.release, u: b.u };   // approval flow: MUST release even if translations fail
     const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
     const api = `https://api.airtable.com/v0/${BASE}`;
 
     const gr = await fetch(`${api}/${UPDATES}/${b.u}`, { headers: auth });
-    if (!gr.ok) return j(200);
+    if (!gr.ok) return await finish(rel, j(200));
     const f = (await gr.json()).fields || {};
     let blocks = []; try { blocks = JSON.parse(f['Blocks'] || '[]'); } catch {}
     let idx = parseInt(b.b || '-1', 10);
     if (!(blocks[idx] && blocks[idx].type === 'video' && (blocks[idx].captions || []).length)) {
       idx = blocks.findIndex(x => x && x.type === 'video' && (x.captions || []).length);
     }
-    if (idx < 0) return j(200);
+    if (idx < 0) return await finish(rel, j(200));
     const block = blocks[idx];
     const en = (block.captions || []).find(t => t.lang === 'en');
-    if (!en) return j(200);
+    if (!en) return await finish(rel, j(200));
     const cues = parseVtt(en.vtt || '');
-    if (!cues.length) return j(200);
+    if (!cues.length) return await finish(rel, j(200));
     const native = block.lang || '';
     const keep = (block.captions || []).filter(t => t.lang === 'en' || t.lang === native);
 
@@ -46,14 +48,46 @@ exports.handler = async function (event) {
     // Re-read before writing so a concurrent edit of another block isn't clobbered.
     const gr2 = await fetch(`${api}/${UPDATES}/${b.u}`, { headers: auth });
     if (gr2.ok) { try { blocks = JSON.parse(((await gr2.json()).fields || {})['Blocks'] || '[]'); } catch {} }
-    if (!(blocks[idx] && blocks[idx].type === 'video')) return j(200);
-    blocks[idx].captions = keep.concat(fresh);
-    await fetch(`${api}/${UPDATES}`, { method: 'PATCH', headers: auth,
-      body: JSON.stringify({ records: [{ id: b.u, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) });
+    if (blocks[idx] && blocks[idx].type === 'video') {
+      blocks[idx].captions = keep.concat(fresh);
+      blocks[idx].captionStatus = 'ready';
+      await fetch(`${api}/${UPDATES}`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: b.u, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) });
+    }
     console.log('retranslate-captions', b.u, 'tracks', keep.length + fresh.length);
-    return j(200);
-  } catch (e) { console.log('retranslate EXCEPTION', String(e && e.message || e)); return j(200); }
+    return await finish(rel, j(200));
+  } catch (e) {
+    console.log('retranslate EXCEPTION', String(e && e.message || e));
+    return await finish(rel, j(200));
+  }
 };
+
+// Approval must always end with the update visible — translations are best-effort.
+async function finish(rel, resp) {
+  if (rel.need && rel.u) { try { await release(rel.u); } catch (e) {} }
+  return resp;
+}
+
+// Flip a held update Processing -> Published and fire the subscriber send (notify itself
+// enforces Live, the platform pause, and the once-only Sent claim).
+async function release(recordId) {
+  const token = process.env.AIRTABLE_TOKEN; if (!token) return;
+  const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  const gr = await fetch(`https://api.airtable.com/v0/${BASE}/${UPDATES}/${recordId}`, { headers: auth });
+  if (!gr.ok) return;
+  const st = ((await gr.json()).fields || {})['Status'];
+  const name = (st && st.name) ? st.name : st;
+  if (name !== 'Processing') return;
+  await fetch(`https://api.airtable.com/v0/${BASE}/${UPDATES}`, { method: 'PATCH', headers: auth,
+    body: JSON.stringify({ records: [{ id: recordId, fields: { Status: 'Published' } }], typecast: true }) });
+  const secret = process.env.SESSION_SECRET, site = process.env.SITE_BASE;
+  if (secret && site) {
+    await fetch(`${site}/.netlify/functions/notify-subscribers-background`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updateId: recordId, secret })
+    }).catch(() => {});
+  }
+}
 
 async function translate(lines, tgtCode, tgtName) {
   const key = process.env.ANTHROPIC_API_KEY; if (!key) return null;

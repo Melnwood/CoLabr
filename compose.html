@@ -773,7 +773,7 @@ async function submit(publish){
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.');
     const hasVid=clean.some(b=>b.type==='video'&&/storage\.googleapis\.com\/.+\/videos\//.test(b.url||'')&&b.lang);
     const held=d.status==='Processing';
-    const subNote=held?' It’s being prepared: subtitles in every language are generating now, and it will appear on your wall automatically in a few minutes — nothing more for you to do.':(hasVid?' Your video’s subtitles are generating and will appear shortly.':'');
+    const subNote=held?' We’re writing the English subtitles now — in a few minutes we’ll email you to check them (also under “Check subtitles” on your dashboard). Once you say the English is good, every other language is translated from it and your update goes live.':(hasVid?' Your video’s subtitles are generating and will appear shortly.':'');
     if(editId){
       show('ok', (publish?(held?'Almost there!':'Changes published — <a href="'+ME_WALL+'">view on your site →</a>'):'Changes saved as a draft.')+subNote);
     } else {

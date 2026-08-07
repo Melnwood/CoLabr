@@ -48,10 +48,14 @@ exports.handler = async function (event) {
   if (idx < 0) return r(404, { error: 'No subtitled video on this update yet.' });
   const block = blocks[idx];
 
+  const stRaw = f['Status'];
+  const status = (stRaw && stRaw.name) ? stRaw.name : stRaw;
+
   if (event.httpMethod === 'GET') {
     return r(200, {
       title: f['Title'] || '', blockIndex: idx, videoLang: block.lang || '',
       videoUrl: block.url || '',
+      held: status === 'Processing',
       tracks: (block.captions || []).map(t => ({ lang: t.lang, label: t.label || t.lang, cues: parseVtt(t.vtt || '') })),
     });
   }
@@ -66,18 +70,20 @@ exports.handler = async function (event) {
   await fetch(`${api}/${UPDATES}`, { method: 'PATCH', headers: auth,
     body: JSON.stringify({ records: [{ id: updateId, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) });
 
+  // approve = the review gate: corrected English is now the source of truth; make every
+  // other language from it, then release the held update to the wall (and its emails).
   let redoing = false;
-  if (b.retranslate && lang === 'en') {
+  if ((b.retranslate || b.approve) && lang === 'en') {
     const secret = process.env.SESSION_SECRET, site = process.env.SITE_BASE;
     if (secret && site) {
       redoing = true;
       await fetch(`${site}/.netlify/functions/retranslate-captions-background`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret, u: updateId, b: idx })
+        body: JSON.stringify({ secret, u: updateId, b: idx, release: !!b.approve })
       }).catch(() => { redoing = false; });
     }
   }
-  return r(200, { ok: true, redoing });
+  return r(200, { ok: true, redoing, released: !!(b.approve && redoing) });
 };
 
 function parseVtt(vtt) {

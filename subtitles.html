@@ -43,6 +43,7 @@
   <div class="bar" id="bar" style="display:none">
     <button class="save" id="save">Save this language</button>
     <button class="redo" id="redo">Save English &amp; redo all other languages</button>
+    <button class="redo" id="approve" style="display:none">✓ The English is good — translate &amp; publish</button>
     <div class="msg" id="msg"></div>
   </div>
   <p class="note" id="note" style="display:none">The speaker's own-language track and English are only ever changed by hand — the other languages are translated from your corrected English.</p>
@@ -63,6 +64,9 @@ async function load(){
     if(d.title) $('lede').insertAdjacentHTML('beforebegin','<div style="font-size:13px;color:var(--muted);margin:2px 0 8px">'+esc(d.title)+'</div>');
     if(d.videoUrl){$('player').innerHTML='<video controls preload="metadata" src="'+esc(d.videoUrl)+'"></video>';VID=$('player').querySelector('video');}
     CUR=d.tracks.some(t=>t.lang==='en')?'en':(d.tracks[0]&&d.tracks[0].lang);
+    if(d.held){
+      $('lede').insertAdjacentHTML('beforebegin','<div style="background:#fff6ee;border:1px solid #f3c9a6;border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.55;margin:0 0 14px"><b>This update is waiting on you.</b> It won’t appear on your wall (and no emails go out) until you approve the English below. Once you do, every other language is translated from your corrected English — then it goes live.</div>');
+    }
     renderPills(); renderCues();
     $('bar').style.display='flex'; $('note').style.display='block';
   }catch(_){$('cues').innerHTML='<div class="state">Could not reach the server.</div>';}
@@ -73,7 +77,12 @@ function renderPills(){
     return '<button class="pill'+(t.lang===CUR?' on':'')+'" data-l="'+esc(t.lang)+'">'+esc(t.label)+(hand?'':' <span class="gen">auto</span>')+'</button>';
   }).join('');
   $('pills').querySelectorAll('.pill').forEach(p=>p.addEventListener('click',()=>{captureEdits();CUR=p.dataset.l;renderPills();renderCues();}));
-  $('redo').style.display=CUR==='en'?'':'none';
+  syncButtons();
+}
+function syncButtons(){
+  const en=CUR==='en';
+  $('approve').style.display=(en&&DATA.held)?'':'none';
+  $('redo').style.display=(en&&!DATA.held)?'':'none';
 }
 function track(){return DATA.tracks.find(t=>t.lang===CUR);}
 function renderCues(){
@@ -85,36 +94,43 @@ function renderCues(){
     ta.addEventListener('input',()=>{fit(ta);ta.closest('.cue').classList.add('dirty');});
   });
   $('cues').querySelectorAll('.ts').forEach(el=>el.addEventListener('click',()=>{if(VID){VID.currentTime=+el.dataset.s;VID.play().catch(()=>{});}}));
-  $('redo').style.display=CUR==='en'?'':'none';
+  syncButtons();
 }
 function fit(ta){ta.style.height='auto';ta.style.height=(ta.scrollHeight)+'px';}
 function captureEdits(){
   const t=track(); if(!t)return;
   document.querySelectorAll('#cues textarea').forEach(ta=>{const i=+ta.dataset.i;if(t.cues[i])t.cues[i].t=ta.value;});
 }
-async function doSave(retranslate){
+async function doSave(mode){   // mode: '' | 'retranslate' | 'approve'
   captureEdits();
   const t=track(); if(!t)return;
-  if(retranslate&&!confirm('Save your corrected English and redo all the other languages from it?\n\nThe other translations refresh on your wall in a few minutes. Your English and '+(DATA.tracks.find(x=>x.lang===DATA.videoLang)||{label:'native'}).label+' tracks stay exactly as you wrote them.'))return;
-  $('save').disabled=true;$('redo').disabled=true;
+  if(mode==='retranslate'&&!confirm('Save your corrected English and redo all the other languages from it?\n\nThe other translations refresh on your wall in a few minutes. Your English and '+(DATA.tracks.find(x=>x.lang===DATA.videoLang)||{label:'native'}).label+' tracks stay exactly as you wrote them.'))return;
+  if(mode==='approve'&&!confirm('Approve the English subtitles?\n\nEvery other language is translated from this English, and when they’re done your update goes live on the wall (and emails go out if your page is live).'))return;
+  ['save','redo','approve'].forEach(id=>$(id).disabled=true);
   const msg=$('msg');msg.className='msg';msg.textContent='Saving…';
   try{
     const r=await fetch('/.netlify/functions/captions',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({u:U,b:DATA.blockIndex,lang:CUR,cues:t.cues,retranslate:!!retranslate})});
+      body:JSON.stringify({u:U,b:DATA.blockIndex,lang:CUR,cues:t.cues,retranslate:mode==='retranslate',approve:mode==='approve'})});
     const d=await r.json();
     if(!r.ok){msg.className='msg err';msg.textContent=d.error||'Could not save.';}
     else{
       document.querySelectorAll('.cue.dirty').forEach(c=>c.classList.remove('dirty'));
       msg.className='msg ok';
-      msg.textContent=d.redoing
-        ?'English saved — the other languages are being redone from your corrected words now. They’ll refresh on your wall within a few minutes.'
-        :'Saved. Your wall serves the corrected subtitles immediately.';
+      if(d.released){
+        msg.textContent='Approved! The other languages are being translated from your English right now — when they’re done (a few minutes), your update goes live on the wall.';
+        DATA.held=false; syncButtons();
+      }else if(d.redoing){
+        msg.textContent='English saved — the other languages are being redone from your corrected words now. They’ll refresh on your wall within a few minutes.';
+      }else{
+        msg.textContent=DATA.held?'Saved. When the English reads right, press the approve button and your update goes out.':'Saved. Your wall serves the corrected subtitles immediately.';
+      }
     }
   }catch(_){msg.className='msg err';msg.textContent='Could not reach the server.';}
-  $('save').disabled=false;$('redo').disabled=false;
+  ['save','redo','approve'].forEach(id=>$(id).disabled=false);
 }
-$('save').addEventListener('click',()=>doSave(false));
-$('redo').addEventListener('click',()=>doSave(true));
+$('save').addEventListener('click',()=>doSave(''));
+$('redo').addEventListener('click',()=>doSave('retranslate'));
+$('approve').addEventListener('click',()=>doSave('approve'));
 load();
 </script>
 </body>
