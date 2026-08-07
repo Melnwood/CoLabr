@@ -243,7 +243,8 @@ async function loadPeople(){
     box.innerHTML=ppl.map(p=>{
       const st=p.active?['following','Following · '+(p.pref||'Full email')]:(p.source==='Requested'?['invited','Asked to follow — your OK?']:(p.source==='Invited'?['invited','Invited — waiting']:['stopped','Not following']));
       const approveBtn=(!p.active&&p.source==='Requested')?`<button data-ap="${p.id}" style="background:var(--acc);color:#fff;border-color:var(--acc)">Approve</button>`:'';
-      return `<div class="prow"><div class="pwho"><b>${esc(p.name||p.email)}</b><span>${esc(p.email||p.phone||'')}</span></div>
+      const lv=p.lastVisit?(' · visited '+new Date(p.lastVisit).toLocaleDateString(undefined,{month:'short',day:'numeric'})):'';
+      return `<div class="prow"><div class="pwho"><b>${esc(p.name||p.email)}</b><span>${esc(p.email||p.phone||'')}${lv}</span></div>
         <span class="pstat ${st[0]}">${esc(st[1])}</span>
         <div class="pact">${approveBtn}${p.active||p.source==='Requested'?'':`<button data-re="${esc(p.name?p.name+' <'+p.email+'>':p.email)}">Resend invite</button>`}<button class="prm" data-rm="${p.id}" data-nm="${esc(p.name||p.email)}">Remove</button></div></div>`;
     }).join('');

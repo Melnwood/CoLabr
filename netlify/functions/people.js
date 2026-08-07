@@ -39,7 +39,7 @@ exports.handler = async function (event) {
         const c = rec.fields || {};
         return {
           id: rec.id, name: c[SF.name] || '', email: c[SF.email] || '', phone: c[SF.phone] || '',
-          pref: sel(c[SF.pref]), active: !!c[SF.active], source: sel(c[SF.source])
+          pref: sel(c[SF.pref]), active: !!c[SF.active], source: sel(c[SF.source]), lastVisit: c['fldxUuNMuqyafBfDp'] || ''
         };
       }).sort((a, b2) => (a.name || a.email).localeCompare(b2.name || b2.email));
       return r(200, { people, missionary });

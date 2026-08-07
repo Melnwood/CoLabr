@@ -55,7 +55,13 @@ exports.handler = async function (event) {
       const trr = await fetch(`https://api.airtable.com/v0/${BASE}/${SUBS}?maxRecords=1&filterByFormula=${tf}`, { headers: auth });
       if (trr.ok) {
         const rec = (((await trr.json()).records) || [])[0];
-        if (rec) { const a = rec.fields['Audience']; viewer = { audience: (a && a.name) ? a.name : (a || 'International') }; }
+        if (rec) {
+          const a = rec.fields['Audience'];
+          viewer = { audience: (a && a.name) ? a.name : (a || 'International'), name: rec.fields['Name'] || '', email: rec.fields['Email'] || '' };
+          // Stamp the visit — fire and forget; the wall never waits on it.
+          fetch(`https://api.airtable.com/v0/${BASE}/${SUBS}`, { method: 'PATCH', headers: { ...auth, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ records: [{ id: rec.id, fields: { 'Last visit': new Date().toISOString() } }], typecast: true }) }).catch(() => {});
+        }
       }
     } catch (e) {}
   }
@@ -147,7 +153,7 @@ exports.handler = async function (event) {
       // Landing card only: who this is and how to ask to follow — no updates, ever.
       return json(200, { locked: true, style, page, brand, updates: [] }, 'no-store');
     }
-    return json(200, { style, page, brand, updates }, 'no-store');
+    return json(200, { style, page, brand, updates, viewer: viewer && viewer.name ? { name: viewer.name, email: viewer.email } : null }, 'no-store');
   } catch (e) {
     return json(502, { error: 'Could not reach Airtable.' });
   }

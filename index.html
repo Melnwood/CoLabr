@@ -463,6 +463,7 @@ const PAGEM=(new URLSearchParams(location.search)).get('m')||'';   // whose page
 const _urlT=(new URLSearchParams(location.search)).get('t')||'';
 if(_urlT){ try{ localStorage.setItem('wallkey:'+(PAGEM||'default'), _urlT); }catch(_){} }
 let VIEWTOK=_urlT; if(!VIEWTOK){ try{ VIEWTOK=localStorage.getItem('wallkey:'+(PAGEM||'default'))||''; }catch(_){} }
+let VIEWER=null;
 // Bare root: signed-in people go to their OWN wall (kills the mobile race where
 // "View site" is tapped before the link rewrite runs); everyone else gets the front page.
 if(!PAGEM && !(new URLSearchParams(location.search)).get('style')){
@@ -623,6 +624,7 @@ async function load(){
     if(PAGEM && raw.page) applyPageIdentity(raw.page);
     if(raw.page && raw.page.photo) setPageAvatar(raw.page.photo);
     if(raw.locked){ renderLocked(raw); return; }
+    VIEWER=raw.viewer||null;
     // Co-brand: national pages (a national-org member writing in their own language) switch brand by
     // reader language and show the "Josiah Venture | <country>" mark for English readers.
     const pg = raw.page || {};
@@ -1096,9 +1098,11 @@ function wireRespond(u){
   respondMode='Encouragement';
   const q=id=>document.getElementById(id);
   const hint=q('rHint');
+  // Known supporter: their name and email come with their key — no retyping.
+  if(VIEWER&&VIEWER.name){ if(q('rName')&&!q('rName').value)q('rName').value=VIEWER.name; if(q('rEmail')&&!q('rEmail').value&&VIEWER.email)q('rEmail').value=VIEWER.email; }
   q('prayBtn').addEventListener('click',async()=>{
     const btn=q('prayBtn'); if(btn.classList.contains('done'))return;
-    try{ await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim()});
+    try{ await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim(),t:VIEWTOK||undefined});
       btn.classList.add('done'); btn.textContent='🙏 Praying — thank you';
       loadEngagement(u.id);
     }catch(e){ /* ignore */ }
@@ -1113,7 +1117,7 @@ function wireRespond(u){
     if(!message){ out.className='rmsg err'; out.textContent='Please write a message.'; return; }
     q('rSend').disabled=true; out.className='rmsg'; out.textContent='Sending…';
     try{
-      await postResp({type:respondMode,updateId:u.id,updateTitle:u.title,missionary:FAMILY,name,email:(q('rEmail').value||'').trim(),message,public:respondMode==='Encouragement'});
+      await postResp({type:respondMode,updateId:u.id,updateTitle:u.title,missionary:FAMILY,name,email:(q('rEmail').value||'').trim(),message,public:respondMode==='Encouragement',t:VIEWTOK||undefined});
       out.className='rmsg ok'; out.textContent = respondMode==='Encouragement' ? 'Thank you — your encouragement is posted below.' : 'Thank you — your note was sent privately to the family.';
       q('rMsg').value='';
       if(respondMode==='Encouragement') loadEngagement(u.id);

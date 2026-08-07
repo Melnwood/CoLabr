@@ -22,7 +22,18 @@ exports.handler = async function (event) {
   const type = TYPES.includes(b.type) ? b.type : null;
   if (!type) return r(400, { error: 'Unknown response type.' });
 
-  const name = (b.name || '').toString().trim().slice(0, 80) || (type === 'Prayer' ? 'A supporter' : '');
+  // A supporter key anchors identity server-side: the missionary always knows who
+  // prayed or wrote, even if the form was left blank.
+  let known = null;
+  const vt = (b.t || '').toString().trim();
+  if (vt && /^[a-f0-9]{16,64}$/i.test(vt) && b.missionary) {
+    try {
+      const tf = encodeURIComponent(`AND({Token}='${vt}',{Missionary}='${String(b.missionary).replace(/'/g, "")}',{Active}=1)`);
+      const trr = await fetch(`https://api.airtable.com/v0/${BASE}/tbl21LyWOBxln6bOy?maxRecords=1&filterByFormula=${tf}`, { headers: { Authorization: 'Bearer ' + token } });
+      if (trr.ok) { const rec = (((await trr.json()).records) || [])[0]; if (rec) known = { name: rec.fields['Name'] || '', email: rec.fields['Email'] || '' }; }
+    } catch (e) {}
+  }
+  const name = (b.name || '').toString().trim().slice(0, 80) || (known && known.name) || (type === 'Prayer' ? 'A supporter' : '');
   if (!name) return r(400, { error: 'Please add your name.' });
   const message = (b.message || '').toString().trim().slice(0, 2000);
   if ((type === 'Note' || type === 'Encouragement') && !message) return r(400, { error: 'Please write a message.' });
@@ -37,7 +48,8 @@ exports.handler = async function (event) {
     [F.read]: false
   };
   if (message) fields[F.message] = message;
-  if (b.email) fields[F.email] = (b.email || '').toString().trim().slice(0, 120);
+  const emailFinal = (b.email || '').toString().trim().slice(0, 120) || (known && known.email) || '';
+  if (emailFinal) fields[F.email] = emailFinal;
   if (b.updateId) { fields[F.update] = [b.updateId]; fields[F.updateId] = b.updateId; }
   if (b.updateTitle) fields[F.updateTitle] = (b.updateTitle || '').toString().slice(0, 200);
   if (b.missionary) fields[F.missionary] = (b.missionary || '').toString().slice(0, 120);
