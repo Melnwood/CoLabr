@@ -513,6 +513,7 @@ const MAST={
   pano:{t:'The panorama',s:'Scroll the story, floor to ceiling — every update a chapter.'}
 };
 let U=[],qs='',sortDir='new',yearFilter='all',monthFilter='all',STYLE='fieldnotes',HEROID='';
+let RAILS={hl:true,picks:true};   // per-page rail switches (dashboard-controlled)
 const urlStyle=new URLSearchParams(location.search).get('style');
 document.getElementById('q').addEventListener('input',e=>{qs=e.target.value.toLowerCase().trim();render();});
 document.querySelectorAll('#sortseg button').forEach(b=>b.addEventListener('click',()=>{sortDir=b.dataset.s;document.querySelectorAll('#sortseg button').forEach(x=>x.classList.toggle('on',x===b));render();}));
@@ -682,6 +683,8 @@ async function load(){
     // Adopt the CURRENT page name from the server — an old link may carry a former name,
     // and every pray/message/subscribe call should use the name that exists today.
     if(raw.page && raw.page.name) FAMILY=raw.page.name;
+    if(raw.page && raw.page.rails) RAILS=raw.page.rails;
+    if(!RAILS.picks){ const jr=document.getElementById('jvrail'); if(jr) jr.style.display='none'; }
     if(raw.locked){ renderLocked(raw); return; }
     VIEWER=raw.viewer||null;
     // Co-brand: national pages (a national-org member writing in their own language) switch brand by
@@ -711,7 +714,7 @@ function renderHighlights(){
   const picks=U.map((u,i)=>({u,i})).filter(x=>x.u.hl)
     .sort((a,b)=>(b.u.rawdate||'').localeCompare(a.u.rawdate||''));
   const rail=document.getElementById('hlrail'); if(!rail)return;
-  if(!picks.length){ rail.style.display='none'; return; }
+  if(!RAILS.hl||!picks.length){ rail.style.display='none'; return; }
   const first=(PAGE_FIRST||'').trim();
   document.getElementById('hlrt').textContent=first?(first+'’s highlights'):'Our highlights';
   document.getElementById('hlrailrow').innerHTML=picks.map(x=>`<div class="jvcard" data-hi="${x.i}">
@@ -1334,7 +1337,7 @@ function renderRail(items){
       loadFeatured();
     }catch(err){ toast(err.message); }
   }));
-  document.getElementById('jvrail').style.display=items.length?'block':'none';
+  document.getElementById('jvrail').style.display=(items.length&&RAILS.picks)?'block':'none';
 }
 async function openFeatured(it){
   if(!it)return; const sheet=document.getElementById('sheet');

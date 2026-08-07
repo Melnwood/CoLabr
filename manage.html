@@ -219,6 +219,10 @@
     <div class="panel appearance" id="appearance">
       <h2>Supporter page style <span class="hint">Pick how your supporters see your updates</span></h2>
       <div class="styles" id="styles"><div class="state" style="padding:10px 0">Loading styles…</div></div>
+      <div id="railprefs" style="display:none;margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);gap:22px;flex-wrap:wrap;font-size:13.5px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="railHl"> Show your <b>highlights</b> rail</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="railPicks"> Show the <b>team picks</b> rail</label>
+      </div>
       <div class="savenote" id="savenote"></div>
     </div>
     <div class="panel" id="updatesPanel">
@@ -446,7 +450,24 @@ async function loadStyle(){
   try{ const d=await api('getStyle'); if(d.style) curStyle=d.style; }catch(e){}
   try{ const p=await fetch('/.netlify/functions/platform').then(r=>r.json()); HIDE_FN=!!p.hideFieldnotes; }catch(e){}
   renderStyles();
+  loadRails();
 }
+async function loadRails(){
+  try{
+    const d=await api('rails');
+    document.getElementById('railHl').checked=!!d.hl;
+    document.getElementById('railPicks').checked=!!d.picks;
+    document.getElementById('railprefs').style.display='flex';
+  }catch(e){}
+}
+['railHl','railPicks'].forEach(id=>document.getElementById(id).addEventListener('change',async()=>{
+  const note=document.getElementById('savenote'); note.className='savenote'; note.textContent='Saving…';
+  try{
+    const d=await api('rails',{set:{hl:document.getElementById('railHl').checked,picks:document.getElementById('railPicks').checked}});
+    note.className='savenote ok';
+    note.textContent='Saved — your wall now shows '+([d.hl?'your highlights':null,d.picks?'the team picks':null].filter(Boolean).join(' and ')||'neither rail')+'.';
+  }catch(e){ note.className='savenote err'; note.textContent='Could not save: '+e.message; loadRails(); }
+}));
 function renderStyles(){
   document.getElementById('styles').innerHTML=STYLE_DEFS.filter(s=>!(s.adminOnly&&HIDE_FN)).map(s=>`
     <div class="scard ${s.name===curStyle?'on':''}" data-style="${s.name}">

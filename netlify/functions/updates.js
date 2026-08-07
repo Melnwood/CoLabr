@@ -134,7 +134,8 @@ exports.handler = async function (event) {
         const mfields = (rec && rec.fields) || {};
         const s = mfields[MIS_STYLE]; if (s) style = (s && s.name) ? s.name : s;
         native = !!mfields[MIS_NATIONAL];
-        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', give: mfields[MIS_GIVE] || '', first: (mfields[MIS_SIGN] || '').trim(), country: '', orgName: '', native };
+        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', give: mfields[MIS_GIVE] || '', first: (mfields[MIS_SIGN] || '').trim(), country: '', orgName: '', native,
+          rails: { hl: !mfields['fldhuobGXx9rv3vaO'], picks: !mfields['fldviqu0XW23doCM2'] } };
       }
     } catch (e) { /* fall back */ }
 

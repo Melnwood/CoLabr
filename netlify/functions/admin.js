@@ -111,6 +111,24 @@ exports.handler = async function (event) {
       return resp(200, { ok: true });
     }
 
+    if (b.action === 'rails') {
+      // Per-page rail switches: which extra rows the wall shows (highlights / team picks).
+      const HIDE_HL = 'fldhuobGXx9rv3vaO', HIDE_PICKS = 'fldviqu0XW23doCM2';
+      const rec = await findMissionary(auth);
+      if (!rec) return resp(404, { error: 'Missionary record not found.' });
+      if (b.set) {
+        const fields = {};
+        if ('hl' in b.set) fields[HIDE_HL] = !b.set.hl;
+        if ('picks' in b.set) fields[HIDE_PICKS] = !b.set.picks;
+        const r = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}`, { method: 'PATCH', headers: auth,
+          body: JSON.stringify({ records: [{ id: rec.id, fields }], typecast: true }) });
+        if (!r.ok) return resp(r.status, { error: 'Could not save.' });
+        const merged = { ...rec.fields, ...fields };
+        return resp(200, { ok: true, hl: !merged[HIDE_HL], picks: !merged[HIDE_PICKS] });
+      }
+      return resp(200, { ok: true, hl: !(rec.fields || {})[HIDE_HL], picks: !(rec.fields || {})[HIDE_PICKS] });
+    }
+
     if (b.action === 'getStyle') {
       const rec = await findMissionary(auth);
       if (!rec) return resp(404, { error: 'Missionary record not found.' });
