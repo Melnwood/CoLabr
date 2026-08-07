@@ -376,11 +376,15 @@ function renderList(){
   const rows=statusF==='all'?ROWS:ROWS.filter(r=>r.status===statusF);
   const list=document.getElementById('list');
   if(!rows.length){ list.innerHTML='<div class="state">No updates here.</div>'; return; }
+  // Same top-ten the wall badges: your most-read updates, marked where you edit and star.
+  const rank={};
+  [...ROWS].filter(r=>r.status==='Published'&&r.opens>0).sort((a,b)=>b.opens-a.opens).slice(0,10).forEach((r,i)=>rank[r.id]=i+1);
   list.innerHTML=rows.map(r=>{
     const toggle=r.status==='Published'?`<button class="unpub" data-act="unpub" data-id="${r.id}">Unpublish</button>`:`<button class="pub" data-act="pub" data-id="${r.id}">Publish</button>`;
     const tags=[r.type,(r.aud||[]).join(' + ')].filter(Boolean).join(' · ');
+    const top=rank[r.id]?`<span style="display:inline-block;background:#fdf8ec;border:1px solid #eddcae;color:#b8791b;font-size:10.5px;font-weight:800;border-radius:10px;padding:2px 8px;margin-left:7px;white-space:nowrap;vertical-align:1px">#${rank[r.id]} most read</span>`:'';
     return `<div class="item"><span class="st ${r.status}">${r.status}</span>
-      <div class="tt"><b>${esc(r.title)}</b><span>${r.date||'—'} · ${tags}${r.opens?(' · '+r.opens.toLocaleString()+' opens'):''}</span></div>
+      <div class="tt"><b>${esc(r.title)}</b>${top}<span>${r.date||'—'} · ${tags}${r.opens?(' · '+r.opens.toLocaleString()+' opens'):''}</span></div>
       <div class="act">${r.status==='Published'?`<button data-act="hl" data-id="${r.id}" data-on="${r.hl?'1':''}"${r.hl?' style="color:#b8791b;border-color:#eddcae;font-weight:800;background:#fdf8ec"':''} title="Highlights appear in their own rail on your wall">${r.hl?'★ Highlighted':'☆ Highlight'}</button>`:''}<a class="edit" href="compose.html?id=${r.id}">Edit</a>${r.hasCaptions?`<a class="edit" href="subtitles.html?u=${r.id}"${r.status==='Processing'?' style="color:#c96a1e;border-color:#f3c9a6;font-weight:800"':''}>${r.status==='Processing'?'Check subtitles':'Subtitles'}</a>`:''}${toggle}<button class="del" data-act="del" data-id="${r.id}">Delete</button></div></div>`;
   }).join('');
   list.querySelectorAll('button[data-act]').forEach(btn=>btn.addEventListener('click',()=>act(btn.dataset.act,btn.dataset.id)));
