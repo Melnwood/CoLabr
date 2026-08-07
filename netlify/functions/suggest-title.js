@@ -6,7 +6,7 @@ const { missByEmail } = require('./_shares');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const UPDATES = 'tbl7aVErl35Qw36QZ';
 
-const SYSTEM = `You title a Christian missionary's supporter update. You will be shown the writer's own past titles — that register is the target. Notice what they actually do: often a declaration of faith ("I will tell of all His wonders…"), a question they are living inside ("Am I drifting?", "To water or plant?"), or a single resonant image or word ("Homecomings"). Their titles carry the spiritual center of the update, not a summary of its events.
+const SYSTEM = `You title a Christian missionary's supporter update. You will be shown the writer's own past titles WITH their real open counts from their wall — the most-opened list is evidence, not decoration: study what those winners have in common (form, depth, cadence) and write toward it. Notice what their best actually do: often a declaration of faith ("I will tell of all His wonders…"), a question they are living inside ("Am I drifting?", "To water or plant?"), or a single resonant image or word ("Homecomings"). Their titles carry the spiritual center of the update, not a summary of its events.
 
 Write titles that:
 - sound unmistakably like THIS writer — same length habits, same cadence, same depth;
@@ -30,8 +30,9 @@ exports.handler = async function (event) {
   const text = (b.body || '').trim();
   if (text.length < 20) return resp(400, { error: 'Write a bit of your update first, then I can suggest titles.' });
 
-  // The writer's own published titles are the style guide.
-  let pastTitles = [];
+  // The style guide is the writer's own record: which of THEIR titles actually earned
+  // opens on their wall, plus their recent register. Proof beats theory.
+  let top = [], recent = [];
   try {
     const token = process.env.AIRTABLE_TOKEN;
     if (token) {
@@ -39,19 +40,20 @@ exports.handler = async function (event) {
       let name = 'The Ellenwood Family';
       try { const m = await missByEmail(auth, s.email); if (m && m.name) name = m.name; } catch (_) {}
       const f = encodeURIComponent(`AND({Status}='Published', FIND('${name.replace(/'/g, "")}', ARRAYJOIN({Missionary}))>0)`);
-      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${UPDATES}?pageSize=40&filterByFormula=${f}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc&fields%5B%5D=Title`, { headers: auth });
+      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${UPDATES}?pageSize=100&filterByFormula=${f}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc&fields%5B%5D=Title&fields%5B%5D=Opens`, { headers: auth });
       if (r.ok) {
-        pastTitles = (((await r.json()).records) || [])
-          .map(rec => (rec.fields || {})['Title'] || '')
-          .filter(t => t && !/^__.*__$/.test(t) && !/video test|caption test/i.test(t))
-          .slice(0, 25);
+        const rows = (((await r.json()).records) || [])
+          .map(rec => ({ t: (rec.fields || {})['Title'] || '', o: (rec.fields || {})['Opens'] || 0 }))
+          .filter(x => x.t && !/^__.*__$/.test(x.t) && !/video test|caption test/i.test(x.t));
+        top = rows.filter(x => x.o > 0).sort((a, b) => b.o - a.o).slice(0, 15);
+        recent = rows.slice(0, 12).map(x => x.t);
       }
     }
   } catch (_) {}
 
-  const titlesBlock = pastTitles.length
-    ? `The writer's own past titles (match this register):\n${pastTitles.map(t => '- ' + t).join('\n')}\n\n`
-    : '';
+  const titlesBlock =
+    (top.length ? `This writer's MOST-OPENED titles from their real wall — what has proven to make their supporters open (weight these heaviest):\n${top.map(x => `- "${x.t}" (${x.o} opens)`).join('\n')}\n\n` : '') +
+    (recent.length ? `Their recent titles (current register):\n${recent.map(t => '- ' + t).join('\n')}\n\n` : '');
 
   const models = [process.env.ANTHROPIC_TRANSLATE_MODEL || 'claude-sonnet-4-5', 'claude-haiku-4-5'];
   for (const model of models) {
