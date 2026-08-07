@@ -141,6 +141,17 @@ exports.handler = async function (event) {
       const r = await fetch(misApi, { method: 'PATCH', headers: auth,
         body: JSON.stringify({ records: [{ id: rec.id, fields: { [MIS_NAME]: newName, [MIS_FORMER]: formerNew } }], typecast: true }) });
       if (!r.ok) { const e = await r.json().catch(() => ({})); return resp(r.status, { error: (e.error && e.error.message) || 'Could not rename.' }); }
+      // Ripple the rename through Subscribers (their Missionary column is text) so
+      // access tokens, sends, and people lists keep matching without a beat skipped.
+      try {
+        const secret = process.env.SESSION_SECRET, site = process.env.SITE_BASE;
+        if (secret && site) {
+          await fetch(`${site}/.netlify/functions/rename-sync-background`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ secret, oldName, newName })
+          });
+        }
+      } catch (e) {}
       return resp(200, { ok: true, name: newName });
     }
 
