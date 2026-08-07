@@ -34,7 +34,29 @@ exports.handler = async function (event) {
       const pr = await fetch(api, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: batch, typecast: true }) });
       if (pr.ok) moved += batch.length;
     }
-    console.log('rename-sync', JSON.stringify({ oldName, newName, found: ids.length, moved }));
+
+    // Feature Shares also carry page names as text — both as the requesting wall
+    // ("Requester Page") and as the featured author. Rewrite both directions.
+    const SHARES = 'tblKLXrYICtkiSp40';
+    let shares = 0;
+    for (const fld of ['Requester Page', 'Author']) {
+      try {
+        let sids = [], soff = '';
+        const sf = encodeURIComponent(`{${fld}}='${oldName.replace(/'/g, "")}'`);
+        do {
+          const r = await fetch(`https://api.airtable.com/v0/${BASE}/${SHARES}?pageSize=100&filterByFormula=${sf}${soff ? '&offset=' + soff : ''}`, { headers: auth });
+          if (!r.ok) break;
+          const d = await r.json();
+          sids = sids.concat((d.records || []).map(x => x.id)); soff = d.offset || '';
+        } while (soff);
+        for (let i = 0; i < sids.length; i += 10) {
+          const batch = sids.slice(i, i + 10).map(id => ({ id, fields: { [fld]: newName } }));
+          const pr = await fetch(`https://api.airtable.com/v0/${BASE}/${SHARES}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: batch, typecast: true }) });
+          if (pr.ok) shares += batch.length;
+        }
+      } catch (e) {}
+    }
+    console.log('rename-sync', JSON.stringify({ oldName, newName, found: ids.length, moved, shares }));
     return j(200);
   } catch (e) { console.log('rename-sync EXCEPTION', String(e && e.message || e)); return j(200); }
 };
