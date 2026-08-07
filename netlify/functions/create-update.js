@@ -43,9 +43,11 @@ exports.handler = async function (event) {
   const firstVideo = (blocks.find(x => x.type === 'video' && x.url) || {}).url || '';
 
   // Mark freshly-uploaded videos as "captions processing" so the page can show status.
+  let pendingVideo = false;
   for (const bk of blocks) {
     if (bk && bk.type === 'video' && bk.url && /storage\.googleapis\.com\/.+\/videos\//.test(bk.url) && bk.lang && !(Array.isArray(bk.captions) && bk.captions.length)) {
       bk.captionStatus = 'processing';
+      pendingVideo = true;
     }
   }
 
@@ -54,7 +56,10 @@ exports.handler = async function (event) {
     'Body': bodyText || (b.body || ''),
     'Excerpt': (bodyText || b.body || '').replace(/\s+/g, ' ').trim().slice(0, 240),
     'Type': b.type || 'Newsletter',
-    'Status': b.publish ? 'Published' : 'Draft',
+    // A published update with a video still generating subtitles HOLDS as 'Processing' —
+    // invisible to supporters — and the caption pipeline releases it when every language
+    // is ready. No half-dressed updates on the wall.
+    'Status': b.publish ? (pendingVideo ? 'Processing' : 'Published') : 'Draft',
     'Source': 'Co-Labr',
     'Missionary': [missionaryName],
     'Date': b.date || new Date().toISOString().slice(0, 10)
@@ -79,13 +84,13 @@ exports.handler = async function (event) {
     // Auto-caption any newly-uploaded (GCS-hosted) videos that don't have captions yet.
     if (recId) { try { await fireCaptions(recId, blocks); } catch (e) {} }
     // Translate the written update into every field language (best-effort, async).
-    if (recId && fields.Status === 'Published') { try { await fireTranslate(recId); } catch (e) {} }
+    if (recId && (fields.Status === 'Published' || fields.Status === 'Processing')) { try { await fireTranslate(recId); } catch (e) {} }
     // If this update just went out as Published, notify subscribers (best-effort, async).
-    if (fields.Status === 'Published' && recId) {
+    if ((fields.Status === 'Published' || fields.Status === 'Processing') && recId) {
       if (b.emailChoice === 'wall') {
         // Wall-only publish: claim Sent so no send path (now or later) ever emails this update.
         try { await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ records: [{ id: recId, fields: { 'fldLIEGYuHv5G1iC2': true } }] }) }); } catch (e) {}
-      } else {
+      } else if (fields.Status === 'Published') {
         try { await fireNotify(recId); } catch (e) {}
       }
     }

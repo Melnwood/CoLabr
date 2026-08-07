@@ -90,6 +90,7 @@ exports.handler = async function (event) {
       } catch (e) { await log('WARN translate ' + tgt + ' ' + String(e.message || e)); }
     }
     if (recId && tracks.length > 2) await attachAllToRecord(recId, parseInt(b.blockIndex || '0', 10), srcShort, tracks);
+    if (recId) await releaseIfHeld(recId);   // subtitles complete in every language — go live
     await log(JSON.stringify({ ok: true, cues: cues.length, srcLang, tracks: tracks.map(t => t.lang), sample: enTexts.slice(0, 2) }));
     return j(200, { ok: true });
   } catch (e) {
@@ -168,6 +169,29 @@ async function attachAllToRecord(recordId, blockIndex, srcLangShort, tracks) {
     body: JSON.stringify({ records: [{ id: recordId, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) }).catch(() => {});
 }
 
+// If the update was held as 'Processing' while subtitles generated, publish it now and
+// fire the subscriber send (notify itself enforces Live, platform pause, and Sent).
+async function releaseIfHeld(recordId) {
+  const token = process.env.AIRTABLE_TOKEN; if (!token || !recordId) return;
+  const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  try {
+    const gr = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}/${recordId}`, { headers: auth });
+    if (!gr.ok) return;
+    const st = ((await gr.json()).fields || {})['Status'];
+    const name = (st && st.name) ? st.name : st;
+    if (name !== 'Processing') return;
+    await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
+      body: JSON.stringify({ records: [{ id: recordId, fields: { Status: 'Published' } }], typecast: true }) });
+    const secret = process.env.SESSION_SECRET, site = process.env.SITE_BASE;
+    if (secret && site) {
+      await fetch(`${site}/.netlify/functions/notify-subscribers-background`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updateId: recordId, secret })
+      }).catch(() => {});
+    }
+  } catch (e) {}
+}
+
 async function setStatus(recordId, blockIndex, status) {
   const token = process.env.AIRTABLE_TOKEN; if (!token || !recordId) return;
   const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
@@ -182,6 +206,8 @@ async function setStatus(recordId, blockIndex, status) {
     blocks[idx].captionStatus = status;
     await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: [{ id: recordId, fields: { Blocks: JSON.stringify(blocks) } }], typecast: true }) });
   } catch (e) {}
+  // Never leave an update invisible because subtitles failed — release without them.
+  if (status === 'failed') { try { await releaseIfHeld(recordId); } catch (e) {} }
 }
 
 async function log(body) {

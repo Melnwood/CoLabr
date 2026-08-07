@@ -772,11 +772,12 @@ async function submit(publish){
     if(r.status===401){location.replace('login.html');return;}
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.');
     const hasVid=clean.some(b=>b.type==='video'&&/storage\.googleapis\.com\/.+\/videos\//.test(b.url||'')&&b.lang);
-    const subNote=hasVid?' Your video’s English subtitles are generating now and will appear on it within a minute or two — nothing more for you to do.':'';
+    const held=d.status==='Processing';
+    const subNote=held?' It’s being prepared: subtitles in every language are generating now, and it will appear on your wall automatically in a few minutes — nothing more for you to do.':(hasVid?' Your video’s subtitles are generating and will appear shortly.':'');
     if(editId){
-      show('ok', (publish?'Changes published — <a href="'+ME_WALL+'">view on your site →</a>':'Changes saved as a draft.')+subNote);
+      show('ok', (publish?(held?'Almost there!':'Changes published — <a href="'+ME_WALL+'">view on your site →</a>'):'Changes saved as a draft.')+subNote);
     } else {
-      show('ok', (publish?(payload.emailChoice==='send'?'Published and emailed to your supporters! <a href="'+ME_WALL+'">View it on your site →</a>':payload.emailChoice==='wall'?'Published to your wall — no emails sent. <a href="'+ME_WALL+'">View it →</a>':'Published! It’s live now — <a href="'+ME_WALL+'">view it on your site →</a>')+'':'Saved as a draft. Publish it from Manage when you’re ready.')+subNote);
+      show('ok', (publish?(held?'Almost there!':(payload.emailChoice==='send'?'Published and emailed to your supporters! <a href="'+ME_WALL+'">View it on your site →</a>':payload.emailChoice==='wall'?'Published to your wall — no emails sent. <a href="'+ME_WALL+'">View it →</a>':'Published! It’s live now — <a href="'+ME_WALL+'">view it on your site →</a>'))+'':'Saved as a draft. Publish it from Manage when you’re ready.')+subNote);
       document.getElementById('title').value=''; blocks=[]; add('text');
     }
   }catch(e){ show('err', e.message); }
