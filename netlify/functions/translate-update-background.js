@@ -5,8 +5,8 @@
 const crypto = require('crypto');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';
-const TARGETS = ['en', 'cs', 'pl', 'uk', 'sk', 'ro', 'bg', 'sl', 'lv', 'et', 'hu'];
-const LNAME = { en:'English', cs:'Czech', pl:'Polish', uk:'Ukrainian', sk:'Slovak', ro:'Romanian', bg:'Bulgarian', sl:'Slovenian', lv:'Latvian', et:'Estonian', hu:'Hungarian' };
+const TARGETS = ['en', 'cs', 'pl', 'uk', 'sk', 'ro', 'bg', 'sl', 'lv', 'et', 'hu', 'sr', 'de', 'es'];
+const LNAME = { en:'English', cs:'Czech', pl:'Polish', uk:'Ukrainian', sk:'Slovak', ro:'Romanian', bg:'Bulgarian', sl:'Slovenian', lv:'Latvian', et:'Estonian', hu:'Hungarian', sr:'Serbian (Latin script)' , de:'German', es:'Spanish' };
 // Which fields of each block hold translatable text.
 const FIELDS = { text:['text'], heading:['text'], quote:['text','by'], prayer:['text'], praise:['text'], signoff:['text'], hero:['heading','sub'], photo:['caption'], numbers:['al','bl','cl'], give:['label'] };
 

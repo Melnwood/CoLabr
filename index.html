@@ -847,7 +847,7 @@ document.addEventListener('scroll',hidePray,true);
 document.addEventListener('click',e=>{ if(!e.target.closest('.praychip'))hidePray(); });
 
 function embedURL(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/)))return 'https://www.youtube.com/embed/'+m[1];if((m=v.match(/vimeo\.com\/(\d+)/)))return 'https://player.vimeo.com/video/'+m[1];return '';}
-var LANGNAMES={en:'English',pl:'Polish',uk:'Ukrainian',cs:'Czech',sk:'Slovak',ro:'Romanian',bg:'Bulgarian',sl:'Slovenian',lv:'Latvian',et:'Estonian',hu:'Hungarian',ru:'Russian',de:'German',es:'Spanish',fr:'French'};
+var LANGNAMES={en:'English',pl:'Polish',uk:'Ukrainian',cs:'Czech',sk:'Slovak',ro:'Romanian',bg:'Bulgarian',sl:'Slovenian',lv:'Latvian',et:'Estonian',hu:'Hungarian',sr:'Serbian',ru:'Russian',de:'German',es:'Spanish',fr:'French'};
 function langName(c){c=(c||'').toLowerCase();const base=c.split(/[-_]/)[0];return LANGNAMES[c]||LANGNAMES[base]||base.toUpperCase();}
 function renderVideo(bk,recId,idx){
   const url=bk.url||''; if(!url) return '';
@@ -1137,7 +1137,7 @@ function closeSub(){document.getElementById('subov').classList.remove('open');do
 
 // ---- reader language ----
 var TRBASE='https://storage.googleapis.com/colabr-photos-jv';
-var RLANGS=['en','cs','pl','uk','sk','ro','bg','sl','lv','et','hu'];
+var RLANGS=['en','cs','pl','uk','sk','ro','bg','sl','lv','et','hu','sr','de','es'];
 var READERLANG='';
 (function setupLang(){
   const sel=document.getElementById('langsel'); if(!sel) return;
