@@ -96,6 +96,7 @@ exports.handler = async function (event) {
       const prefSel = f[SF.pref]; const pref = (prefSel && prefSel.name) ? prefSel.name : prefSel;
       const first = ((f[SF.name] || '').split(/\s+/)[0]) || 'friend';
       const manage = f[SF.token] && site ? `${site}/prefs.html?t=${f[SF.token]}` : '';
+      const wall = site ? `${site}/index.html?m=${encodeURIComponent(missName)}${f[SF.token] ? '&t=' + f[SF.token] : ''}` : '';
       const coverHtml = cover ? `<img src="${esc(cover)}" alt="" style="width:100%;max-width:560px;border-radius:12px;margin:0 0 16px">` : '';
       let html;
       if (pref === 'Full email') {
@@ -103,7 +104,7 @@ exports.handler = async function (event) {
       } else {
         html = wrap(`${coverHtml}<h1 style="font-size:22px;font-weight:800;color:#241f1b;margin:0 0 10px">${esc(title)}</h1>
           <p style="font-size:15px;line-height:1.6;color:#3c3733;margin:0 0 16px">${esc(excerpt)}…</p>
-          ${site ? `<p><a href="${site}/index.html?m=${encodeURIComponent(missName)}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage, missName, missFirst);
+          ${wall ? `<p><a href="${wall}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage, missName, missFirst);
       }
       try { await sendMail({ to: email, subject: title, html, replyTo, fromName: missName }); } catch (e) {}
     }

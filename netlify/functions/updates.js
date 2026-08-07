@@ -18,6 +18,8 @@ const ORG_CODE = 'fldYMMDdsP2DgNzmZ', ORG_NAME = 'fldsyU3dpzLdkXI7t';
 const ORG_INK = 'fldhe4BdqqpM37Hod', ORG_ACCENT = 'fldqjEmVMB9lVTOzG', ORG_BG = 'fldpgLMC8jv9YHtxm', ORG_TEXTON = 'fldufCKMaSCYUh3xt';
 const ORG_COUNTRY = 'fldsJCCbZgD5wcamY';           // Country (for the "Josiah Venture | <country>" co-brand mark)
 const DEFAULT_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
+const { sessionFromEvent } = require('./_auth');
+const SUBS = 'tbl21LyWOBxln6bOy';
 const F = {
   title:  'fldhkHAXyvqtrx3cu',
   date:   'fldvi8dFkZBFANacG',
@@ -40,6 +42,24 @@ exports.handler = async function (event) {
   const missionary = (q.m && q.m.trim()) || DEFAULT_MISSIONARY;
   const isDefault = missionary === DEFAULT_MISSIONARY;
   const nameEsc = missionary.replace(/'/g, "\\'");
+
+  // ---- The wall is for the curated supporter team, not the open web. ----
+  // Proof of belonging: a supporter token (carried in every email link) matching an
+  // ACTIVE subscriber of this missionary, or a signed-in staff session (inside the org).
+  // Without proof: the landing card only — identity + ask-to-follow, no updates.
+  let viewer = null;   // { audience } for supporters, { staff:true } for staff
+  const vt = (q.t || '').trim();
+  if (vt && /^[a-f0-9]{16,64}$/i.test(vt)) {
+    try {
+      const tf = encodeURIComponent(`AND({Token}='${vt}',{Missionary}='${missionary.replace(/'/g, "")}',{Active}=1)`);
+      const trr = await fetch(`https://api.airtable.com/v0/${BASE}/${SUBS}?maxRecords=1&filterByFormula=${tf}`, { headers: auth });
+      if (trr.ok) {
+        const rec = (((await trr.json()).records) || [])[0];
+        if (rec) { const a = rec.fields['Audience']; viewer = { audience: (a && a.name) ? a.name : (a || 'International') }; }
+      }
+    } catch (e) {}
+  }
+  if (!viewer) { try { if (sessionFromEvent(event)) viewer = { staff: true }; } catch (e) {} }
   // Default page: this missionary OR legacy untagged updates. Teammate page: exact match only.
   const formula = isDefault
     ? `AND({Status}='Published', OR(LEN(ARRAYJOIN({Missionary}))=0, FIND('${nameEsc}', ARRAYJOIN({Missionary}))>0))`
@@ -69,9 +89,15 @@ exports.handler = async function (event) {
         tr:      (trObj && trObj.tr) || null            // inline { en: {title, blocks}, ... }
       };
     }).filter(u => u.title)
-      // National-only updates are for the missionary's chosen national circle — they
-      // reach that circle by email and never appear on the public wall.
-      .filter(u => !(u.aud.some(a => /in-country|national/i.test(a)) && !u.aud.some(a => /international/i.test(a))))
+      // Circles within the team: national-only updates reach only the national circle.
+      // Staff see everything; National/Both supporters see everything; International
+      // supporters skip national-only posts.
+      .filter(u => {
+        const natOnly = u.aud.some(a => /in-country|national/i.test(a)) && !u.aud.some(a => /international/i.test(a));
+        if (!natOnly) return true;
+        if (viewer && viewer.staff) return true;
+        return !!(viewer && (viewer.audience === 'National' || viewer.audience === 'Both'));
+      })
       .sort((a, b) => (b.rawdate).localeCompare(a.rawdate) || (b.created || '').localeCompare(a.created || ''));
 
     // A page is "national" when the person's "National staff" toggle is on (set by an admin in the
@@ -117,6 +143,10 @@ exports.handler = async function (event) {
       if (!page.country) page.country = page.org;
     }
 
+    if (!viewer) {
+      // Landing card only: who this is and how to ask to follow — no updates, ever.
+      return json(200, { locked: true, style, page, brand, updates: [] }, 'no-store');
+    }
     return json(200, { style, page, brand, updates }, 'no-store');
   } catch (e) {
     return json(502, { error: 'Could not reach Airtable.' });

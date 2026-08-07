@@ -40,9 +40,21 @@ for fn in ['org-watch', 'platform', 'me']:
     check('gate /' + fn, status(SITE + '/.netlify/functions/' + fn) == 401)
 check('gate /golive POST', status(SITE + '/.netlify/functions/golive', 'POST') == 401)
 
-print('— wall payload —')
+print('— wall privacy —')
 try:
     s, b = get(WALL)
+    dl = json.loads(b)
+    check('anonymous wall is locked', s == 200 and dl.get('locked') is True and not (dl.get('updates') or []), 'locked=' + repr(dl.get('locked')))
+    check('landing still carries identity', bool((dl.get('page') or {}).get('name')))
+except Exception as e:
+    check('wall privacy', False, str(e)[:120])
+
+import os
+TOK = os.environ.get('SMOKE_T', '')
+print('— wall payload ' + ('(with supporter key)' if TOK else '(skipped — set SMOKE_T for full checks)') + ' —')
+try:
+    if not TOK: raise Exception('SKIP')
+    s, b = get(WALL + '&t=' + TOK)
     d = json.loads(b)
     items = d.get('updates') or d.get('items') or []
     page = d.get('page') or {}
@@ -86,7 +98,10 @@ try:
         st, v = get(SITE + f'/.netlify/functions/vtt?u={u.get("id")}&b={idx}&l=en')
         check('vtt endpoint serves cues', st == 200 and '-->' in v)
 except Exception as e:
-    check('wall payload', False, str(e)[:120])
+    if str(e) == 'SKIP':
+        print('  --   full payload checks skipped (no SMOKE_T)')
+    else:
+        check('wall payload', False, str(e)[:120])
 
 print()
 print(f'PASS {len(PASS)}  FAIL {len(FAIL)}')
