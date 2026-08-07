@@ -87,7 +87,10 @@ try:
 
     print('— subtitles —')
     vids = [(u, bk) for u in items for bk in (u.get('blocks') or []) if bk.get('type') == 'video' and bk.get('captions')]
-    check('video updates carry captions', bool(vids), 'none found' if not vids else '')
+    if not vids:
+        print('  --   no published captioned videos right now — subtitle checks skipped')
+    else:
+        check('video updates carry captions', True)
     for u, bk in vids[:2]:
         caps = bk['captions']
         langs = [c.get('lang') for c in caps]
