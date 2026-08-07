@@ -7,7 +7,7 @@ const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const UPDATES = 'tbl7aVErl35Qw36QZ';
 const SUBS = 'tbl21LyWOBxln6bOy';
 const MIS = 'tbli1L8AO0JUDL7Wl';
-const UF = { title: 'fldhkHAXyvqtrx3cu', status: 'fldV9l8rl1XNK0OjS', blocks: 'fldN9B0v6YU0xptFu', body: 'fld96vgsguk83wclD', excerpt: 'fld9PBqSvmd4vNiyh', cover: 'fldsU5p6r9LzdeTF7', video: 'fldzK9sIREqMYJU5e', sent: 'fldLIEGYuHv5G1iC2' };
+const UF = { title: 'fldhkHAXyvqtrx3cu', status: 'fldV9l8rl1XNK0OjS', blocks: 'fldN9B0v6YU0xptFu', body: 'fld96vgsguk83wclD', excerpt: 'fld9PBqSvmd4vNiyh', cover: 'fldsU5p6r9LzdeTF7', video: 'fldzK9sIREqMYJU5e', sent: 'fldLIEGYuHv5G1iC2', aud: 'fld6ZpC94Aq43d5ZY' };
 const SF = { name: 'fld95CZHX6o0uNKEb', email: 'fldzhY8nJPjWLKjUK', pref: 'fldI3ED38BzW05kzQ', missionary: 'fldz4NfdnkTC9dw3t', token: 'fldUS2VRksgaVipcC' };
 const SITE_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 
@@ -66,8 +66,15 @@ exports.handler = async function (event) {
     // Claim it immediately so a duplicate trigger can't double-send.
     await fetch(`${api}/${UPDATES}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: [{ id: b.updateId, fields: { [UF.sent]: true } }], typecast: true }) });
 
-    // Active subscribers for this missionary who want an email each update.
-    const sf = encodeURIComponent(`AND({Active}=1,{Missionary}='${missName.replace(/'/g, "")}',OR({Preference}='Full email',{Preference}='Link email'))`);
+    // Active subscribers for this missionary who want an email each update —
+    // narrowed to the update's audience circle when one is chosen.
+    const audNames = (c[UF.aud] || []).map(a => (a && a.name) ? a.name : a);
+    const natOnly = audNames.some(a => /in-country|national/i.test(a)) && !audNames.some(a => /international/i.test(a));
+    const intOnly = audNames.some(a => /international/i.test(a)) && !audNames.some(a => /in-country|national/i.test(a));
+    const audCond = natOnly ? `,OR({Audience}='National',{Audience}='Both')`
+                  : intOnly ? `,OR({Audience}='International',{Audience}='Both',{Audience}='')`
+                  : '';
+    const sf = encodeURIComponent(`AND({Active}=1,{Missionary}='${missName.replace(/'/g, "")}',OR({Preference}='Full email',{Preference}='Link email')${audCond})`);
     let subs = [], url = `${api}/${SUBS}?pageSize=100&returnFieldsByFieldId=true&filterByFormula=${sf}`;
     while (url) {
       const sr = await fetch(url, { headers: auth }); if (!sr.ok) break;

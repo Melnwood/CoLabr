@@ -68,7 +68,11 @@ exports.handler = async function (event) {
         src:     (trObj && trObj.src) || '',            // original language, if not English
         tr:      (trObj && trObj.tr) || null            // inline { en: {title, blocks}, ... }
       };
-    }).filter(u => u.title).sort((a, b) => (b.rawdate).localeCompare(a.rawdate) || (b.created || '').localeCompare(a.created || ''));
+    }).filter(u => u.title)
+      // National-only updates are for the missionary's chosen national circle — they
+      // reach that circle by email and never appear on the public wall.
+      .filter(u => !(u.aud.some(a => /in-country|national/i.test(a)) && !u.aud.some(a => /international/i.test(a))))
+      .sort((a, b) => (b.rawdate).localeCompare(a.rawdate) || (b.created || '').localeCompare(a.created || ''));
 
     // A page is "national" when the person's "National staff" toggle is on (set by an admin in the
     // console). That authoritatively turns on the reader-language brand switch + co-brand mark.

@@ -241,11 +241,16 @@ async function loadPeople(){
     document.getElementById('pplcount').textContent=ppl.length?('('+ppl.length+' — '+ppl.filter(p=>p.active).length+' following)'):'';
     if(!ppl.length){ box.innerHTML='<div class="ppl-state">No one yet — send your first invitations above, or your imported supporters will appear here.</div>'; return; }
     box.innerHTML=ppl.map(p=>{
-      const st=p.active?['following','Following · '+(p.pref||'Full email')]:(p.source==='Invited'?['invited','Invited — waiting']:['stopped','Not following']);
+      const st=p.active?['following','Following · '+(p.pref||'Full email')]:(p.source==='Requested'?['invited','Asked to follow — your OK?']:(p.source==='Invited'?['invited','Invited — waiting']:['stopped','Not following']));
+      const approveBtn=(!p.active&&p.source==='Requested')?`<button data-ap="${p.id}" style="background:var(--acc);color:#fff;border-color:var(--acc)">Approve</button>`:'';
       return `<div class="prow"><div class="pwho"><b>${esc(p.name||p.email)}</b><span>${esc(p.email||p.phone||'')}</span></div>
         <span class="pstat ${st[0]}">${esc(st[1])}</span>
-        <div class="pact">${p.active?'':`<button data-re="${esc(p.name?p.name+' <'+p.email+'>':p.email)}">Resend invite</button>`}<button class="prm" data-rm="${p.id}" data-nm="${esc(p.name||p.email)}">Remove</button></div></div>`;
+        <div class="pact">${approveBtn}${p.active||p.source==='Requested'?'':`<button data-re="${esc(p.name?p.name+' <'+p.email+'>':p.email)}">Resend invite</button>`}<button class="prm" data-rm="${p.id}" data-nm="${esc(p.name||p.email)}">Remove</button></div></div>`;
     }).join('');
+    box.querySelectorAll('[data-ap]').forEach(b=>b.addEventListener('click',async()=>{
+      b.disabled=true;
+      try{ const r=await fetch('/.netlify/functions/people',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'approve',id:b.dataset.ap})}); if(r.ok) loadPeople(); else {alert('Could not approve.');b.disabled=false;} }catch(e){alert('Could not approve.');b.disabled=false;}
+    }));
     box.querySelectorAll('[data-re]').forEach(b=>b.addEventListener('click',()=>{
       const t=document.getElementById('recips');
       t.value=(t.value.trim()?t.value.trim()+'\n':'')+b.dataset.re; updateCount(); growTo(); t.scrollIntoView({behavior:'smooth',block:'center'});

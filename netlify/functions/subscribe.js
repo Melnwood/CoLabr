@@ -35,14 +35,18 @@ exports.handler = async function (event) {
       const sr = await fetch(`${api}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${f}`, { headers: auth });
       if (sr.ok) { const sd = await sr.json(); existing = (sd.records || [])[0] || null; if (existing && existing.fields && existing.fields[F.token]) mtoken = existing.fields[F.token]; }
     }
-    const fields = { [F.name]: name, [F.pref]: pref, [F.missionary]: missionary, [F.active]: true, [F.token]: mtoken };
+    const fields = { [F.name]: name, [F.pref]: pref, [F.missionary]: missionary, [F.token]: mtoken };
     if (email) fields[F.email] = email;
     if (phone) fields[F.phone] = phone;
     let resp;
     if (existing) {
+      // A known person updating their preference — keep their standing as-is.
       resp = await fetch(api, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: [{ id: existing.id, fields }], typecast: true }) });
     } else {
-      fields[F.source] = 'Site';
+      // A stranger from the public wall: the circle is known people only — they wait
+      // for the missionary's OK before any email flows.
+      fields[F.source] = 'Requested';
+      fields[F.active] = false;
       resp = await fetch(api, { method: 'POST', headers: auth, body: JSON.stringify({ fields, typecast: true }) });
     }
     const data = await resp.json();

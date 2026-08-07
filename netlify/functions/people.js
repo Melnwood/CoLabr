@@ -45,6 +45,16 @@ exports.handler = async function (event) {
       return r(200, { people, missionary });
     }
 
+    if (b.action === 'approve') {
+      if (!b.id) return r(400, { error: 'Missing person.' });
+      const gr = await fetch(`${api}/${b.id}?returnFieldsByFieldId=true`, { headers: auth });
+      if (!gr.ok) return r(404, { error: 'Not found.' });
+      const gf = (await gr.json()).fields || {};
+      if ((gf[SF.missionary] || '') !== missionary) return r(403, { error: 'Not one of your people.' });
+      const ur = await fetch(api, { method: 'PATCH', headers: auth, body: JSON.stringify({ records: [{ id: b.id, fields: { [SF.active]: true } }] }) });
+      if (!ur.ok) return r(502, { error: 'Could not approve.' });
+      return r(200, { ok: true });
+    }
     if (b.action === 'remove') {
       if (!b.id) return r(400, { error: 'Missing person.' });
       // Only allow removing someone from YOUR page.
