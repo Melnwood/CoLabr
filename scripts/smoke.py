@@ -28,7 +28,7 @@ print('— pages —')
 for path, marker in [('/home.html', 'In it together'), ('/login.html', 'Use any email'),
                      ('/join.html', 'Which organization'), ('/privacy.html', 'Tov-ell'),
                      ('/index.html', 'renderPano'), ('/manage.html', 'livestrip'),
-                     ('/compose.html', 'subtitles arrive'), ('/orgs.html', 'Organizations forming'),
+                     ('/compose.html', 'Translation ready'), ('/orgs.html', 'Organizations forming'),
                      ('/admin.html', 'killpanel'), ('/subtitles.html', 'Fix the subtitles')]:
     try:
         s, b = get(SITE + path)
