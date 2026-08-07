@@ -622,6 +622,7 @@ function setMasthead(){
 // two visits (or until dismissed), then never again.
 function maybeTour(){
   if(!VIEWTOK) return;                                  // team members only
+  if(new URLSearchParams(location.search).get('notour')) return;   // screenshots/demos
   let st={}; try{ st=JSON.parse(localStorage.getItem('walltour')||'{}'); }catch(_){}
   if(st.off || (st.n||0)>=2) return;
   st.n=(st.n||0)+1; try{ localStorage.setItem('walltour',JSON.stringify(st)); }catch(_){}
