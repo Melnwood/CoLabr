@@ -107,6 +107,25 @@
     </a>
   </div>
 
+  <div class="sect">Test lab</div>
+  <div class="panel" id="ghostpanel">
+    <b class="t">Draft an update in your voice</b>
+    <p class="sub" style="margin:0 0 10px">Say what you want to tell your supporters — ramble, bullet points, half-sentences, anything. It reads your past updates and writes the way <i>you</i> write. Nothing publishes; the draft opens in the composer for your edit.</p>
+    <textarea id="gnotes" rows="4" placeholder="e.g. camp in Poland wrapped, 4 students followed Jesus, Amy's mom visiting, ask prayer for Hayley's tests Thursday…" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;color:var(--text);font-family:inherit;resize:vertical"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+      <button id="ggo" style="background:var(--acc);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-weight:800;font-size:13px;cursor:pointer">Write it in my voice</button>
+      <span id="gmsg" style="font-size:12.5px;color:var(--muted)"></span>
+    </div>
+    <div id="gout" style="display:none;margin-top:14px;background:#fff;color:#241f1b;border-radius:12px;padding:18px 20px">
+      <div id="gtitle" style="font-family:var(--serif);font-size:19px;font-weight:700;margin-bottom:10px"></div>
+      <div id="gbody" style="font-size:14px;line-height:1.65"></div>
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+        <button id="guse" style="background:#241f1b;color:#fff;border:none;border-radius:9px;padding:10px 16px;font-weight:700;font-size:12.5px;cursor:pointer">Open in the composer →</button>
+        <button id="gretry" style="background:none;border:1px solid #e4e8ec;color:#241f1b;border-radius:9px;padding:10px 16px;font-weight:600;font-size:12.5px;cursor:pointer">Try again</button>
+      </div>
+    </div>
+  </div>
+
   <div class="sect">Test drive</div>
   <div class="panel" id="tdpanel">
     <b class="t">Replay any first-time experience</b>
@@ -158,6 +177,35 @@ function switches(){
     });
   });
 }
+/* Test lab: draft an update in the writer's own voice */
+let GDRAFT=null;
+async function ghostGo(){
+  const notes=document.getElementById('gnotes').value.trim();
+  const msg=document.getElementById('gmsg');
+  if(notes.length<10){ msg.style.color='var(--red)'; msg.textContent='Tell me a bit more first.'; return; }
+  document.getElementById('ggo').disabled=true;
+  msg.style.color='var(--muted)'; msg.textContent='Reading your past updates and writing…';
+  try{
+    const r=await fetch('/.netlify/functions/ghostwrite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes})});
+    const d=await r.json();
+    if(!r.ok){ msg.style.color='var(--red)'; msg.textContent=d.error||'Could not draft.'; }
+    else{
+      GDRAFT=d; msg.style.color='var(--green)'; msg.textContent='Drafted from '+d.samples+' of your updates — your words, your call.';
+      document.getElementById('gtitle').textContent=d.title;
+      document.getElementById('gbody').innerHTML=d.paragraphs.map(p=>'<p style="margin:0 0 10px">'+p.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</p>').join('');
+      document.getElementById('gout').style.display='block';
+    }
+  }catch(_){ msg.style.color='var(--red)'; msg.textContent='Could not reach the server.'; }
+  document.getElementById('ggo').disabled=false;
+}
+document.getElementById('ggo').addEventListener('click',ghostGo);
+document.getElementById('gretry').addEventListener('click',ghostGo);
+document.getElementById('guse').addEventListener('click',()=>{
+  if(!GDRAFT)return;
+  try{ localStorage.setItem('ghostdraft',JSON.stringify({title:GDRAFT.title,paragraphs:GDRAFT.paragraphs})); }catch(_){}
+  location.href='compose.html?ghost=1';
+});
+
 document.getElementById('tdwipe').addEventListener('click',async()=>{
   const email=document.getElementById('tdemail').value.trim();
   const msg=document.getElementById('tdmsg');

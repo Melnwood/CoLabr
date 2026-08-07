@@ -367,7 +367,19 @@ async function guard(){
     document.getElementById('form').style.display='block';
     document.getElementById('date').value=new Date().toISOString().slice(0,10);
     const editParam=new URLSearchParams(location.search).get('id');
+    const ghost=new URLSearchParams(location.search).get('ghost')==='1'?localStorage.getItem('ghostdraft'):null;
     if(editParam){ loadForEdit(editParam); }
+    else if(ghost){
+      // A Test Lab draft written in their voice — lands as a normal editable update.
+      try{
+        const g=JSON.parse(ghost);
+        document.getElementById('title').value=g.title||'';
+        add('hero');
+        (g.paragraphs||[]).forEach(t=>{ add('text'); const nb=blocks.filter(x=>x.type==='text').pop(); if(nb) nb.text=t; });
+        add('signoff'); render();
+      }catch(_){ if(!blocks.length){ add('hero'); add('text'); add('signoff'); } }
+      try{ localStorage.removeItem('ghostdraft'); }catch(_){}
+    }
     else if(!blocks.length){ add('hero'); add('text'); add('signoff'); }
   }catch{ location.replace('login.html'); }
 }

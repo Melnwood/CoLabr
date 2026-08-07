@@ -37,7 +37,7 @@ for path, marker in [('/home.html', 'In it together'), ('/login.html', 'Use any 
         check('page ' + path, False, str(e)[:80])
 
 print('— auth gates (anonymous must be denied) —')
-for fn in ['org-watch', 'platform', 'me', 'platform-stats', 'captions']:
+for fn in ['org-watch', 'platform', 'me', 'platform-stats', 'captions', 'ghostwrite']:
     check('gate /' + fn, status(SITE + '/.netlify/functions/' + fn) == 401)
 check('gate /golive POST', status(SITE + '/.netlify/functions/golive', 'POST') == 401)
 
