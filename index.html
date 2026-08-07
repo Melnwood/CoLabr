@@ -1102,11 +1102,17 @@ function bodyHtml(u,dedupeCover){
       if(i>-1&&u.blocks[i].url===u.cover) skipIdx=i;
     }
     return u.blocks.map((bk,bidx)=>{
+      // A banner with no photo behind it is just words — render it as a heading,
+      // never as a giant empty canvas.
+      const heroText=b2=>((b2.heading||b2.sub)?`${b2.heading?`<h3 class="rh">${esc(b2.heading)}</h3>`:''}${b2.sub?`<div class="rcap" style="margin-top:${b2.heading?'-8px':'0'}">${esc(b2.sub)}</div>`:''}`:'');
       if(bidx===skipIdx){
         if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';
-        return (bk.heading||bk.sub)?`<div class="rhero"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:'';
+        return heroText(bk);
       }
-      if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}');background-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+      if(bk.type==='hero'){
+        if(!bk.url) return heroText(bk);
+        return `<div class="rhero" style="background-image:url('${esc(bk.url)}');background-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+      }
       if(bk.type==='praise'){const C=blockColor(bk);return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${fmt(bk.text)}</div>`;}
       if(bk.type==='heading'){const C=blockColor(bk);return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;}
       if(bk.type==='divider') return `<hr class="rhr">`;
