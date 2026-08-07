@@ -78,7 +78,7 @@ exports.handler = async function (event) {
         { type: 'video', url: httpUrl, lang: srcShort, captions: tracks.slice(), captionStatus: 'ready' },
         { type: 'text', text: 'Captions were generated automatically (Google transcription + Claude translation) and may contain small errors.' }
       ];
-      recId = await createUpdate(b.title || '🎬 Video caption test (safe to delete)', blocks);
+      recId = await createUpdate(b.title || 'Video caption test (safe to delete)', blocks);
     }
 
     // STOP for human review: the uploader was there — they check and correct the English

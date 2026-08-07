@@ -47,7 +47,7 @@
   .meta{margin-top:20px;font-size:12px;display:flex;gap:8px;flex-wrap:wrap}
   .meta .pill{font-weight:600;color:var(--text);background:var(--soft);padding:6px 12px;border-radius:18px}
   .meta .pill b{color:var(--acc);font-weight:800}
-  /* prayer peek — a 🙏 chip on any card that has a prayer request; hover (desktop) / tap (mobile) */
+  /* prayer peek — a prayer chip on any card that has a prayer request; hover (desktop) / tap (mobile) */
   .praychip{position:absolute;top:9px;right:9px;z-index:6;background:#fff;border:1px solid var(--line);color:var(--acc);font-size:11px;font-weight:800;padding:4px 9px;border-radius:20px;cursor:pointer;box-shadow:0 2px 8px rgba(60,40,20,.14);display:inline-flex;align-items:center;gap:4px;font-family:var(--font);line-height:1}
   .praychip:hover{background:#fff8f1;border-color:var(--acc)}
   #praypop{position:fixed;z-index:90;max-width:300px;background:#241f1b;color:#fff;font-size:13.5px;line-height:1.55;padding:12px 15px;border-radius:13px;box-shadow:0 18px 44px rgba(0,0,0,.4);opacity:0;transform:translateY(5px);transition:opacity .12s,transform .12s;pointer-events:none}
@@ -463,7 +463,7 @@
       <div class="submsg" id="submsg"></div>
     </div>
     <div id="subdone" style="display:none;text-align:center">
-      <h3>You're in! 🎉</h3>
+      <h3>You're in!</h3>
       <p id="subdonemsg"></p>
       <a class="sublink" id="submanage" target="_blank" rel="noopener">Change how you hear from us →</a>
     </div>
@@ -628,9 +628,9 @@ function maybeTour(){
   st.n=(st.n||0)+1; try{ localStorage.setItem('walltour',JSON.stringify(st)); }catch(_){}
   const F=PAGE_FIRST||FAMSHORT;
   const steps=[
-    {i:'👋',h:'Welcome — this wall is for you',p:'You\u2019re part of '+esc(F)+'\u2019s support team, so everything they share lives here: every update, photo, and video, going back years. Scroll anytime, from any email.'},
-    {i:'💬',h:'Tap any update to read it',p:'Inside you can do three things: tap 🙏 <b>I\u2019m praying</b> so they know you\u2019re standing with them, <b>write a message</b> — public encouragement or a private note straight to them — and <b>give</b> toward their ministry.'},
-    {i:'🌍',h:'Read in your language',p:'Use the language picker up top and the whole wall — even video subtitles — switches to the language of your heart. Change how you get emails anytime from the link in any update.'}
+    {i:licon('heart',34),h:'Welcome — this wall is for you',p:'You\u2019re part of '+esc(F)+'\u2019s support team, so everything they share lives here: every update, photo, and video, going back years. Scroll anytime, from any email.'},
+    {i:licon('chat',34),h:'Tap any update to read it',p:'Inside you can do three things: tap <b>I\u2019m praying</b> so they know you\u2019re standing with them, <b>write a message</b> — public encouragement or a private note straight to them — and <b>give</b> toward their ministry.'},
+    {i:licon('globe',34),h:'Read in your language',p:'Use the language picker up top and the whole wall — even video subtitles — switches to the language of your heart. Change how you get emails anytime from the link in any update.'}
   ];
   let i=0;
   const ov=document.createElement('div'); ov.className='tourov';
@@ -656,7 +656,7 @@ function renderLocked(raw){
   const first=(raw.page&&(raw.page.first||raw.page.name))||'this missionary';
   const lock=document.createElement('div');
   lock.style.cssText='max-width:560px;margin:26px auto 60px;background:#fff;border:1px solid #e7e0d6;border-radius:16px;padding:30px 28px;text-align:center;box-shadow:0 10px 30px rgba(60,40,20,.10)';
-  lock.innerHTML='<div style="font-size:38px;margin-bottom:10px">🤍</div>'+
+  lock.innerHTML='<div style="margin-bottom:10px;opacity:.75">'+licon('heart',40)+'</div>'+
     '<h2 style="margin:0 0 10px;font-size:21px;font-weight:800">Updates shared with '+esc(first)+'\u2019s support team</h2>'+
     '<p style="font-size:14px;color:#7a756f;line-height:1.65;margin:0 0 18px">This wall is for the people walking with '+esc(first)+' — the ones who pray, give, and cheer them on. Ask to join, and once they say yes, every email you receive opens this page like a key.</p>'+
     '<button id="lockfollow" style="background:var(--acc,#FF6600);color:#fff;border:none;font-weight:800;font-size:15px;padding:13px 28px;border-radius:24px;cursor:pointer">Ask to follow</button>'+
@@ -721,6 +721,14 @@ function buildMeta(){
   m.innerHTML=`<span class="pill"><b>${U.length}</b> updates</span><span class="pill"><b>${span}</b></span><span class="pill"><b>${opens.toLocaleString()}</b> opens</span>`;
 }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// Fine-line icons (stroke, currentColor) — the site's icon language; no emoji in UI.
+function licon(n,s){s=s||15;const P={
+  pray:'M12 21v-8.5L8.6 5.6 7 7.2l2.1 5.8M12 12.5V21m0-8.5 3.4-6.9L17 7.2l-2.1 5.8M7.5 21h9',
+  heart:'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z',
+  globe:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9M12 3C9.5 5.6 8.2 8.7 8.2 12s1.3 6.4 3.8 9',
+  chat:'M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.5 0-2.9-.4-4.1-1L3 20l1.1-5.2a8.4 8.4 0 1 1 16.9-3.3z',
+  mail:'M3.5 5.5h17a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-17a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zM3 7.5l9 6 9-6'};
+return '<svg viewBox="0 0 24 24" style="width:'+s+'px;height:'+s+'px;vertical-align:-2px" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+P[n]+'"/></svg>';}
 function opensNum(u){return (u.opens||0).toLocaleString();}
 /* Top ten most-read updates get a rank badge; recomputed from opens on every load,
    so an update that climbs moves into its place automatically. */
@@ -901,7 +909,7 @@ function ensurePrayPop(){ if(_praypop)return _praypop; _praypop=document.createE
 function showPray(chip,text){
   const p=ensurePrayPop();
   const disp=text.length>360?text.slice(0,360).trim()+'…':text;
-  p.innerHTML='<b>🙏 Prayer request</b>'+esc(disp).replace(/\n/g,'<br>');
+  p.innerHTML='<b>'+licon('pray',14)+' Prayer request</b>'+esc(disp).replace(/\n/g,'<br>');
   p.classList.add('on');
   const pw=Math.min(300,window.innerWidth-24); p.style.maxWidth=pw+'px';
   const r=chip.getBoundingClientRect();
@@ -914,7 +922,7 @@ function wirePrayerPeek(root){
   (root||document).querySelectorAll('[data-i]').forEach(el=>{
     if(el.dataset.pp)return; const u=U[+el.dataset.i]; const t=prayerText(u); if(!t)return; el.dataset.pp='1';
     if(getComputedStyle(el).position==='static') el.style.position='relative';
-    const chip=document.createElement('button'); chip.type='button'; chip.className='praychip'; chip.setAttribute('aria-label','See prayer request'); chip.innerHTML='🙏 Prayer';
+    const chip=document.createElement('button'); chip.type='button'; chip.className='praychip'; chip.setAttribute('aria-label','See prayer request'); chip.innerHTML=licon('pray',12)+' Prayer';
     chip.addEventListener('mouseenter',()=>showPray(chip,t));
     chip.addEventListener('mouseleave',hidePray);
     chip.addEventListener('click',e=>{ e.stopPropagation(); if(_praypop&&_praypop.classList.contains('on'))hidePray(); else showPray(chip,t); });
@@ -1098,14 +1106,14 @@ async function openReader(i){
     if(!tr){ try{ const r=await fetch(TRBASE+'/translations/'+u.id+'/'+target+'.json',{cache:'no-store'});
       if(r.ok){ const d=await r.json(); if(d&&Array.isArray(d.blocks)) tr=d; } }catch(e){} }
     if(tr&&Array.isArray(tr.blocks)){ title=tr.title||title; blocks=tr.blocks;
-      tnote=`<div class="trnote">🌐 Shown in ${langName(target)} · AI‑translated from ${(src&&src!=='en')?langName(src):'the original'}</div>`; }
+      tnote=`<div class="trnote">${licon('globe',12)} Shown in ${langName(target)} · AI‑translated from ${(src&&src!=='en')?langName(src):'the original'}</div>`; }
   }
   const uu={...u,title,blocks};
   const emb=u.video?embedURL(u.video):'';
   const cf=coverFocus(u);
   const media=emb?`<iframe src="${emb}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`:(u.cover?`<img src="${u.cover}" alt=""${cf?` style="object-position:${cf}"`:''} onerror="this.style.display='none'">`:'');
   sheet.innerHTML=`<div class="rcov">${media}<button class="x" id="rx">×</button>${ME?'<button class="rmore" id="rmore" aria-label="More">⋯</button>':''}</div>
-    ${ME?`<div class="rmoremenu" id="rmoremenu"><button id="rshareBtn">🌍 Share this on my international wall</button></div>`:''}
+    ${ME?`<div class="rmoremenu" id="rmoremenu"><button id="rshareBtn">${licon('globe',13)} Share this on my international wall</button></div>`:''}
     <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>
     <div class="rmeta"><span>${u.date}, ${u.y}</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#7a756f" stroke-width="1.9"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>${(u.opens||0).toLocaleString()} opens</span></div>
     ${tnote}
@@ -1131,7 +1139,7 @@ let PAGE_FIRST='';
 function respondHTML(u){
   return `<div class="eng">
     <h4>Respond to the ${FAMSHORT}</h4>
-    <div class="prayrow" id="respondRow"><button class="praybtn" id="prayBtn">🙏 I'm praying</button><a class="givebtn" id="giveBtn2" target="_blank" rel="noopener">❤ Give</a><span class="praycount" id="prayCount"></span></div>
+    <div class="prayrow" id="respondRow"><button class="praybtn" id="prayBtn">${licon('pray',15)} I'm praying</button><a class="givebtn" id="giveBtn2" target="_blank" rel="noopener">${licon('heart',13)} Give</a><span class="praycount" id="prayCount"></span></div>
     <div class="rtabs"><button class="rtab on" data-m="Encouragement">Leave encouragement</button><button class="rtab" data-m="Note">Send a private note</button></div>
     <div class="rform">
       <input id="rName" placeholder="Your name">
@@ -1155,7 +1163,7 @@ function wireRespond(u){
   q('prayBtn').addEventListener('click',async()=>{
     const btn=q('prayBtn'); if(btn.classList.contains('done'))return;
     try{ await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim(),t:VIEWTOK||undefined});
-      btn.classList.add('done'); btn.textContent='🙏 Praying — thank you';
+      btn.classList.add('done'); btn.textContent='✓ Praying — thank you';
       loadEngagement(u.id);
     }catch(e){ /* ignore */ }
   });
@@ -1310,8 +1318,8 @@ async function openFeatured(it){
     <div class="rbody"><div class="rk">Across Josiah Venture</div><h2>${esc(it.title)}</h2>
     <div class="rmeta"><span>${esc(it.author||'')}</span>${it.country?`<span>${esc(it.country)}</span>`:''}</div>
     ${body}
-    ${it.author==='Josiah Venture'?'':`<div class="trnote" style="margin-top:10px">🌍 Featured with ${esc(it.author||'the author')}'s permission</div>`}
-    ${it.author?`<button class="jvsub" id="jvsubbtn">✉️ I’d like ${esc(it.author)}’s updates too</button>`:''}</div>`;
+    ${it.author==='Josiah Venture'?'':`<div class="trnote" style="margin-top:10px">${licon('globe',12)} Featured with ${esc(it.author||'the author')}'s permission</div>`}
+    ${it.author?`<button class="jvsub" id="jvsubbtn">${licon('mail',13)} I’d like ${esc(it.author)}’s updates too</button>`:''}</div>`;
   const wire=()=>{
     document.getElementById('rx').addEventListener('click',closeReader);
     const jb=document.getElementById('jvsubbtn'); if(jb)jb.addEventListener('click',()=>openSubFor(it.author));
@@ -1334,7 +1342,7 @@ async function shareUpdate(id){
   try{
     const r=await fetch('/.netlify/functions/share-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({updateId:id})});
     const d=await r.json().catch(()=>({}));
-    toast(r.ok?('Sent to '+(d.author||'the author')+' for approval 🌍'):(d.error||'Could not share.'));
+    toast(r.ok?('Sent to '+(d.author||'the author')+' for approval'):(d.error||'Could not share.'));
   }catch(_){ toast('Could not share right now.'); }
 }
 document.addEventListener('click',e=>{ if(!e.target.closest('#rmore')&&!e.target.closest('#rmoremenu')){ const mm=document.getElementById('rmoremenu'); if(mm)mm.classList.remove('on'); } });

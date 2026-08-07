@@ -135,6 +135,8 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 <script>
 var ME=null, CUR=[];   // CUR = updates for the open teammate
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function licon(n,s){s=s||13;const P={globe:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9s-1.3 6.4-3.8 9M12 3C9.5 5.6 8.2 8.7 8.2 12s1.3 6.4 3.8 9'};
+return '<svg viewBox="0 0 24 24" style="width:'+s+'px;height:'+s+'px;vertical-align:-2px" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+P[n]+'"/></svg>';}
 function langName(c){const M={en:'English',pl:'Polish',cs:'Czech',uk:'Ukrainian',sk:'Slovak',ro:'Romanian',bg:'Bulgarian',sl:'Slovenian',lv:'Latvian',et:'Estonian',hu:'Hungarian'};c=(c||'').toLowerCase();return M[c]||M[c.split('-')[0]]||(c||'').toUpperCase();}
 var _tt=null;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('on'),3600);}
 
@@ -192,7 +194,7 @@ async function openTeammate(m){
       return `<div class="uitem">${u.cover?`<div class="uthumb" style="background-image:url('${esc(u.cover)}')"></div>`:''}
       <div class="ub"><div class="udate">${fmtDate(u.rawdate)}</div><div class="ut">${esc(disp.title)}</div>
       <div class="ux">${esc(firstText(disp.blocks)||u.excerpt||'')}</div>
-      <div class="uact"><button data-read="${i}">Read</button><button class="feat" data-feat="${i}">🌍 Feature on my wall</button></div></div></div>`;
+      <div class="uact"><button data-read="${i}">Read</button><button class="feat" data-feat="${i}">${licon('globe')} Feature on my wall</button></div></div></div>`;
     }).join('');
     list.querySelectorAll('[data-read]').forEach(b=>b.addEventListener('click',()=>openReader(+b.dataset.read)));
     list.querySelectorAll('[data-feat]').forEach(b=>b.addEventListener('click',()=>feature(CUR[+b.dataset.feat])));
@@ -222,11 +224,11 @@ function openReaderU(u, label){
     if(bk.type==='photo'&&bk.url) return `<img class="rtext" style="width:100%;border-radius:10px" src="${esc(bk.url)}" alt="">`;
     return '';
   }).join('');
-  const note=disp.translatedFrom?`<div class="trnote">🌐 Shown in English · AI‑translated from ${langName(disp.translatedFrom)}</div>`:'';
+  const note=disp.translatedFrom?`<div class="trnote">${licon('globe',12)} Shown in English · AI‑translated from ${langName(disp.translatedFrom)}</div>`:'';
   document.getElementById('sheet').innerHTML=`<div class="rcov">${u.cover?`<img src="${esc(u.cover)}" alt="" onerror="this.style.display='none'">`:''}<button class="x" id="rx">×</button></div>
     <div class="rbody"><div class="rk">${esc(label||'')}</div><h2>${esc(disp.title)}</h2>
     <div class="rmeta">${fmtDate(u.rawdate)}</div>${note}${body}
-    <button class="rfeat" id="rfeat">🌍 Feature this on my wall</button></div>`;
+    <button class="rfeat" id="rfeat">${licon('globe')} Feature this on my wall</button></div>`;
   document.getElementById('reader').classList.add('open'); document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
   document.getElementById('rfeat').addEventListener('click',()=>feature(u));
@@ -239,7 +241,7 @@ async function feature(u){
   try{
     const r=await fetch('/.netlify/functions/share-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({updateId:u.id})});
     const d=await r.json().catch(()=>({}));
-    toast(r.ok?(d.approved?'Added to your wall — it\u2019s live in your team picks.':'Sent to '+(d.author||'the author')+' for approval 🌍'):(d.error||'Could not share.'));
+    toast(r.ok?(d.approved?'Added to your wall — it\u2019s live in your team picks.':'Sent to '+(d.author||'the author')+' for approval'):(d.error||'Could not share.'));
   }catch(_){ toast('Could not share right now.'); }
 }
 
@@ -266,7 +268,7 @@ async function loadPresident(){
       return `<div class="uitem">${u.cover?`<div class="uthumb" style="background-image:url('${esc(u.cover)}')"></div>`:''}
       <div class="ub"><div class="udate">${fmtDate(u.rawdate)}</div><div class="ut">${esc(disp.title)}</div>
       <div class="ux">${esc(firstText(disp.blocks)||u.excerpt||'')}</div>
-      <div class="uact"><button data-pread="${i}">Read</button><button class="feat" data-pfeat="${i}">🌍 Feature on my wall</button></div></div></div>`;
+      <div class="uact"><button data-pread="${i}">Read</button><button class="feat" data-pfeat="${i}">${licon('globe')} Feature on my wall</button></div></div></div>`;
     }).join('');
     el.querySelectorAll('[data-pread]').forEach(b=>b.addEventListener('click',()=>openReaderU(PRES[+b.dataset.pread],'Josiah Venture · President\u2019s Monthly')));
     el.querySelectorAll('[data-pfeat]').forEach(b=>b.addEventListener('click',()=>feature(PRES[+b.dataset.pfeat])));
