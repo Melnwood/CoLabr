@@ -67,6 +67,12 @@
   .panels{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:22px}
   @media(max-width:720px){.panels{grid-template-columns:1fr}}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  /* Layout rhythm: consistent gaps, and small panels share a row instead of
+     each new feature becoming another full-width stripe. */
+  .wrap>.panel,.wrap>.panels,.wrap>.grid2{margin-bottom:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .grid2>.panel{margin-bottom:0}
   .panel h2{font-size:13px;font-weight:750;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 14px}
   .chart{width:100%;overflow-x:auto}
   .chart{overflow-x:auto}
@@ -84,7 +90,6 @@
   .tl .trow .op{color:var(--acc);font-weight:750;font-variant-numeric:tabular-nums;flex:none}
 
   .listhead{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-  #updatesPanel{margin-bottom:22px}
   #updatesPanel .listhead{margin-bottom:0}
   #updatesPanel #list{margin-top:14px}
   #updatesPanel .item{background:#fbfaf8}
@@ -195,6 +200,7 @@
       <h2>Feature requests <span class="ib zero" id="sharecount">0</span></h2>
       <div id="sharelist"></div>
     </div>
+    <div class="grid2">
     <div class="panel" id="namePanel">
       <h2>Your page name <span class="hint">The family name across the top of your wall</span></h2>
       <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
@@ -215,6 +221,7 @@
           <div class="savenote" id="photoMsg"></div>
         </div>
       </div>
+    </div>
     </div>
     <div class="panel appearance" id="appearance">
       <h2>Supporter page style <span class="hint">Pick how your supporters see your updates</span></h2>
