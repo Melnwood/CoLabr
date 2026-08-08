@@ -29,7 +29,8 @@ for path, marker in [('/home.html', 'In it together'), ('/login.html', 'Use any 
                      ('/join.html', 'Which organization'), ('/privacy.html', 'Tov-ell'),
                      ('/index.html', 'renderPano'), ('/manage.html', 'livestrip'),
                      ('/compose.html', 'Translation ready'), ('/orgs.html', 'Organizations forming'),
-                     ('/admin.html', 'killpanel'), ('/subtitles.html', 'Fix the subtitles')]:
+                     ('/admin.html', 'killpanel'), ('/subtitles.html', 'Fix the subtitles'),
+                     ('/pricing.html', 'Testing season')]:
     try:
         s, b = get(SITE + path)
         check('page ' + path, s == 200 and marker in b, f'status {s}, marker {"found" if marker in b else "MISSING"}')

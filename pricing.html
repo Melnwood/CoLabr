@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D1B2A'/%3E%3Ccircle cx='32' cy='34' r='9' fill='%23FF6B5B'/%3E%3C/svg%3E">
+<title>Co·labr — Pricing</title>
+<meta name="description" content="Co·labr is in its testing season. Join the waitlist and we'll email you when it opens.">
+<style>
+  :root{--acc:#FF6B5B;--acc-soft:#fff0ee;--teal:#00C2B3;--ink:#0D1B2A;--body:#3d4a5c;--muted:#7d8794;--line:#e4e8ec;--soft:#F1F3F5;--serif:Georgia,'Times New Roman',serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:680px;margin:0 auto;padding:0 22px}
+  header{display:flex;align-items:center;gap:12px;padding:22px 0}
+  .mark{font-family:var(--serif);font-size:22px;font-weight:600}
+  .mark a{text-decoration:none}
+  .mark .d{display:inline-block;width:.34em;height:.34em;background:var(--acc);border-radius:50%;margin:0 .13em;vertical-align:.06em}
+  header nav{margin-left:auto}
+  header nav a{font-size:13.5px;font-weight:600;text-decoration:none;border:1px solid var(--line);border-radius:22px;padding:9px 16px;margin-left:8px}
+  header nav a.acc{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .hero{text-align:center;padding:34px 0 10px}
+  .hero h1{font-family:var(--serif);font-size:clamp(28px,5vw,40px);font-weight:600;margin:0 0 12px}
+  .hero p{font-size:15px;color:var(--body);max-width:520px;margin:0 auto;line-height:1.65}
+  .badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);border:1px solid #b8ece7;background:#effbfa;border-radius:16px;padding:6px 14px;margin-bottom:16px}
+  .card{border:1px solid var(--line);border-radius:18px;padding:26px 26px;margin:30px 0;background:#fff}
+  .card h2{font-family:var(--serif);font-size:21px;font-weight:600;margin:0 0 10px}
+  .card p{font-size:14.5px;line-height:1.7;color:var(--body);margin:0 0 12px}
+  .card p:last-child{margin-bottom:0}
+  .card.join{background:var(--acc-soft);border-color:#ffd3cc}
+  .row{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+  .row input{flex:1;min-width:200px;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+  .row input:focus{outline:2px solid var(--acc)}
+  .row button{background:var(--acc);color:#fff;font-weight:800;font-size:14.5px;border:none;border-radius:11px;padding:12px 22px;cursor:pointer}
+  .row button:disabled{opacity:.55}
+  .msg{font-size:13px;margin-top:10px;line-height:1.5;display:none}
+  .msg.ok{display:block;color:#00776e}
+  .msg.err{display:block;color:#c0392b}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:24px 0 46px;font-size:12px;color:var(--muted);text-align:center;line-height:1.7}
+  footer a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><a href="home.html">Co<span class="d"></span>labr</a></div>
+    <nav><a href="tour.html">Take a tour</a><a class="acc" href="login.html">Sign in</a></nav>
+  </header>
+
+  <div class="hero">
+    <span class="badge">Testing season</span>
+    <h1>Pricing</h1>
+    <p>Co·labr is being tested right now with a small group of missionary families at Josiah Venture. While we're in this season, there's nothing to buy — we're busy making sure every piece serves real supporters and real stories first.</p>
+  </div>
+
+  <div class="card">
+    <h2>What pricing will look like</h2>
+    <p>We're shaping the price alongside our testing families, so we won't publish numbers we might break. What we can promise about the shape of it:</p>
+    <p><b>Simple.</b> One plan a single missionary can understand and afford — no tiers to decode, no per-email math.</p>
+    <p><b>Worth the switch.</b> Co·labr replaces your newsletter tool entirely — writing, translation into fourteen languages, video subtitles, your supporter list, and a private wall your people actually visit — and it's built to cost you less than what you're leaving.</p>
+    <p><b>Kind to organizations.</b> When a whole team joins, there'll be an organization plan with your branding across every page and leadership tools included.</p>
+  </div>
+
+  <div class="card join">
+    <h2>Interested? Get in line.</h2>
+    <p>When Co·labr opens past the testing group, we'll send you one email to say it's ready — that's the whole deal. No newsletter, no drip campaign, just the door opening.</p>
+    <div class="row">
+      <input id="wname" placeholder="Your name (optional)" autocomplete="name">
+      <input id="wemail" type="email" placeholder="you@anywhere.org" autocomplete="email">
+      <button id="wgo">Email me when it's ready</button>
+    </div>
+    <div class="msg" id="wmsg"></div>
+  </div>
+
+  <footer>
+    Co·labr is an app by Tov-ell LLC. · <a href="privacy.html">How we care for your details</a>
+  </footer>
+</div>
+<script>
+async function joinWaitlist(){
+  const email=document.getElementById('wemail').value.trim();
+  const name=document.getElementById('wname').value.trim();
+  const msg=document.getElementById('wmsg'), btn=document.getElementById('wgo');
+  msg.className='msg';
+  if(!/.+@.+\..+/.test(email)){ msg.className='msg err'; msg.textContent='Please enter your email address.'; return; }
+  btn.disabled=true;
+  try{
+    const r=await fetch('/.netlify/functions/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name})});
+    const d=await r.json();
+    if(!r.ok){ msg.className='msg err'; msg.textContent=d.error||'Could not save — try again.'; btn.disabled=false; return; }
+    msg.className='msg ok';
+    msg.textContent=d.already?'You’re already on the list — we haven’t forgotten you.':'You’re on the list. One email, the day the doors open.';
+    btn.textContent='✓ You’re in line';
+  }catch(_){ msg.className='msg err'; msg.textContent='Could not reach the server — try again.'; btn.disabled=false; }
+}
+document.getElementById('wgo').addEventListener('click',joinWaitlist);
+document.getElementById('wemail').addEventListener('keydown',e=>{if(e.key==='Enter')joinWaitlist();});
+</script>
+</body>
+</html>
