@@ -46,6 +46,16 @@
   .ckt b{font-size:13.5px;display:block}
   .ckt span{font-size:11.5px;color:var(--muted);line-height:1.4}
   .ckgo{flex:none;font-size:12px;font-weight:700;color:var(--acc)}
+  .qrow{margin-bottom:14px}
+  .qrow label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}
+  .qrow .qhint{font-size:11px;color:var(--muted);font-weight:500;margin-left:4px}
+  .qline{display:flex;gap:8px}
+  .qline input,.qline textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;min-width:0;outline:none}
+  .qline input:focus,.qline textarea:focus{border-color:var(--acc)}
+  .qline textarea{resize:vertical;min-height:64px}
+  .qline button{flex:none;background:var(--text);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-size:12.5px;font-weight:700;cursor:pointer;align-self:flex-start}
+  .qmsg{font-size:11.5px;margin-top:5px;min-height:13px}.qmsg.ok{color:var(--green)}.qmsg.err{color:#c0392b}
+  .qfix{font-size:12.5px;color:var(--muted);background:#faf7f2;border:1px solid #efe9df;border-radius:10px;padding:9px 13px}
   .styles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .scard{border:2px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;background:#faf7f2;transition:.14s}
   .scard.on{border-color:var(--acc);background:#fff;box-shadow:0 6px 16px rgba(255,102,0,.12)}
@@ -109,6 +119,12 @@
       <div class="d">Send this link to your supporters, put it in your email signature, or add it to your newsletter.</div>
       <div class="share"><input id="shareUrl" readonly><button class="btn" id="copyBtn">Copy</button></div>
       <div class="msg" id="s5msg"></div>
+    </div>
+
+    <div class="step" id="qa" style="margin-top:26px">
+      <h2>Your sign-up answers — change them anytime</h2>
+      <div class="d">Everything you were asked when your account began lives here too. Edit and save; your wall and every email follow instantly.</div>
+      <div id="qabody"><span class="pill blue">Loading your answers…</span></div>
     </div>
 
     <div class="step" id="kit" style="margin-top:26px">
@@ -198,6 +214,31 @@ document.getElementById('copyBtn').addEventListener('click',async()=>{
   try{ await navigator.clipboard.writeText(url); m.className='msg ok'; m.textContent='Copied to your clipboard.'; }
   catch(e){ document.getElementById('shareUrl').select(); m.className='msg'; m.textContent='Press ⌘/Ctrl+C to copy.'; }
 });
+// ---- Sign-up answers, editable in place ----
+async function loadQA(){
+  const box=document.getElementById('qabody');
+  try{
+    const mr=await fetch('/.netlify/functions/me?full=1'); if(!mr.ok){ box.innerHTML='<span class="note">Sign in to see your answers.</span>'; return; }
+    const m=(await mr.json()).miss||{};
+    box.innerHTML=`
+      <div class="qrow"><label>Your page name <span class="qhint">what supporters see — renaming is safe, old links keep working</span></label>
+        <div class="qline"><input id="qaName" value="${esc(m.name||'')}"><button id="qaNameGo">Save</button></div><div class="qmsg" id="qaNameMsg"></div></div>
+      <div class="qrow"><label>How you sign every update <span class="qhint">your words, your lines — nothing is ever added</span></label>
+        <div class="qline"><textarea id="qaSign">${esc(m.signoff||'')}</textarea><button id="qaSignGo">Save</button></div><div class="qmsg" id="qaSignMsg"></div></div>
+      <div class="qrow"><label>Your giving link <span class="qhint">where Give buttons send people — blank = JV general fund</span></label>
+        <div class="qline"><input id="qaGive" value="${esc(m.give||'')}" placeholder="https://…"><button id="qaGiveGo">Save</button></div><div class="qmsg" id="qaGiveMsg"></div></div>
+      <div class="qrow"><label>Where you serve</label>
+        <div class="qfix">${esc(m.country||'Not set yet')} — your organization and location drive your page's brand, so the team changes these with you. Ask in the help bubble.</div></div>`;
+    const wire=(id,fn)=>{const b=document.getElementById(id+'Go'),msg=document.getElementById(id+'Msg');
+      b.addEventListener('click',async()=>{ b.disabled=true; msg.className='qmsg'; msg.textContent='Saving…';
+        try{ await fn(); msg.className='qmsg ok'; msg.textContent='Saved ✓'; loadKit&&loadKit(); }
+        catch(e){ msg.className='qmsg err'; msg.textContent=e.message||'Could not save.'; }
+        b.disabled=false; });};
+    wire('qaName',async()=>{ const v=document.getElementById('qaName').value.trim(); if(!v)throw new Error('Give your page a name.'); await api('renamePage',{name:v}); });
+    wire('qaSign',async()=>{ await api('setSignoff',{names:document.getElementById('qaSign').value}); });
+    wire('qaGive',async()=>{ await api('setGive',{url:document.getElementById('qaGive').value.trim()}); });
+  }catch(e){ box.innerHTML='<span class="note">Could not load your answers.</span>'; }
+}
 // ---- The whole kit: every setting, its live status, and the door to it ----
 async function loadKit(){
   const box=document.getElementById('ckl');
@@ -220,7 +261,7 @@ async function loadKit(){
       item(m.live?'ok':'opt','Go live',m.live?'LIVE — your supporters get emails':'Test mode — nothing emails anyone until the team flips this with you','manage.html','Status');
   }catch(e){ box.innerHTML='<span class="note">Could not load the checklist.</span>'; }
 }
-init().then(loadKit,loadKit);
+init().then(()=>{loadKit();loadQA();},()=>{loadKit();loadQA();});
 </script>
 </body>
 </html>
