@@ -411,6 +411,7 @@ async function guard(){
       try{ localStorage.removeItem('ghostdraft'); }catch(_){}
     }
     else if(!blocks.length){ add('hero'); add('text'); add('signoff'); }
+    offerRestore();
   }catch{ location.replace('login.html'); }
 }
 let editId=null;
@@ -449,6 +450,43 @@ const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, 
 const NAME={hero:'Banner',heading:'Heading',text:'Text',photo:'Photo',video:'Video',numbers:'Numbers',quote:'Quote',prayer:'Prayer request',praise:'Praise',give:'Give button',signoff:'Sign-off',divider:'Divider'};
 document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
   b.addEventListener('pointerdown',e=>beginDrag(e,'new',{type:b.dataset.t,label:NAME[b.dataset.t]})));
+/* ---- Never lose typed work: the update autosaves locally as you type. Close the
+   creator, lose power, click the wrong thing — come back and it offers itself back. ---- */
+const STASHKEY='colabr_draft_'+(new URLSearchParams(location.search).get('id')||'new');
+let stashT=null;
+function stashDraft(){
+  try{
+    syncFromDOM();
+    const t=document.getElementById('title').value.trim();
+    const meaty=blocks.some(b=>(b.text&&b.text.trim())||(b.url&&b.url.trim())||(b.heading&&b.heading.trim()));
+    if(!t&&!meaty) return;
+    localStorage.setItem(STASHKEY,JSON.stringify({t:Date.now(),title:t,date:document.getElementById('date').value,type:document.getElementById('type').value,blocks}));
+  }catch(_){}
+}
+function scheduleStash(){ clearTimeout(stashT); stashT=setTimeout(stashDraft,1200); }
+document.addEventListener('input',e=>{ const el=e.target; if(el&&el.closest&&(el.closest('#canvas')||el.id==='title')) scheduleStash(); });
+document.addEventListener('change',e=>{ const el=e.target; if(el&&el.closest&&el.closest('#form')) scheduleStash(); });
+window.addEventListener('beforeunload',()=>{ if(stashT){ clearTimeout(stashT); stashDraft(); } });
+function clearStash(){ try{localStorage.removeItem(STASHKEY);}catch(_){} }
+function offerRestore(){
+  let st=null; try{ st=JSON.parse(localStorage.getItem(STASHKEY)||'null'); }catch(_){}
+  if(!st||!st.blocks||!st.blocks.length) return;
+  if(Date.now()-st.t>7*86400e3){ clearStash(); return; }
+  const bar=document.createElement('div');
+  bar.style.cssText='background:#fff8f2;border:1.5px solid #ffd9bd;border-radius:12px;padding:12px 15px;margin:10px 0;font-size:13.5px;display:flex;gap:12px;align-items:center;flex-wrap:wrap';
+  bar.innerHTML='<span>You have unsaved work from <b>'+new Date(st.t).toLocaleString()+'</b>'+(st.title?' — “'+esc(st.title).slice(0,60)+'”':'')+'.</span>'+
+    '<button type="button" id="drRestore" style="background:var(--acc);color:#fff;border:none;border-radius:8px;padding:8px 15px;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit">Restore it</button>'+
+    '<button type="button" id="drDiscard" style="background:none;border:1px solid var(--line);border-radius:8px;padding:8px 13px;font-size:12.5px;cursor:pointer;font-family:inherit">Discard</button>';
+  const form=document.getElementById('form');
+  form.insertBefore(bar,form.children[1]||null);
+  bar.querySelector('#drRestore').addEventListener('click',()=>{
+    document.getElementById('title').value=st.title||'';
+    if(st.date)document.getElementById('date').value=st.date;
+    if(st.type)document.getElementById('type').value=st.type;
+    blocks=st.blocks; seq=Math.max(0,...blocks.map(b=>+b.id||0))+1; render(); bar.remove();
+  });
+  bar.querySelector('#drDiscard').addEventListener('click',()=>{ clearStash(); bar.remove(); });
+}
 /* Deleted a section by accident? Undo puts it back exactly where it was. */
 let UNDO=[], undoTimer=null;
 function showUndo(label){
@@ -1105,6 +1143,7 @@ async function submit(publish){
     const r=await fetch('/.netlify/functions/create-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     if(r.status===401){location.replace('login.html');return;}
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.');
+    clearStash();   // it's safely in Airtable now — the local safety copy has done its job
     const hasVid=clean.some(b=>b.type==='video'&&/storage\.googleapis\.com\/.+\/videos\//.test(b.url||'')&&b.lang);
     const held=d.status==='Processing';
     const vidBlocks=clean.filter(b=>b.type==='video'&&b.url);
