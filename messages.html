@@ -72,6 +72,31 @@
   .compose button{flex:none;background:var(--text);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:13.5px;font-weight:700;cursor:pointer}
   .compose button:disabled{opacity:.5}
   .cnote{font-size:11.5px;color:var(--muted);padding:0 14px 12px}
+  /* One card per conversation string — the open one is unmistakable. */
+  .ptag{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#b8791b;background:#fbf3e2;border-radius:8px;padding:2px 6px;flex:none}
+  .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .minipill{font-size:10.5px;color:#7a6a4f;background:#fbf6ec;border:1px solid #efe4cd;border-radius:14px;padding:4px 10px;display:inline-flex;align-items:center;gap:5px}
+  .tstr{border:1px solid var(--line);border-radius:13px;margin-bottom:9px;background:#fff;overflow:hidden}
+  .tstr.on{border-color:var(--acc);box-shadow:0 4px 16px rgba(255,102,0,.09)}
+  .tsh{display:flex;width:100%;align-items:center;gap:9px;background:none;border:none;padding:11px 14px;cursor:pointer;font-family:inherit;text-align:left}
+  .tstr.on .tsh{background:#fff8f2}
+  .tslab{font-size:13px;font-weight:750;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tstr.on .tslab{color:#c25200}
+  .tsmeta{flex:none;font-size:10.5px;color:var(--muted)}
+  .tschev{flex:none;font-size:11px;color:var(--muted);transition:transform .15s}
+  .tstr.on .tschev{transform:rotate(180deg)}
+  .tsb{display:none;padding:4px 14px 13px;flex-direction:column}
+  .tstr.on .tsb{display:flex}
+  .reply{display:flex;gap:8px;margin-top:10px}
+  .reply textarea{flex:1;border:1px solid var(--line);border-radius:11px;padding:9px 12px;font-size:13px;font-family:inherit;min-height:40px;resize:vertical;outline:none}
+  .reply textarea:focus{border-color:var(--acc)}
+  .reply button{flex:none;background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:700;cursor:pointer;align-self:flex-end}
+  .cmsg{font-size:11.5px;margin-top:6px;color:var(--muted)}.cmsg.ok{color:#2f9e63}.cmsg.err{color:#c0392b}
+  .newstr{background:#fff;border:1.5px dashed #d8cdb6;border-radius:11px;width:100%;padding:11px;font-size:13px;font-weight:700;color:#8a7550;cursor:pointer;font-family:inherit}
+  .newstr:hover{border-color:var(--acc);color:var(--acc)}
+  .newtxt{display:block;width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 13px;font-size:13.5px;font-family:inherit;min-height:70px;resize:vertical;outline:none}
+  .newtxt:focus{border-color:var(--acc)}
+  .newgo{background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer}
   .state{color:var(--muted);font-size:14px;padding:50px 20px;text-align:center}
   .backlist{display:none;font-size:12.5px;color:var(--acc);font-weight:700;cursor:pointer;margin-bottom:8px}
   @media(max-width:840px){
@@ -144,13 +169,27 @@ function build(){
     p.gives=(p.gives||0)+1;
     p.items.push({kind:'give',at:g.at,updateTitle:g.updateTitle});
   });
+  // The other direction: pages THIS member follows and writes as a supporter.
+  // Sides flip — in these conversations, "you" are the supporter.
+  (DATA.sup||[]).forEach(row=>{
+    if(!row.missionary)return;
+    const k='mis:'+row.missionary.toLowerCase();
+    const p=map[k]=map[k]||{key:k,name:row.missionary,email:'',items:[],rows:[],prayed:0,flip:true};
+    p.rows.push(row);
+    if(row.type==='Prayer'&&!row.message){ p.items.push({kind:'pray',at:row.created,byMe:true}); }
+    if(row.message){ p.items.push({kind:'msg',f:'s',t:row.message,at:row.created,updateId:row.updateId,updateTitle:row.updateTitle}); }
+    (row.thread||[]).forEach((x,i)=>{ if(x&&x.t)p.items.push({kind:'msg',f:x.f==='m'?'m':'s',t:x.t,at:x.at||row.created,ord:i}); });
+  });
   PEOPLE=Object.values(map).filter(p=>p.name);
   PEOPLE.forEach(p=>{
     p.items.sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||((a.ord||0)-(b.ord||0)));
     p.last=p.items.length?p.items[p.items.length-1]:null;
-    p.unread=p.rows.some(r=>!r.read);
+    // "Their side" is the supporter normally, the missionary when flipped.
+    p.inF=p.flip?'m':'s';
+    p.mineF=p.flip?'s':'m';
+    p.unread=p.flip?!!(p.last&&p.last.kind==='msg'&&p.last.f==='m'):p.rows.some(r=>!r.read);
     // The last time THEY wrote or prayed — what "recent conversation" means.
-    p.lastIn=p.items.reduce((m,x)=>(x.kind==='pray'||x.f==='s')&&String(x.at||'')>m?x.at:m,'');
+    p.lastIn=p.items.reduce((m,x)=>((x.kind==='pray'&&!x.byMe)||x.f===p.inF)&&String(x.at||'')>m?x.at:m,'');
   });
   // Recent incoming first (newest on top), then everyone else A→Z by last name.
   const lname=p=>{const w=(p.name||'').trim().replace(/&.*$/,'').trim().split(/\s+/);return (w[w.length-1]||'').toLowerCase();};
@@ -172,11 +211,11 @@ function renderPeople(){
   if(pc)pc.innerHTML=FLT?`<b>${show.length}</b> of <b>${PEOPLE.length}</b> people`:`<b>${PEOPLE.length}</b> ${PEOPLE.length===1?'person':'people'} on your list`;
   if(!show.length){ el.innerHTML='<div class="state">No one matches “'+esc(FLT)+'”.</div>'; return; }
   el.innerHTML=show.map((p,i)=>{
-    const prev=p.last?(p.last.kind==='pray'?'Prayed for you':((p.last.f==='m'?'You: ':'')+p.last.t)):'No messages yet — say hello';
+    const prev=p.last?(p.last.kind==='pray'?(p.last.byMe?'You prayed for them':'Prayed for you'):((p.last.f===p.mineF?'You: ':'')+p.last.t)):'No messages yet — say hello';
     return `<div class="person${CUR===p.key?' on':''}" data-k="${esc(p.key)}">
       ${SELMODE?`<input type="checkbox" class="psel"${SEL.has(p.key)?' checked':''}${p.email?'':' disabled title="No email"'}>`:''}
       <div class="pav">${esc((p.name||'?').trim().charAt(0).toUpperCase())}</div>
-      <div class="pmain"><div class="pname">${p.unread?'<span class="pdot"></span>':''}${esc(p.name)}</div>
+      <div class="pmain"><div class="pname">${p.unread?'<span class="pdot"></span>':''}${esc(p.name)}${p.flip?'<span class="ptag">you follow</span>':''}</div>
       <div class="pprev">${esc(prev)}</div></div>
       <div class="pwhen">${p.last?fmtD(p.last.at):''}</div></div>`;
   }).join('');
@@ -246,64 +285,123 @@ function openPerson(k){
   if(wrote)facts.push('written <b>'+wrote+(wrote===1?' note':' notes')+'</b>');
   if(p.gives)facts.push('clicked Give <b>'+p.gives+(p.gives===1?' time':' times')+'</b>');
   if(p.lastVisit)facts.push('last visited your wall '+esc(fmtD(p.lastVisit)));
+  if(p.flip){
+    facts.length=0;
+    facts.push('A page you follow — in these strings, <b>you</b> are the supporter');
+    const myPrays=p.items.filter(x=>x.kind==='pray'&&x.byMe).length;
+    if(myPrays)facts.push('you\u2019ve prayed for them <b>'+myPrays+(myPrays===1?' time':' times')+'</b>');
+  }
+  // One card per STRING: each response/direct message is its own thread, labeled by
+  // the update it started on. Exactly one card is open — no doubt which string you're in.
+  const strings=p.rows.filter(r=>r.message||(r.thread&&r.thread.length)).map(r=>{
+    const msgs=[{f:'s',t:r.message,at:r.created}].concat(r.thread||[]).filter(x=>x&&x.t);
+    const lastAt=msgs.length?(msgs[msgs.length-1].at||r.created):r.created;
+    return {r,msgs,lastAt};
+  }).sort((a,b)=>String(b.lastAt).localeCompare(String(a.lastAt)));
+  TRTXT=[];
   let html=`<div class="chead"><div class="backlist" id="backlist">← All people</div><h3>${esc(p.name)}</h3><div class="cfacts">${facts.join(' · ')||'From your wall'}</div></div><div class="stream" id="stream">`;
-  if(!p.items.length) html+=`<div class="state">Nothing yet — start the conversation below. They’ll get it by email and can reply right back.</div>`;
-  let lastUpdate='';
-  p.items.forEach((it,idx)=>{
-    if(it.kind==='pray'){ html+=`<div class="praypill">${licon('pray')} ${esc(p.name)} ${plural(p.name)?'were':'was'} praying · ${esc(fmtD(it.at))}</div>`; return; }
-    if(it.kind==='give'){ html+=`<div class="praypill">${licon('give')} Clicked Give${it.updateTitle?' on “'+esc(it.updateTitle)+'”':''} · ${esc(fmtD(it.at))}</div>`; return; }
-    if(it.f==='s'&&it.updateId&&DATA.updates[it.updateId]&&it.updateId!==lastUpdate){
-      const u=DATA.updates[it.updateId]; lastUpdate=it.updateId;
-      html+=`<div class="ucard">${u.cover?`<div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div>`:''}<div class="ut">${esc(u.title||it.updateTitle)}</div></div>`;
-    }
-    html+=`<div class="bub ${it.f}" data-bi="${idx}">${esc(it.t)}</div>`;
-    if(it.f==='s') html+=`<div class="trlink" data-tr="${idx}">Translate</div>`;
-    html+=`<div class="bwhen ${it.f}">${esc(fmtDT(it.at))}</div>`;
+  const pills=p.items.filter(x=>x.kind==='pray'||x.kind==='give');
+  if(pills.length){
+    html+=`<div class="pillrow">`+pills.slice(-6).map(x=>x.kind==='pray'
+      ?`<span class="minipill">${licon('pray',11)} ${x.byMe?'You prayed':'Prayed'} · ${esc(fmtD(x.at))}</span>`
+      :`<span class="minipill">${licon('give',11)} Give click · ${esc(fmtD(x.at))}</span>`).join('')+`</div>`;
+  }
+  if(!strings.length) html+=`<div class="state">No conversations yet — start one below.</div>`;
+  strings.forEach((s,si)=>{
+    const r=s.r;
+    const label=r.updateTitle?'On \u201c'+esc(r.updateTitle)+'\u201d':(r.type==='Message'?'Direct conversation':esc(r.type||'Note'));
+    const u=r.updateId&&DATA.updates[r.updateId];
+    html+=`<div class="tstr" data-si="${si}">
+      <button type="button" class="tsh" data-ts="${si}"><span class="tslab">${label}</span><span class="tsmeta">${s.msgs.length} message${s.msgs.length===1?'':'s'} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
+      <div class="tsb">
+        ${(u&&u.cover)?`<div class="ucard"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||r.updateTitle)}</div></div>`:''}
+        ${s.msgs.map(x=>{
+          const mine=x.f===p.mineF;
+          let b=`<div class="bub ${mine?'m':'s'}">${esc(x.t)}</div>`;
+          if(!mine){ TRTXT.push(x.t); b+=`<div class="trlink" data-tr="${TRTXT.length-1}">Translate</div>`; }
+          return b+`<div class="bwhen ${mine?'m':'s'}">${esc(fmtDT(x.at))}</div>`;
+        }).join('')}
+        ${(p.flip&&!r.k)?`<div class="cnote" style="padding:6px 0 0">This older string can\u2019t be continued from here yet — reply from their wall.</div>`
+          :`<div class="reply"><textarea id="rt${si}" placeholder="Write back in this string…"></textarea><button data-rs="${si}">Send</button></div><div class="cmsg" id="rm${si}"></div>`}
+      </div></div>`;
   });
   html+=`</div>
-    <div class="compose"><textarea id="dm" placeholder="Write to ${esc(p.name)}…"></textarea><button id="dmsend"${p.email?'':' disabled'}>Send</button></div>
-    <div class="cnote" id="dmnote">${p.email?'Delivered by email too — and kept here forever.':'This person didn’t leave an email, so there’s no way to reach them — they can still write you from your wall.'}</div>`;
+    <div class="compose" style="display:block">
+      <button type="button" class="newstr" id="newstr">+ Start a new conversation</button>
+      <div id="newwrap" style="display:none;margin-top:10px">
+        <textarea id="newtxt" class="newtxt" placeholder="Something new — not about one update…"></textarea>
+        <div style="display:flex;gap:9px;align-items:center;margin-top:8px"><button class="newgo" id="newgo">Send</button><span class="cmsg" id="newmsg"></span></div>
+      </div>
+    </div>
+    <div class="cnote">${p.flip?'Your words land on their dashboard and in their inbox — and stay in the string.':(p.email?'Delivered by email too — and kept here forever.':'This person didn\u2019t leave an email — they can write you from your wall, but you can\u2019t start a message to them.')}</div>`;
   const cv=document.getElementById('convo'); cv.innerHTML=html;
-  const st=document.getElementById('stream'); if(st)st.scrollTop=1e6;
   document.getElementById('backlist').addEventListener('click',()=>{ document.getElementById('split').classList.remove('open'); CUR=null; renderPeople(); });
-  cv.querySelectorAll('[data-tr]').forEach(el=>el.addEventListener('click',()=>translateBubble(p,+el.dataset.tr,el)));
-  const send=document.getElementById('dmsend');
-  if(send&&p.email) send.addEventListener('click',()=>sendDM(p));
-  // Opening the conversation clears its "new" flags.
-  p.rows.filter(r=>!r.read).forEach(r=>{ r.read=true; fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'markRead',id:r.id,read:true})}).catch(()=>{}); });
-  p.unread=false; renderPeople();
+  // Accordion: exactly one string open, boldly marked.
+  cv.querySelectorAll('[data-ts]').forEach(b=>b.addEventListener('click',()=>{
+    const el=cv.querySelector('.tstr[data-si="'+b.dataset.ts+'"]');
+    const was=el.classList.contains('on');
+    cv.querySelectorAll('.tstr').forEach(x=>x.classList.remove('on'));
+    if(!was) el.classList.add('on');
+  }));
+  const first=cv.querySelector('.tstr'); if(first) first.classList.add('on');
+  cv.querySelectorAll('[data-tr]').forEach(el=>el.addEventListener('click',()=>translateBubble(+el.dataset.tr,el)));
+  cv.querySelectorAll('[data-rs]').forEach(b=>b.addEventListener('click',()=>sendToString(p,strings[+b.dataset.rs].r,+b.dataset.rs)));
+  const ns=document.getElementById('newstr');
+  if(ns)ns.addEventListener('click',()=>{
+    if(!p.flip&&!p.email){ document.getElementById('newmsg')||0; return; }
+    const w=document.getElementById('newwrap'); w.style.display=w.style.display==='none'?'':'none';
+    if(w.style.display!=='none')document.getElementById('newtxt').focus();
+  });
+  const ng=document.getElementById('newgo');
+  if(ng)ng.addEventListener('click',()=>startString(p));
+  // Opening the conversation clears its "new" flags — your own rows only.
+  if(!p.flip){
+    p.rows.filter(r=>!r.read).forEach(r=>{ r.read=true; fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'markRead',id:r.id,read:true})}).catch(()=>{}); });
+    p.unread=false; renderPeople();
+  }
 }
-async function translateBubble(p,idx,el){
-  const it=p.items[idx]; if(!it)return;
+let TRTXT=[];
+async function translateBubble(i,el){
+  const txt=TRTXT[i]; if(!txt)return;
   el.textContent='Translating…';
   try{
-    const r=await fetch('/.netlify/functions/translate-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:it.t})});
+    const r=await fetch('/.netlify/functions/translate-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:txt})});
     const d=await r.json();
     if(r.ok&&d.text){ el.insertAdjacentHTML('afterend','<div class="trout">'+esc(d.text)+'</div>'); el.remove(); }
     else{ el.textContent='Could not translate'; }
   }catch(_){ el.textContent='Could not translate'; }
 }
-async function sendDM(p){
-  const t=document.getElementById('dm'), note=document.getElementById('dmnote'), btn=document.getElementById('dmsend');
-  const msg=t.value.trim(); if(!msg)return;
-  btn.disabled=true; note.textContent='Sending…';
+// Reply inside ONE string — never leaks into another.
+async function sendToString(p,row,si){
+  const t=document.getElementById('rt'+si), m=document.getElementById('rm'+si);
+  const msg=t.value.trim(); if(!msg){ m.className='cmsg err'; m.textContent='Write something first.'; return; }
+  m.className='cmsg'; m.textContent='Sending…';
   try{
-    // Continue their newest thread if one exists; otherwise start a fresh conversation.
-    const target=p.rows.slice().sort((a,b)=>String(b.created).localeCompare(String(a.created)))[0];
-    let d;
-    if(target){
-      const r=await fetch('/.netlify/functions/thread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({r:target.id,message:msg})});
-      d=await r.json(); if(!r.ok)throw new Error(d.error||'Could not send.');
-      target.thread=(target.thread||[]).concat([{f:'m',t:msg,at:new Date().toISOString()}]);
-    }else{
-      const r=await fetch('/.netlify/functions/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:p.email,name:p.name,message:msg})});
-      d=await r.json(); if(!r.ok)throw new Error(d.error||'Could not send.');
-      p.rows.push({id:d.id,type:'Message',message:'',email:p.email,read:true,thread:d.thread,created:new Date().toISOString()});
-    }
-    p.items.push({kind:'msg',f:'m',t:msg,at:new Date().toISOString()});
+    const body=p.flip?{r:row.id,k:row.k,message:msg}:{r:row.id,message:msg};
+    const r=await fetch('/.netlify/functions/thread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json(); if(!r.ok)throw new Error(d.error||'Could not send.');
+    row.thread=d.thread||(row.thread||[]).concat([{f:p.mineF,t:msg,at:new Date().toISOString()}]);
+    p.items.push({kind:'msg',f:p.mineF,t:msg,at:new Date().toISOString()});
     p.last=p.items[p.items.length-1];
-    openPerson(p.key);
-  }catch(e){ note.textContent=e.message||'Could not send.'; btn.disabled=false; }
+    openPerson(p.key);   // freshest string sorts to the top and opens
+  }catch(e){ m.className='cmsg err'; m.textContent=e.message||'Could not send.'; }
+}
+// A brand-new string with this person, from inside Co·labr.
+async function startString(p){
+  const t=document.getElementById('newtxt'), m=document.getElementById('newmsg'), b=document.getElementById('newgo');
+  const msg=t.value.trim(); if(!msg){ m.className='cmsg err'; m.textContent='Write something first.'; return; }
+  b.disabled=true; m.className='cmsg'; m.textContent='Sending…';
+  try{
+    let r,d;
+    if(p.flip){
+      r=await fetch('/.netlify/functions/respond',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'Note',missionary:p.name,message:msg})});
+    }else{
+      if(!p.email) throw new Error('No email on file for them.');
+      r=await fetch('/.netlify/functions/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:p.email,name:p.name,message:msg})});
+    }
+    d=await r.json(); if(!r.ok)throw new Error(d.error||'Could not send.');
+    await load();   // re-pull so the new string appears with its real record
+  }catch(e){ m.className='cmsg err'; m.textContent=e.message||'Could not send.'; b.disabled=false; }
 }
 async function load(){
   try{
@@ -312,6 +410,7 @@ async function load(){
     const d=await r.json();
     if(!r.ok){ document.getElementById('people').innerHTML='<div class="state">'+esc(d.error||'Could not load.')+'</div>'; return; }
     DATA=d; build(); renderPeople();
+    if(CUR&&PEOPLE.some(p=>p.key===CUR)) openPerson(CUR);
   }catch(_){ document.getElementById('people').innerHTML='<div class="state">Could not reach the server.</div>'; }
 }
 load();

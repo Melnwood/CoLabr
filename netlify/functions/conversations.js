@@ -49,6 +49,30 @@ exports.handler = async function (event) {
         url = d.offset ? `https://api.airtable.com/v0/${BASE}/${RTABLE}?pageSize=100&filterByFormula=${encodeURIComponent(`{Missionary}='${nameEsc}'`)}&offset=${d.offset}` : '';
       }
 
+      // The OTHER side of the member's life: conversations where THEY are the
+      // supporter of a teammate's page. Without this, "I wrote Mel & Amy back"
+      // never shows on their own dashboard — the classic lost message.
+      const sup = [];
+      const myEmail = (sess.email || '').toLowerCase().replace(/'/g, "\\'");
+      let supUrl = `https://api.airtable.com/v0/${BASE}/${RTABLE}?pageSize=100&filterByFormula=${encodeURIComponent(`AND(LOWER({Email})='${myEmail}',NOT({Missionary}='${nameEsc}'))`)}`;
+      while (supUrl) {
+        const d2r = await fetch(supUrl, { headers: auth }); if (!d2r.ok) break;
+        const d2 = await d2r.json();
+        (d2.records || []).forEach(rec => {
+          const c = rec.fields || {};
+          let thread = []; try { thread = JSON.parse(c['Thread'] || '[]'); } catch (e) {}
+          if (!Array.isArray(thread)) thread = [];
+          if (!thread.length && c['Reply']) thread = [{ f: 'm', t: c['Reply'], at: '' }];
+          sup.push({
+            id: rec.id, k: c['Thread Key'] || '', type: c['Type'] || 'Note',
+            missionary: c['Missionary'] || '', message: c['Message'] || '', thread,
+            updateId: c['Update ID'] || '', updateTitle: c['Update Title'] || '',
+            created: rec.createdTime || ''
+          });
+        });
+        supUrl = d2.offset ? supUrl.split('&offset=')[0] + '&offset=' + d2.offset : '';
+      }
+
       // The supporter team — EVERYONE, following Airtable's 100-row pages to the end,
       // so an imported list of hundreds all show up.
       const subs = [];
@@ -64,8 +88,8 @@ exports.handler = async function (event) {
         surl = sd.offset ? subsBase + '&offset=' + sd.offset : '';
       }
 
-      // Cover art for every update that shows up in a conversation.
-      const ids = [...new Set(rows.map(x => x.updateId).filter(Boolean))];
+      // Cover art for every update that shows up in a conversation — both sides.
+      const ids = [...new Set(rows.map(x => x.updateId).concat(sup.map(x => x.updateId)).filter(Boolean))];
       const updates = {};
       for (let i = 0; i < ids.length; i += 20) {
         const or = 'OR(' + ids.slice(i, i + 20).map(id => `RECORD_ID()='${id}'`).join(',') + ')';
@@ -92,7 +116,7 @@ exports.handler = async function (event) {
         gurl = gd.offset ? gurl.split('&offset=')[0] + '&offset=' + gd.offset : '';
       }
 
-      return r(200, { ok: true, me: myName, rows, subs, updates, gives });
+      return r(200, { ok: true, me: myName, rows, sup, subs, updates, gives });
     }
 
     if (event.httpMethod !== 'POST') return r(405, { error: 'Method not allowed' });
