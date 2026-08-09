@@ -339,14 +339,24 @@ function openPerson(k){
     <div class="cnote">${p.flip?'Your words land on their dashboard and in their inbox — and stay in the string.':(p.email?'Delivered by email too — and kept here forever.':'This person didn\u2019t leave an email — they can write you from your wall, but you can\u2019t start a message to them.')}</div>`;
   const cv=document.getElementById('convo'); cv.innerHTML=html;
   document.getElementById('backlist').addEventListener('click',()=>{ document.getElementById('split').classList.remove('open'); CUR=null; renderPeople(); });
+  // The window opens AT the latest words — history lives above, scroll up for it.
+  const showLatest=()=>{
+    const st=cv.querySelector('#stream'), on=cv.querySelector('.tstr.on'); if(!on)return;
+    const tail=on.querySelector('.reply')||on;
+    if(st&&st.scrollHeight>st.clientHeight+4){
+      st.scrollTop+=tail.getBoundingClientRect().bottom-st.getBoundingClientRect().bottom+10;
+    }else{
+      tail.scrollIntoView({block:'nearest'});
+    }
+  };
   // Accordion: exactly one string open, boldly marked.
   cv.querySelectorAll('[data-ts]').forEach(b=>b.addEventListener('click',()=>{
     const el=cv.querySelector('.tstr[data-si="'+b.dataset.ts+'"]');
     const was=el.classList.contains('on');
     cv.querySelectorAll('.tstr').forEach(x=>x.classList.remove('on'));
-    if(!was) el.classList.add('on');
+    if(!was){ el.classList.add('on'); showLatest(); }
   }));
-  const first=cv.querySelector('.tstr'); if(first) first.classList.add('on');
+  const first=cv.querySelector('.tstr'); if(first){ first.classList.add('on'); requestAnimationFrame(showLatest); }
   cv.querySelectorAll('[data-tr]').forEach(el=>el.addEventListener('click',()=>translateBubble(+el.dataset.tr,el)));
   cv.querySelectorAll('[data-rs]').forEach(b=>b.addEventListener('click',()=>sendToString(p,strings[+b.dataset.rs].r,+b.dataset.rs)));
   const ns=document.getElementById('newstr');
