@@ -1363,7 +1363,8 @@ function pvFmt(t){
 }
 function pvBlockHtml(bk){
   const C=bk.color&&/^#[0-9a-fA-F]{6}$/.test(bk.color)?bk.color:'';
-  if(bk.type==='hero') return `<div class="rhero"${bk.url?` style="background-image:url('${esc(bk.url)}');background-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"`:''}><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+  // A banner with no photo is just words — a heading, never a giant gold canvas.
+  if(bk.type==='hero') return bk.url?`<div class="rhero" style="background-image:url('${esc(bk.url)}');background-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:((bk.heading||bk.sub)?`${bk.heading?`<h3 class="rh">${esc(bk.heading)}</h3>`:''}${bk.sub?`<div class="rcap" style="margin-top:${bk.heading?'-8px':'0'}">${esc(bk.sub)}</div>`:''}`:'');
   if(bk.type==='praise') return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${pvFmt(bk.text)}</div>`;
   if(bk.type==='heading') return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;
   if(bk.type==='divider') return `<hr class="rhr">`;

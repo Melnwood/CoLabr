@@ -48,7 +48,8 @@
     h1{font-size:22px}
     .kpis{gap:9px}
   }
-  h1{font-size:24px;font-weight:750;letter-spacing:-.02em;margin:4px 0 18px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:4px 0 18px}
+  h1 .gsub{display:block;font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
 
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
   @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
@@ -424,7 +425,8 @@ async function guard(){
     if(me.miss&&me.miss.signoff){
       const ln=me.miss.signoff.split('\n').map(l=>l.trim()).filter(Boolean);
       const names=ln.find(l=>!/[,，:]$/.test(l))||ln[0]||'';
-      if(names) document.getElementById('greet').textContent='Welcome back, '+names;
+      // The page NAME stays big and obvious — the greeting rides along smaller.
+      if(names){ const g=document.getElementById('greet'); g.textContent='My Dashboard'; const s=document.createElement('span'); s.className='gsub'; s.textContent='Welcome back, '+names; g.appendChild(s); }
     }
     const av=me.pic?`<img src="${me.pic}" alt="">`:`<span style="width:26px;height:26px;border-radius:50%;background:#241f1b;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">${(me.email||'?')[0].toUpperCase()}</span>`;
     document.getElementById('who').innerHTML=av+`<span class="wem">${me.email}</span>`;
