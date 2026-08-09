@@ -707,7 +707,7 @@ function renderResponses(){
     const canReply = !!r.email;
     const reply = canReply ? `<button class="reply replybtn" data-id="${r.id}">Reply</button>` : '';
     const mark = `<button class="markbtn" data-id="${r.id}">Mark done</button>`;
-    const msg = (r.type==='Prayer' && !r.message) ? '<i>is praying for you</i>' : esc(r.message);
+    const msg = (r.type==='Prayer' && !r.message) ? `<i>${/&|\band\b|\+|,/i.test(r.name)?'are':'is'} praying for you</i>` : esc(r.message);
     // The conversation so far — a supporter reply re-opens the item, so show the history.
     const th=(r.thread&&r.thread.length)?`<div class="rthread">${r.thread.map(x=>`<div class="tline"><b>${x.f==='m'?'You':esc(r.name)}:</b> ${esc(x.t)}</div>`).join('')}</div>`:'';
     const composer = canReply ? `<div class="rcompose" id="comp-${r.id}">

@@ -76,7 +76,7 @@ function render(){
   list.innerHTML=rows.map(r=>{
     let when=''; try{ when=r.created?new Date(r.created).toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):''; }catch(e){}
     const canReply=!!r.email;
-    const msg=(r.type==='Prayer'&&!r.message)?'<i>is praying for you</i>':esc(r.message);
+    const msg=(r.type==='Prayer'&&!r.message)?`<i>${/&|\band\b|\+|,/i.test(r.name)?'are':'is'} praying for you</i>`:esc(r.message);
     // The whole back-and-forth, in order — every reply on both sides is kept.
     const th=(r.thread&&r.thread.length)?r.thread:((r.replied&&r.reply)?[{f:'m',t:r.reply}]:[]);
     const sent=th.length?`<div class="sent">${th.map(x=>`<b>${x.f==='m'?'You replied':esc(r.name)+' wrote back'}</b>${esc(x.t)}`).join('<hr style="border:none;border-top:1px solid #eee7dc;margin:8px 0">')}</div>`:'';

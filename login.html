@@ -101,7 +101,10 @@
       const r=await fetch('/.netlify/functions/auth-email-verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ct:CT,code})});
       const d=await r.json();
       if(!r.ok){msg.className='mmsg err';msg.textContent=d.error||'That code didn’t work.';$('mgo').disabled=false;return;}
-      location.href=d.dest||'/manage.html';
+      // A relative ?next= (e.g. a conversation link from an email) wins over the default —
+      // same-site pages only, so the param can never bounce anyone off Co·labr.
+      const next=new URLSearchParams(location.search).get('next')||'';
+      location.href=(next&&/^[a-z0-9_-]+\.html(\?[^\s]*)?$/i.test(next))?next:(d.dest||'/manage.html');
     }catch(_){msg.className='mmsg err';msg.textContent='Could not reach the server — try again.';$('mgo').disabled=false;}
   }
   $('msend').addEventListener('click',sendLink);

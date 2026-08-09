@@ -28,14 +28,16 @@ exports.handler = async function (event) {
     const rec = await gr.json();
     const c = rec.fields || {};
 
-    // Who is asking? The supporter with the right key, or the signed-in missionary who owns it.
-    const keyOk = !!(key && c['Thread Key'] && key === c['Thread Key']);
+    // Who is asking? The signed-in missionary who OWNS this conversation always wins —
+    // even when they arrived through a link carrying the supporter's key. Otherwise,
+    // the supporter with the right key.
     let isOwner = false;
     const sess = sessionFromEvent(event);
-    if (!keyOk && sess && sess.email) {
+    if (sess && sess.email) {
       try { const me = await missByEmail({ Authorization: 'Bearer ' + token }, sess.email); isOwner = !!(me && me.name && me.name === (c['Missionary'] || '')); } catch (e) {}
     }
-    if (!keyOk && !isOwner) return r(403, { error: 'This link is not valid.' });
+    const keyOk = !isOwner && !!(key && c['Thread Key'] && key === c['Thread Key']);
+    if (!keyOk && !isOwner) return r(403, { error: 'This link is not valid.', signin: !key });
 
     let thread = []; try { thread = JSON.parse(c['Thread'] || '[]'); } catch (e) {}
     if (!Array.isArray(thread)) thread = [];
@@ -78,7 +80,7 @@ exports.handler = async function (event) {
           html: `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px;color:#241f1b">
             <p style="font-size:15px"><b>${esc(c['Name'] || 'A supporter')}</b> wrote back:</p>
             <blockquote style="border-left:3px solid #FF6600;margin:0 0 14px;padding:6px 0 6px 14px;font-size:15px;line-height:1.5;white-space:pre-wrap">${esc(msg)}</blockquote>
-            ${site ? `<p><a href="${site}/manage.html" style="color:#FF6600;font-weight:700">Reply in Co·labr →</a><br><span style="font-size:12px;color:#7a756f">Replying there keeps the whole conversation in one place.</span></p>` : ''}
+            ${site ? `<p><a href="${site}/thread.html?r=${id}" style="background:#FF6600;color:#fff;font-weight:700;text-decoration:none;border-radius:10px;padding:11px 20px;display:inline-block">Reply in Co·labr →</a><br><span style="font-size:12px;color:#7a756f">That link opens this exact conversation — replying there keeps the whole history in one place.</span></p>` : ''}
           </div>`,
           replyTo: c['Email'] || '', fromName: 'Co-Labr'
         });

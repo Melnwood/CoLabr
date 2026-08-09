@@ -79,7 +79,7 @@ exports.handler = async function (event) {
     const data = await resp.json();
     if (!resp.ok) return r(resp.status, { error: (data.error && data.error.message) || 'Could not send.' });
     // Best-effort: notify the missionary by email so they can reply quickly. Never blocks the response.
-    try { await notify(token, { type, name, message, email: emailFinal, missionary: b.missionary, updateTitle: b.updateTitle }); } catch (e) {}
+    try { await notify(token, { type, name, message, email: emailFinal, missionary: b.missionary, updateTitle: b.updateTitle, id: data.id }); } catch (e) {}
     return r(200, { ok: true, id: data.id, public: isPublic });
   } catch (e) {
     return r(502, { error: 'Could not reach the server.' });
@@ -97,7 +97,9 @@ async function notify(token, x) {
   }
   if (!to) return;
 
-  const label = x.type === 'Prayer' ? 'is praying for you' : (x.type === 'Note' ? 'sent you a note' : 'left you encouragement');
+  // Couples and families take a plural verb — "Mel & Amy ARE praying", never "is".
+  const plural = /&|\band\b|\+|,/i.test(x.name || '');
+  const label = x.type === 'Prayer' ? (plural ? 'are praying for you' : 'is praying for you') : (x.type === 'Note' ? 'sent you a note' : 'left you encouragement');
   const subject = `${x.name} ${label}` + (x.updateTitle ? ` \u00b7 ${x.updateTitle}` : '');
   const site = process.env.SITE_BASE || '';
   const html =
@@ -105,7 +107,9 @@ async function notify(token, x) {
       <p style="font-size:15px;color:#241f1b"><b>${esc(x.name)}</b> ${label}${x.updateTitle ? ` on <b>${esc(x.updateTitle)}</b>` : ''}.</p>
       ${x.message ? `<blockquote style="border-left:3px solid #FF6600;margin:0 0 14px;padding:6px 0 6px 14px;color:#3c3733;font-size:15px;line-height:1.5">${esc(x.message)}</blockquote>` : ''}
       ${x.email ? `<p style="font-size:13px;color:#7a756f">From ${esc(x.email)} — reply to this email (or reply inside Co-Labr) to write ${esc(x.name)} back.</p>` : ''}
-      ${site ? `<p><a href="${site}/manage.html" style="color:#FF6600;font-weight:700">Open your Co-Labr inbox \u2192</a></p>` : ''}
+      ${site ? ((x.type !== 'Prayer' && x.id)
+        ? `<p><a href="${site}/thread.html?r=${x.id}" style="background:#FF6600;color:#fff;font-weight:700;text-decoration:none;border-radius:10px;padding:11px 20px;display:inline-block">Reply in Co\u00b7labr \u2192</a><br><span style="font-size:12px;color:#7a756f">That link opens this exact conversation \u2014 every reply on both sides is kept there.</span></p>`
+        : `<p><a href="${site}/manage.html" style="color:#FF6600;font-weight:700">Open your Co-Labr inbox \u2192</a></p>`) : ''}
     </div>`;
 
   const fromName = x.missionary ? `${x.missionary} via Co-Labr` : 'Co-Labr';
