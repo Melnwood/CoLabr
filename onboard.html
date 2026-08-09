@@ -36,6 +36,16 @@
   .who .em{color:var(--muted);font-size:12.5px}
   .pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--green);background:#eafaf1;border:1px solid #bfe6cf;border-radius:20px;padding:6px 12px}
   .pill.blue{color:var(--blue);background:#eef3fe;border-color:#cfe0fb}
+  .ckrow{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid #f0ece6;text-decoration:none;color:inherit}
+  .ckrow:last-child{border-bottom:none}
+  .ckdot{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800}
+  .ckdot.ok{background:#eafaf1;color:var(--green);border:1px solid #bfe6cf}
+  .ckdot.todo{background:#fff3e0;color:#b26a00;border:1px solid #f3d3a6}
+  .ckdot.opt{background:#f4f1ec;color:#8a847c;border:1px solid #e2ddd5}
+  .ckt{flex:1;min-width:0}
+  .ckt b{font-size:13.5px;display:block}
+  .ckt span{font-size:11.5px;color:var(--muted);line-height:1.4}
+  .ckgo{flex:none;font-size:12px;font-weight:700;color:var(--acc)}
   .styles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .scard{border:2px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;background:#faf7f2;transition:.14s}
   .scard.on{border-color:var(--acc);background:#fff;box-shadow:0 6px 16px rgba(255,102,0,.12)}
@@ -99,6 +109,12 @@
       <div class="d">Send this link to your supporters, put it in your email signature, or add it to your newsletter.</div>
       <div class="share"><input id="shareUrl" readonly><button class="btn" id="copyBtn">Copy</button></div>
       <div class="msg" id="s5msg"></div>
+    </div>
+
+    <div class="step" id="kit" style="margin-top:26px">
+      <h2>The whole kit — check it's all there</h2>
+      <div class="d">Every piece your page uses, in one list. Green means done; anything open takes you straight to where it's set.</div>
+      <div id="ckl"><span class="pill blue">Checking your page…</span></div>
     </div>
   </div>
 
@@ -182,7 +198,29 @@ document.getElementById('copyBtn').addEventListener('click',async()=>{
   try{ await navigator.clipboard.writeText(url); m.className='msg ok'; m.textContent='Copied to your clipboard.'; }
   catch(e){ document.getElementById('shareUrl').select(); m.className='msg'; m.textContent='Press ⌘/Ctrl+C to copy.'; }
 });
-init();
+// ---- The whole kit: every setting, its live status, and the door to it ----
+async function loadKit(){
+  const box=document.getElementById('ckl');
+  try{
+    const mr=await fetch('/.netlify/functions/me?full=1'); if(!mr.ok){ box.innerHTML='<span class="note">Sign in to see your checklist.</span>'; return; }
+    const meFull=await mr.json(); const m=meFull.miss||{};
+    let rows=[]; try{ rows=(await api('list')).rows||[]; }catch(e){}
+    let ppl=[]; try{ const pr=await fetch('/.netlify/functions/people',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})}); if(pr.ok)ppl=((await pr.json()).people)||[]; }catch(e){}
+    const pub=rows.filter(r=>r.status==='Published').length, mc=rows.filter(r=>r.source==='Mailchimp import').length;
+    const item=(state,title,sub,href,go)=>`<a class="ckrow" href="${href}"><span class="ckdot ${state}">${state==='ok'?'✓':(state==='todo'?'!':'·')}</span><span class="ckt"><b>${title}</b><span>${sub}</span></span><span class="ckgo">${go||'Open →'}</span></a>`;
+    box.innerHTML=
+      item(m.name?'ok':'todo','Page name & photo',m.name?esc(m.name)+(m.photo?' · photo set':' · no photo yet'):'Name your page','manage.html')+
+      item(m.signoff?'ok':'todo','Sign-off',m.signoff?'“'+esc(String(m.signoff).split('\n')[0])+'…” — closes every update':'How you sign every update — your words','manage.html')+
+      item(m.give?'ok':'opt','Giving link',m.give?'Give buttons point to your page':'Optional — blank sends gifts to the JV general fund','manage.html')+
+      item('ok','Wall style',esc(curStyle)+' — change anytime','manage.html')+
+      item(ppl.length?'ok':'todo','Your people',ppl.length?ppl.length+' supporters on your list':'Invite or import the people your updates go to','invite.html')+
+      item(mc?'ok':'opt','Your history',mc?mc+' past updates imported':'Optional — pull your Mailchimp newsletters in, ~3 minutes','migrate.html')+
+      item(pub?'ok':'todo','First update',pub?pub+' published on your wall':'Write your first update — it can be small','compose.html')+
+      item('ok','Conversations','Always on — prayers, notes, and replies keep their history','messages.html')+
+      item(m.live?'ok':'opt','Go live',m.live?'LIVE — your supporters get emails':'Test mode — nothing emails anyone until the team flips this with you','manage.html','Status');
+  }catch(e){ box.innerHTML='<span class="note">Could not load the checklist.</span>'; }
+}
+init().then(loadKit,loadKit);
 </script>
 </body>
 </html>
