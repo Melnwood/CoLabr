@@ -491,7 +491,7 @@ let VIEWER=null;
 fetch('/.netlify/functions/me').then(r=>r.ok?r.json():null).then(me=>{
   if(!me)return;
   const tc=document.querySelector('.top .topcta'); if(!tc)return;
-  const a=document.createElement('a'); a.href='manage.html'; a.className='dashlink'; a.textContent='← Dashboard';
+  const a=document.createElement('a'); a.href='manage.html'; a.className='dashlink'; a.textContent='← My Dashboard';
   tc.insertBefore(a, tc.firstChild);
 }).catch(()=>{});
 // Bare root: signed-in people go to their OWN wall (kills the mobile race where
@@ -1134,7 +1134,9 @@ function bodyHtml(u,dedupeCover){
       if(bk.type==='heading'){const C=blockColor(bk);return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;}
       if(bk.type==='divider') return `<hr class="rhr">`;
       if(bk.type==='signoff') return `<p class="rsign">${fmt(bk.text)}</p>`;
-      if(bk.type==='give'){const C=blockColor(bk);return `<a class="rgive"${C?` style="background:${C}"`:''} href="${esc(bk.url||GIVE)}" target="_blank" rel="noopener">${esc(bk.label||'Give')}</a>`;}
+      // The Give block IS the give moment now — nothing give-related is automatic.
+      // It renders as the full partner box, pointed at their giving link.
+      if(bk.type==='give'){const C=blockColor(bk);return `<div class="give"><div class="t">Partner with ${esc(ORGD)} for ${PAGE_FIRST?esc(PAGE_FIRST)+'’s':(PAGEM?esc(PAGEM)+'’s':'our')} ministry</div><div class="d">Every gift is designated for ${PAGEM?'their':'our'} work.</div><a href="${esc(bk.url||GIVE)}"${C?` style="background:${C}"`:''} target="_blank" rel="noopener">${esc(bk.label||'Give')}</a></div>`;}
       if(bk.type==='button'){if(!bk.url)return '';const C=blockColor(bk);const al=['center','right'].includes(bk.align)?bk.align:'left';return `<div style="text-align:${al}"><a class="rgive"${C?` style="background:${C}"`:''} href="${esc(bk.url)}" target="_blank" rel="noopener">${esc(bk.label||'Open')}</a></div>`;}
       if(bk.type==='numbers'){ const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]); if(!it.length)return ''; return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`; }
       if(bk.type==='text') return `<p class="rtext">${fmt(bk.text)}</p>`;
@@ -1174,7 +1176,7 @@ async function openReader(i){
     ${bodyHtml(uu, !emb&&!!u.cover)}
     ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
     ${respondHTML(u)}
-    <div class="give"><div class="t">Partner with ${esc(ORGD)} for ${PAGE_FIRST?esc(PAGE_FIRST)+'\u2019s':(PAGEM?esc(PAGEM)+'\u2019s':'the Ellenwoods\u2019')} ministry</div><div class="d">Every gift is designated for ${PAGEM?'their':'our'} work.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div></div>`;
+    </div>`;
   document.getElementById('reader').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
   if(ME){
@@ -1193,7 +1195,7 @@ let PAGE_FIRST='';
 function respondHTML(u){
   return `<div class="eng">
     <h4>Respond to the ${FAMSHORT}</h4>
-    <div class="prayrow" id="respondRow"><button class="praybtn" id="prayBtn">${licon('pray',15)} I'm praying</button><a class="givebtn" id="giveBtn2" target="_blank" rel="noopener">${licon('heart',13)} Give</a><span class="praycount" id="prayCount"></span></div>
+    <div class="prayrow" id="respondRow"><button class="praybtn" id="prayBtn">${licon('pray',15)} I'm praying</button><span class="praycount" id="prayCount"></span></div>
     <div class="rtabs"><button class="rtab on" data-m="Encouragement">Leave encouragement</button><button class="rtab" data-m="Note">Send a private note</button></div>
     <div class="rform">
       <input id="rName" placeholder="Your name">
@@ -1213,7 +1215,6 @@ function wireRespond(u){
   const hint=q('rHint');
   // Known supporter: their name and email come with their key — no retyping.
   if(VIEWER&&VIEWER.name){ if(q('rName')&&!q('rName').value)q('rName').value=VIEWER.name; if(q('rEmail')&&!q('rEmail').value&&VIEWER.email)q('rEmail').value=VIEWER.email; }
-  const gb2=q('giveBtn2'); if(gb2) gb2.href=GIVE;
   q('prayBtn').addEventListener('click',async()=>{
     const btn=q('prayBtn'); if(btn.classList.contains('done'))return;
     try{ await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim(),t:VIEWTOK||undefined});
