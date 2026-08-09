@@ -137,6 +137,16 @@
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let DATA=null, PEOPLE=[], CUR=null;
 const plural=n=>/&|\band\b|\+|,/i.test(n||'');
+// Does this text look like it needs translating? Non-ASCII letters (háčky, Cyrillic…)
+// or — for plain-lettered languages — not a single everyday English word.
+function likelyForeign(t){
+  t=String(t||'');
+  if(/[\u00C0-\u024F\u0400-\u04FF]/.test(t)) return true;
+  const words=t.toLowerCase().split(/[^a-z']+/).filter(Boolean);
+  if(words.length<3) return false;
+  const en=new Set(['the','a','an','and','or','is','are','was','were','i','you','we','they','he','she','it','to','of','in','for','on','with','that','this','my','your','our','so','be','have','has','not','but','at','as','from','will','can','do','did','me','us','him','her','them','what','when','how','pray','praying','prayer','love','thank','thanks','god','lord','bless','family','update','hope','week','time','good','great']);
+  return !words.some(w=>en.has(w));
+}
 // Fine-line icons, matching the wall — never emoji.
 const ICONS={pray:'M12 21v-8.5L8.6 5.6 7 7.2l2.1 5.8M12 12.5V21m0-8.5 3.4-6.9L17 7.2l-2.1 5.8M7.5 21h9',
   give:'M12 21C7 16.5 4 13.6 4 10.4 4 8 5.9 6 8.3 6c1.5 0 2.9.8 3.7 2 .8-1.2 2.2-2 3.7-2C18.1 6 20 8 20 10.4c0 3.2-3 6.1-8 10.6z'};
@@ -301,12 +311,31 @@ function openPerson(k){
     const myPrays=p.items.filter(x=>x.kind==='pray'&&x.byMe).length;
     if(myPrays)facts.push('you\u2019ve prayed for them <b>'+myPrays+(myPrays===1?' time':' times')+'</b>');
   }
-  // One card per STRING: each response/direct message is its own thread, labeled by
-  // the update it started on. Exactly one card is open — no doubt which string you're in.
-  const strings=p.rows.filter(r=>r.message||(r.thread&&r.thread.length)||r.type==='Prayer').map(r=>{
-    const msgs=[{f:'s',t:r.message,at:r.created}].concat(r.thread||[]).filter(x=>x&&x.t);
-    const lastAt=msgs.length?(msgs[msgs.length-1].at||r.created):r.created;
-    return {r,msgs,lastAt};
+  // One card per STRING — and one string per UPDATE: the same person's prayer
+  // and their note on the same update live in the SAME thread, in time order.
+  const groups={};
+  p.rows.forEach(r=>{
+    if(!(r.message||(r.thread&&r.thread.length)||r.type==='Prayer'))return;
+    const gk=r.updateId?('u:'+r.updateId):('r:'+r.id);
+    const g=groups[gk]=groups[gk]||{gk,rows:[],updateId:r.updateId||'',updateTitle:'',type:r.type};
+    g.rows.push(r);
+    if(!g.updateTitle&&r.updateTitle)g.updateTitle=r.updateTitle;
+    if(r.message||(r.thread&&r.thread.length))g.type=r.type;
+  });
+  const strings=Object.values(groups).map(g=>{
+    const entries=[];
+    let hasPray=false,msgCount=0;
+    g.rows.forEach(r=>{
+      if(r.type==='Prayer'&&!r.message){ hasPray=true; entries.push({kind:'pray',at:r.created}); }
+      if(r.message){ msgCount++; entries.push({kind:'msg',f:'s',t:r.message,at:r.created}); }
+      (r.thread||[]).forEach((x,i)=>{ if(x&&x.t){ msgCount++; entries.push({kind:'msg',f:x.f==='m'?'m':'s',t:x.t,at:x.at||r.created,ord:i}); } });
+    });
+    entries.sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||((a.ord||0)-(b.ord||0)));
+    const lastAt=entries.length?(entries[entries.length-1].at||g.rows[0].created):g.rows[0].created;
+    // Where a reply lands: the newest row this side is allowed to continue.
+    const cand=g.rows.filter(r=>p.flip?!!r.k:true).sort((a,b)=>String(b.created).localeCompare(String(a.created)));
+    const target=cand.find(r=>r.message||(r.thread&&r.thread.length))||cand[0]||null;
+    return {g,entries,lastAt,target,hasPray,msgCount};
   }).sort((a,b)=>String(b.lastAt).localeCompare(String(a.lastAt)));
   TRTXT=[];
   let html=`<div class="chead"><div class="backlist" id="backlist">← All people</div><h3>${esc(p.name)}</h3><div class="cfacts">${facts.join(' · ')||'From your wall'}</div></div><div class="stream" id="stream">`;
@@ -318,22 +347,24 @@ function openPerson(k){
   }
   if(!strings.length) html+=`<div class="state">No conversations yet — start one below.</div>`;
   strings.forEach((s,si)=>{
-    const r=s.r;
-    const isPray=r.type==='Prayer'&&!r.message;
-    const label=isPray?(r.updateTitle?'Prayed on \u201c'+esc(r.updateTitle)+'\u201d':'Prayed for you'):(r.updateTitle?'On \u201c'+esc(r.updateTitle)+'\u201d':(r.type==='Message'?'Direct conversation':esc(r.type||'Note')));
-    const u=r.updateId&&DATA.updates[r.updateId];
+    const g=s.g;
+    const label=g.updateTitle
+      ?((s.msgCount?'On \u201c':'Prayed on \u201c')+esc(g.updateTitle)+'\u201d')
+      :(s.msgCount?(g.type==='Message'?'Direct conversation':esc(g.type||'Note')):'Prayed for you');
+    const u=g.updateId&&DATA.updates[g.updateId];
     html+=`<div class="tstr" data-si="${si}">
-      <button type="button" class="tsh" data-ts="${si}"><span class="tslab">${label}</span><span class="tsmeta">${s.msgs.length?s.msgs.length+' message'+(s.msgs.length===1?'':'s'):'prayer'} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
+      <button type="button" class="tsh" data-ts="${si}"><span class="tslab">${label}</span><span class="tsmeta">${s.msgCount?s.msgCount+' message'+(s.msgCount===1?'':'s'):'prayer'}${s.hasPray&&s.msgCount?' + prayer':''} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
       <div class="tsb">
-        ${(u&&u.cover)?`<div class="ucard"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||r.updateTitle)}</div></div>`:''}
-        ${isPray?`<div class="praypill" style="align-self:flex-start;margin:6px 0 2px">${licon('pray')} ${p.flip?'You prayed for this':esc(p.name)+(plural(p.name)?' were':' was')+' praying'} · ${esc(fmtD(r.created))}</div>`:''}
-        ${s.msgs.map(x=>{
+        ${(u&&u.cover)?`<div class="ucard"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||g.updateTitle)}</div></div>`:''}
+        ${s.entries.map(x=>{
+          if(x.kind==='pray')return `<div class="praypill" style="align-self:flex-start;margin:6px 0 2px">${licon('pray')} ${p.flip?'You prayed for this':esc(p.name)+(plural(p.name)?' were':' was')+' praying'} · ${esc(fmtD(x.at))}</div>`;
           const mine=x.f===p.mineF;
           let b=`<div class="bub ${mine?'m':'s'}">${esc(x.t)}</div>`;
-          if(!mine){ TRTXT.push(x.t); b+=`<div class="trlink" data-tr="${TRTXT.length-1}">Translate</div>`; }
+          // Translate only when the words don't look like English — never English-to-English.
+          if(!mine&&likelyForeign(x.t)){ TRTXT.push(x.t); b+=`<div class="trlink" data-tr="${TRTXT.length-1}">Translate</div>`; }
           return b+`<div class="bwhen ${mine?'m':'s'}">${esc(fmtDT(x.at))}</div>`;
         }).join('')}
-        ${(p.flip&&!r.k)?`<div class="cnote" style="padding:6px 0 0">This older string can\u2019t be continued from here yet — reply from their wall.</div>`
+        ${(!s.target)?`<div class="cnote" style="padding:6px 0 0">This older string can\u2019t be continued from here yet — reply from their wall.</div>`
           :`<div class="reply"><textarea id="rt${si}" placeholder="Write back in this string…"></textarea><button data-rs="${si}">Send</button></div><div class="cmsg" id="rm${si}"></div>`}
       </div></div>`;
   });
@@ -367,7 +398,7 @@ function openPerson(k){
   }));
   const first=cv.querySelector('.tstr'); if(first){ first.classList.add('on'); requestAnimationFrame(showLatest); }
   cv.querySelectorAll('[data-tr]').forEach(el=>el.addEventListener('click',()=>translateBubble(+el.dataset.tr,el)));
-  cv.querySelectorAll('[data-rs]').forEach(b=>b.addEventListener('click',()=>sendToString(p,strings[+b.dataset.rs].r,+b.dataset.rs)));
+  cv.querySelectorAll('[data-rs]').forEach(b=>b.addEventListener('click',()=>sendToString(p,strings[+b.dataset.rs].target,+b.dataset.rs)));
   const ns=document.getElementById('newstr');
   if(ns)ns.addEventListener('click',()=>{
     if(!p.flip&&!p.email){ document.getElementById('newmsg')||0; return; }
