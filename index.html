@@ -1343,7 +1343,7 @@ document.addEventListener('click',e=>{
   const a=e.target.closest && e.target.closest('a[href*="/give/give-form"]');
   if(!a)return;
   try{
-    const p={kind:'Give',updateId:curU?curU.id:'',updateTitle:curU?curU.title:'',missionary:FAMILY};
+    const p={kind:'Give',updateId:curU?curU.id:'',updateTitle:curU?curU.title:'',missionary:FAMILY,t:VIEWTOK||undefined};
     const blob=new Blob([JSON.stringify(p)],{type:'application/json'});
     if(navigator.sendBeacon)navigator.sendBeacon('/.netlify/functions/track',blob);
     else fetch('/.netlify/functions/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p),keepalive:true});

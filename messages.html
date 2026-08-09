@@ -14,7 +14,29 @@
   h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px}
   .lede{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.5}
   .split{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start}
-  .people{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;max-height:72vh;overflow-y:auto}
+  .pfind{display:block;width:100%;border:1px solid var(--line);border-radius:22px;padding:10px 15px;font-size:13px;font-family:inherit;margin-bottom:10px;outline:none;background:var(--card)}
+  .pfind:focus{border-color:var(--acc)}
+  .selbar{margin-bottom:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .selbtn{background:var(--card);border:1px solid var(--line);border-radius:18px;font-size:12px;font-weight:700;color:var(--text);padding:8px 14px;cursor:pointer;font-family:inherit}
+  .selbtn:hover{border-color:var(--acc);color:var(--acc)}
+  .selbtn.go{background:var(--text);color:#fff;border-color:var(--text)}
+  .selbtn.go:hover{color:#fff}
+  .selcount{font-size:12px;color:var(--muted);font-weight:600}
+  .psel{width:17px;height:17px;accent-color:var(--acc);flex:none}
+  /* broadcast composer */
+  #bcast{display:none;position:fixed;inset:0;z-index:200;background:rgba(30,24,18,.5);backdrop-filter:blur(2px)}
+  #bcast.on{display:flex;align-items:center;justify-content:center;padding:18px}
+  .bbox{width:min(520px,94vw);background:#fff;border-radius:18px;padding:24px;box-shadow:0 40px 100px rgba(0,0,0,.4)}
+  .bbox h3{margin:0 0 4px;font-size:17px;font-weight:800}
+  .bbox .bsub{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0 0 14px}
+  .bbox textarea{display:block;width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;min-height:120px;resize:vertical;outline:none}
+  .bbox textarea:focus{border-color:var(--acc)}
+  .brow{display:flex;gap:9px;align-items:center;margin-top:12px}
+  .bsend{background:var(--text);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer}
+  .bsend:disabled{opacity:.55}
+  .bx{background:none;border:none;font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit}
+  .bmsg{font-size:12.5px;margin-top:10px;color:var(--muted)}
+  .people{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;max-height:68vh;overflow-y:auto}
   .person{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #f1ede7;cursor:pointer}
   .person:hover{background:#faf7f2}
   .person.on{background:#fdf4ec}
@@ -52,7 +74,7 @@
   .backlist{display:none;font-size:12.5px;color:var(--acc);font-weight:700;cursor:pointer;margin-bottom:8px}
   @media(max-width:840px){
     .split{grid-template-columns:1fr}
-    .split.open .people{display:none}
+    .split.open .pcol{display:none}
     .split:not(.open) .convo{display:none}
     .backlist{display:block}
     .people,.convo{max-height:none}
@@ -65,14 +87,29 @@
   <h1>Conversations</h1>
   <p class="lede">One stream per person — every prayer, note, and reply you've ever traded, in one place.</p>
   <div class="split" id="split">
-    <div class="people" id="people"><div class="state">Loading your people…</div></div>
+    <div class="pcol">
+      <input id="pfind" class="pfind" type="search" placeholder="Find a person…">
+      <div class="selbar" id="selbar"><button class="selbtn" id="selmode">Write to several people…</button></div>
+      <div class="people" id="people"><div class="state">Loading your people…</div></div>
+    </div>
     <div class="convo" id="convo"><div class="state">Pick a person to open your conversation.</div></div>
   </div>
 </div>
+<div id="bcast"><div class="bbox">
+  <h3>One message, personally delivered</h3>
+  <p class="bsub">Each person gets their <b>own</b> email and their own conversation thread, greeted by name — “Hey Rebecca,” “Hey Noah and Jill,” — never a group blast, no addresses shared.</p>
+  <textarea id="btxt" placeholder="Write it once — skip the greeting, each person’s is added automatically…"></textarea>
+  <div class="brow"><button class="bsend" id="bsend">Send</button><button class="bx" id="bxc">Cancel</button></div>
+  <div class="bmsg" id="bmsg"></div>
+</div></div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let DATA=null, PEOPLE=[], CUR=null;
 const plural=n=>/&|\band\b|\+|,/i.test(n||'');
+// Fine-line icons, matching the wall — never emoji.
+const ICONS={pray:'M12 21v-8.5L8.6 5.6 7 7.2l2.1 5.8M12 12.5V21m0-8.5 3.4-6.9L17 7.2l-2.1 5.8M7.5 21h9',
+  give:'M12 21C7 16.5 4 13.6 4 10.4 4 8 5.9 6 8.3 6c1.5 0 2.9.8 3.7 2 .8-1.2 2.2-2 3.7-2C18.1 6 20 8 20 10.4c0 3.2-3 6.1-8 10.6z'};
+const licon=(n,s)=>`<svg viewBox="0 0 24 24" width="${s||13}" height="${s||13}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="${ICONS[n]}"/></svg>`;
 function fmtD(at){ if(!at)return''; try{ return new Date(at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }catch(_){ return''; } }
 function fmtDT(at){ if(!at)return''; try{ return new Date(at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(_){ return''; } }
 
@@ -97,27 +134,101 @@ function build(){
     }
     (row.thread||[]).forEach((x,i)=>{ if(x&&x.t)p.items.push({kind:'msg',f:x.f==='m'?'m':'s',t:x.t,at:x.at||row.created,ord:i}); });
   });
+  // Give-button clicks we could attribute — engagement, woven into the stream.
+  (DATA.gives||[]).forEach(g=>{
+    const k=keyOf(g.email,g.name);
+    const p=map[k]; if(!p)return;
+    p.gives=(p.gives||0)+1;
+    p.items.push({kind:'give',at:g.at,updateTitle:g.updateTitle});
+  });
   PEOPLE=Object.values(map).filter(p=>p.name);
   PEOPLE.forEach(p=>{
     p.items.sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||((a.ord||0)-(b.ord||0)));
     p.last=p.items.length?p.items[p.items.length-1]:null;
     p.unread=p.rows.some(r=>!r.read);
+    // The last time THEY wrote or prayed — what "recent conversation" means.
+    p.lastIn=p.items.reduce((m,x)=>(x.kind==='pray'||x.f==='s')&&String(x.at||'')>m?x.at:m,'');
   });
-  PEOPLE.sort((a,b)=>String((b.last&&b.last.at)||b.since||'').localeCompare(String((a.last&&a.last.at)||a.since||'')));
+  // Recent incoming first (newest on top), then everyone else A→Z by last name.
+  const lname=p=>{const w=(p.name||'').trim().replace(/&.*$/,'').trim().split(/\s+/);return (w[w.length-1]||'').toLowerCase();};
+  const cutoff=new Date(Date.now()-90*24*3600*1000).toISOString();
+  PEOPLE.sort((a,b)=>{
+    const ar=a.unread||a.lastIn>cutoff, br=b.unread||b.lastIn>cutoff;
+    if(ar!==br) return ar?-1:1;
+    if(ar&&br) return String(b.lastIn).localeCompare(String(a.lastIn));
+    return lname(a).localeCompare(lname(b))||a.name.localeCompare(b.name);
+  });
 }
+let FLT='';
+document.getElementById('pfind').addEventListener('input',e=>{ FLT=e.target.value.trim().toLowerCase(); renderPeople(); });
 function renderPeople(){
   const el=document.getElementById('people');
   if(!PEOPLE.length){ el.innerHTML='<div class="state">No supporters yet — when someone joins your wall or writes, they appear here.</div>'; return; }
-  el.innerHTML=PEOPLE.map((p,i)=>{
-    const prev=p.last?(p.last.kind==='pray'?((plural(p.name)?'Prayed':'Prayed')+' for you'):((p.last.f==='m'?'You: ':'')+p.last.t)):'No messages yet — say hello';
+  const show=FLT?PEOPLE.filter(p=>(p.name+' '+(p.email||'')).toLowerCase().includes(FLT)):PEOPLE;
+  if(!show.length){ el.innerHTML='<div class="state">No one matches “'+esc(FLT)+'”.</div>'; return; }
+  el.innerHTML=show.map((p,i)=>{
+    const prev=p.last?(p.last.kind==='pray'?'Prayed for you':((p.last.f==='m'?'You: ':'')+p.last.t)):'No messages yet — say hello';
     return `<div class="person${CUR===p.key?' on':''}" data-k="${esc(p.key)}">
+      ${SELMODE?`<input type="checkbox" class="psel"${SEL.has(p.key)?' checked':''}${p.email?'':' disabled title="No email"'}>`:''}
       <div class="pav">${esc((p.name||'?').trim().charAt(0).toUpperCase())}</div>
       <div class="pmain"><div class="pname">${p.unread?'<span class="pdot"></span>':''}${esc(p.name)}</div>
       <div class="pprev">${esc(prev)}</div></div>
       <div class="pwhen">${p.last?fmtD(p.last.at):''}</div></div>`;
   }).join('');
-  el.querySelectorAll('.person').forEach(d=>d.addEventListener('click',()=>openPerson(d.dataset.k)));
+  el.querySelectorAll('.person').forEach(d=>d.addEventListener('click',()=>{
+    if(SELMODE){
+      const p=PEOPLE.find(x=>x.key===d.dataset.k); if(!p||!p.email)return;
+      if(SEL.has(p.key))SEL.delete(p.key); else SEL.add(p.key);
+      renderSelbar(); renderPeople(); return;
+    }
+    openPerson(d.dataset.k);
+  }));
 }
+/* ---- Write to several people: one message, each copy personal ---- */
+let SELMODE=false; const SEL=new Set();
+function firstNames(n){
+  n=String(n||'').trim(); if(!n)return 'friend';
+  const w=n.split(/\s+/);
+  const f=(w.length>1?w.slice(0,-1).join(' '):n).replace(/\s*&\s*/g,' and ').trim();
+  return f||n;
+}
+function renderSelbar(){
+  const el=document.getElementById('selbar');
+  if(!SELMODE){
+    el.innerHTML='<button class="selbtn" id="selmode">Write to several people…</button>';
+    document.getElementById('selmode').addEventListener('click',()=>{SELMODE=true;SEL.clear();renderSelbar();renderPeople();});
+    return;
+  }
+  const n=SEL.size;
+  el.innerHTML=`<button class="selbtn" id="selall">Select all</button><span class="selcount">${n} selected</span><button class="selbtn go" id="selgo"${n?'':' disabled'}>Write to ${n||'them'}</button><button class="selbtn" id="selcancel">Cancel</button>`;
+  document.getElementById('selall').addEventListener('click',()=>{PEOPLE.filter(p=>p.email).forEach(p=>SEL.add(p.key));renderSelbar();renderPeople();});
+  document.getElementById('selcancel').addEventListener('click',()=>{SELMODE=false;SEL.clear();renderSelbar();renderPeople();});
+  const go=document.getElementById('selgo');
+  if(n)go.addEventListener('click',()=>{document.getElementById('bmsg').textContent='';document.getElementById('bcast').classList.add('on');document.getElementById('btxt').focus();});
+}
+document.getElementById('bxc').addEventListener('click',()=>document.getElementById('bcast').classList.remove('on'));
+document.getElementById('bsend').addEventListener('click',async()=>{
+  const txt=document.getElementById('btxt').value.trim(), msgEl=document.getElementById('bmsg'), btn=document.getElementById('bsend');
+  if(!txt){ msgEl.textContent='Write something first.'; return; }
+  const targets=PEOPLE.filter(p=>SEL.has(p.key)&&p.email);
+  if(!targets.length){ msgEl.textContent='No one selected.'; return; }
+  btn.disabled=true;
+  let sent=0,failed=0;
+  for(const p of targets){
+    msgEl.textContent=`Sending… ${sent+failed+1}/${targets.length} (${esc(p.name)})`;
+    try{
+      const personal=`Hey ${firstNames(p.name)},\n\n${txt}`;
+      const r=await fetch('/.netlify/functions/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:p.email,name:p.name,message:personal})});
+      if(r.ok)sent++; else failed++;
+    }catch(_){ failed++; }
+    await new Promise(res=>setTimeout(res,400));
+  }
+  msgEl.textContent=`Done — sent to ${sent} ${sent===1?'person':'people'}`+(failed?`, ${failed} failed (try those again)`:'')+'. Each has their own thread now.';
+  btn.disabled=false;
+  document.getElementById('btxt').value='';
+  setTimeout(()=>{ document.getElementById('bcast').classList.remove('on'); SELMODE=false; SEL.clear(); renderSelbar(); load(); },1800);
+});
+renderSelbar();
 function openPerson(k){
   CUR=k; const p=PEOPLE.find(x=>x.key===k); if(!p)return;
   document.getElementById('split').classList.add('open');
@@ -125,12 +236,16 @@ function openPerson(k){
   const facts=[];
   if(p.since)facts.push('Following since <b>'+esc(fmtD(p.since))+'</b>');
   if(p.prayed)facts.push('prayed with you <b>'+p.prayed+(p.prayed===1?' time':' times')+'</b>');
+  const wrote=p.rows.filter(r=>r.message).length;
+  if(wrote)facts.push('written <b>'+wrote+(wrote===1?' note':' notes')+'</b>');
+  if(p.gives)facts.push('clicked Give <b>'+p.gives+(p.gives===1?' time':' times')+'</b>');
   if(p.lastVisit)facts.push('last visited your wall '+esc(fmtD(p.lastVisit)));
   let html=`<div class="chead"><div class="backlist" id="backlist">← All people</div><h3>${esc(p.name)}</h3><div class="cfacts">${facts.join(' · ')||'From your wall'}</div></div><div class="stream" id="stream">`;
   if(!p.items.length) html+=`<div class="state">Nothing yet — start the conversation below. They’ll get it by email and can reply right back.</div>`;
   let lastUpdate='';
   p.items.forEach((it,idx)=>{
-    if(it.kind==='pray'){ html+=`<div class="praypill">🙏 ${esc(p.name)} ${plural(p.name)?'were':'was'} praying · ${esc(fmtD(it.at))}</div>`; return; }
+    if(it.kind==='pray'){ html+=`<div class="praypill">${licon('pray')} ${esc(p.name)} ${plural(p.name)?'were':'was'} praying · ${esc(fmtD(it.at))}</div>`; return; }
+    if(it.kind==='give'){ html+=`<div class="praypill">${licon('give')} Clicked Give${it.updateTitle?' on “'+esc(it.updateTitle)+'”':''} · ${esc(fmtD(it.at))}</div>`; return; }
     if(it.f==='s'&&it.updateId&&DATA.updates[it.updateId]&&it.updateId!==lastUpdate){
       const u=DATA.updates[it.updateId]; lastUpdate=it.updateId;
       html+=`<div class="ucard">${u.cover?`<div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div>`:''}<div class="ut">${esc(u.title||it.updateTitle)}</div></div>`;

@@ -104,6 +104,7 @@ Amy &amp; Mel</textarea>
 
     <h2 class="ppl-h">Your people <span id="pplcount"></span></h2>
     <p class="ppl-lede">Everyone tied to your page — this is the list your updates go to. No Mailchimp, no Google Group: when you publish, Co-Labr emails each person here the way they chose.</p>
+    <input id="pplfind" class="pplfind" type="search" placeholder="Find someone — type a name or email…">
     <div id="ppl"><div class="ppl-state">Loading…</div></div>
   </div>
   <style>
@@ -116,6 +117,8 @@ Amy &amp; Mel</textarea>
     .ppl-h span{font-size:12.5px;color:var(--muted);font-weight:600}
     .ppl-lede{font-size:13px;color:var(--muted);margin:0 0 12px;max-width:62ch;line-height:1.5}
     .ppl-state{color:var(--muted);font-size:13.5px;padding:14px 0}
+    .pplfind{display:block;width:100%;max-width:420px;box-sizing:border-box;border:1px solid var(--line);border-radius:22px;padding:10px 16px;font-size:13.5px;font-family:inherit;margin:0 0 12px;outline:none}
+    .pplfind:focus{border-color:var(--acc)}
     .prow{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:8px;flex-wrap:wrap}
     .prow .pwho{min-width:0}
     .prow .pwho b{font-size:14px;display:block}
@@ -232,12 +235,20 @@ document.getElementById('sendBtn').addEventListener('click',async()=>{
   }catch(e){ msg.className='msg err'; msg.textContent=e.message+ (sent?` (sent ${sent} before this).`:''); }
   finally{ btn.disabled=false; }
 });
+// Type a name or email — the list narrows as you type.
+document.getElementById('pplfind').addEventListener('input',()=>{
+  const q=document.getElementById('pplfind').value.trim().toLowerCase();
+  document.querySelectorAll('#ppl .prow').forEach(r=>{ r.style.display=(!q||r.textContent.toLowerCase().includes(q))?'':'none'; });
+});
 async function loadPeople(){
   const box=document.getElementById('ppl');
   try{
     const r=await fetch('/.netlify/functions/people',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})});
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not load.');
     const ppl=d.people||[];
+    // Alphabetical by last name, so the list reads like an address book.
+    const ln=p=>{const w=String(p.name||p.email||'').trim().replace(/&.*$/,'').trim().split(/\s+/);return (w[w.length-1]||'').toLowerCase();};
+    ppl.sort((a,b)=>ln(a).localeCompare(ln(b))||String(a.name||'').localeCompare(String(b.name||'')));
     document.getElementById('pplcount').textContent=ppl.length?('('+ppl.length+' — '+ppl.filter(p=>p.active).length+' following)'):'';
     if(!ppl.length){ box.innerHTML='<div class="ppl-state">No one yet — send your first invitations above, or your imported supporters will appear here.</div>'; return; }
     box.innerHTML=ppl.map(p=>{

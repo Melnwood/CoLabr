@@ -72,7 +72,22 @@ exports.handler = async function (event) {
         });
       }
 
-      return r(200, { ok: true, me: myName, rows, subs, updates });
+      // Give-button clicks that we could attribute to a person (newer clicks carry
+      // the supporter's wall key) — shown as engagement in their conversation.
+      const gives = [];
+      let gurl = `https://api.airtable.com/v0/${BASE}/tbl2Dm5W07cAMrJgs?pageSize=100&filterByFormula=${encodeURIComponent(`AND({Kind}='Give',{Missionary}='${nameEsc}',LEN({Supporter})>0)`)}`;
+      while (gurl) {
+        const gr = await fetch(gurl, { headers: auth }); if (!gr.ok) break;
+        const gd = await gr.json();
+        (gd.records || []).forEach(rec => {
+          const c = rec.fields || {};
+          const m = String(c['Supporter'] || '').match(/^(.*?)\s*<([^>]*)>$/);
+          gives.push({ name: (m ? m[1] : String(c['Supporter'] || '')).trim(), email: (m ? m[2] : '').toLowerCase(), at: rec.createdTime || '', updateTitle: c['Update Title'] || '' });
+        });
+        gurl = gd.offset ? gurl.split('&offset=')[0] + '&offset=' + gd.offset : '';
+      }
+
+      return r(200, { ok: true, me: myName, rows, subs, updates, gives });
     }
 
     if (event.httpMethod !== 'POST') return r(405, { error: 'Method not allowed' });
