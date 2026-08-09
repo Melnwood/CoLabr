@@ -555,9 +555,18 @@ function render(){
   c.querySelectorAll('[data-cpick]').forEach(el=>el.addEventListener('click',()=>{
     const inp=document.getElementById('cpickinp'); if(!inp)return;
     const b=blocks.find(x=>String(x.id)===el.dataset.cpick); if(!b)return;
+    // The picker must sit AT the dot — Safari won't open a color wheel for an
+    // off-screen input, and Chrome anchors the popover to the input's position.
+    const r=el.getBoundingClientRect();
+    inp.style.left=Math.round(r.left)+'px';
+    inp.style.top=Math.round(r.bottom+4)+'px';
+    inp.style.width='26px'; inp.style.height='26px';
+    inp.style.opacity='0'; inp.style.pointerEvents='none';
     inp.value=(b.color&&/^#[0-9a-fA-F]{6}$/.test(b.color))?b.color:'#FF6600';
     inp.dataset.for=el.dataset.cpick;
-    inp.onchange=()=>{ syncFromDOM(); const t=blocks.find(x=>String(x.id)===inp.dataset.for); if(t){ t.color=inp.value; render(); } };
+    const apply=(final)=>{ syncFromDOM(); const t=blocks.find(x=>String(x.id)===inp.dataset.for); if(t){ t.color=inp.value; if(final) render(); } };
+    inp.oninput=()=>apply(false);      // keep the choice even if 'change' never fires
+    inp.onchange=()=>apply(true);      // picker closed — repaint with the new color
     inp.click();
   }));
   samplePalette();
