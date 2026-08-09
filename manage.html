@@ -103,6 +103,8 @@
 
   .listhead{display:flex;align-items:center;gap:12px;margin-bottom:12px}
   #updatesPanel .listhead{margin-bottom:0}
+  .listctl{margin-left:auto;display:flex;gap:7px}
+  .listctl select{background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;font-family:inherit;max-width:150px}
   #updatesPanel #list{margin-top:14px}
   #updatesPanel .item{background:#fbfaf8}
   .listhead h2{font-size:16px;font-weight:750;margin:0}
@@ -260,8 +262,11 @@
         <div id="quicklist"></div>
       </div>
       <div class="panel" id="updatesPanel">
-        <div class="listhead"><h2 id="listtoggle" class="acc-h">All updates <span class="chev" id="chev">▸</span> <span class="cnt" id="listcnt"></span> <span class="cnt" id="latestpeek"></span></h2>
-          <div class="seg" id="statusfilter" style="display:none"><button data-s="all" class="on">All</button><button data-s="Published">Published</button><button data-s="Draft">Drafts</button></div>
+        <div class="listhead"><h2 id="listtoggle" class="acc-h">Updates <span class="chev" id="chev">▸</span> <span class="cnt" id="listcnt"></span></h2>
+          <div class="listctl" id="listctl" style="display:none">
+            <select id="typef"><option value="">All kinds</option></select>
+            <select id="sortf"><option value="new">Newest first</option><option value="reads">Most read</option><option value="top10">Top 10 most read</option></select>
+          </div>
         </div>
         <div id="list" style="display:none"><div class="state">Loading…</div></div>
       </div>
@@ -481,9 +486,10 @@ function renderAll(){
   document.getElementById('detailrow').innerHTML=
     `<span class="d"><b>${ROWS.length}</b> updates all-time</span><span class="d"><b>${opensAll.toLocaleString()}</b> opens all-time</span><span class="d"><b>${pub}</b> published</span><span class="d"><b>${dr}</b> drafts</span>`;
   const lc=document.getElementById('listcnt'); if(lc){ const n=ROWS.filter(r=>r.status!=='Draft').length; lc.textContent=n?('('+n+')'):''; }
-  const lp=document.getElementById('latestpeek');
-  if(lp){ const latest=ROWS.filter(r=>r.status!=='Draft')[0]||ROWS[0];
-    lp.textContent=latest?('· “'+latest.title+'”'):''; }
+  // Populate the "kind" filter from the types actually used.
+  const tf=document.getElementById('typef');
+  if(tf){ const cur=tf.value; const types=[...new Set(ROWS.filter(r=>r.status!=='Draft').map(r=>r.type).filter(Boolean))].sort();
+    tf.innerHTML='<option value="">All kinds</option>'+types.map(t=>`<option value="${esc(t)}"${t===cur?' selected':''}>${esc(t)}</option>`).join(''); }
   renderChart(); renderTop(); renderList();
 }
 function kpi(v,l,acc){ return `<div class="kpi${acc?' acc':''}"><b>${v}</b><span>${l}</span></div>`; }
@@ -538,7 +544,12 @@ function renderQuick(){
 function renderList(){
   renderQuick();
   // Published (and processing) only — drafts have their own tile grid above.
-  const rows=ROWS.filter(r=>r.status!=='Draft');
+  let rows=ROWS.filter(r=>r.status!=='Draft');
+  const tf=(document.getElementById('typef')||{}).value||'';
+  const sf=(document.getElementById('sortf')||{}).value||'new';
+  if(tf) rows=rows.filter(r=>r.type===tf);
+  if(sf==='reads'||sf==='top10') rows=rows.slice().sort((a,b)=>(b.opens||0)-(a.opens||0));
+  if(sf==='top10') rows=rows.slice(0,10);
   const list=document.getElementById('list');
   if(!rows.length){ list.innerHTML='<div class="state">Nothing published yet.</div>'; return; }
   // Same top-ten the wall badges: your most-read updates, marked where you edit and star.
@@ -554,7 +565,7 @@ function renderList(){
   }).join('');
   list.querySelectorAll('button[data-act]').forEach(btn=>btn.addEventListener('click',()=>act(btn.dataset.act,btn.dataset.id)));
 }
-document.getElementById('statusfilter').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{statusF=b.dataset.s;document.getElementById('statusfilter').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));renderList();}));
+['typef','sortf'].forEach(id=>document.getElementById(id).addEventListener('change',renderList));
 // Test mode vs Live — make the invisible visible, and make going live a deliberate step.
 async function liveStrip(){
   try{
@@ -588,7 +599,7 @@ document.addEventListener('click',()=>{const m=document.getElementById('sysMenu'
 document.getElementById('listtoggle').addEventListener('click',()=>{
   const h=document.getElementById('listtoggle'); const open=h.classList.toggle('open');
   document.getElementById('list').style.display=open?'':'none';
-  // Drafts live in their own tile grid above — this list is published only, no filter needed.
+  document.getElementById('listctl').style.display=open?'flex':'none';
 });
 async function act(a,id){
   try{
