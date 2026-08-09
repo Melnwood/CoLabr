@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/favicon.png">
+<title>Co·labr — My Co·labr</title>
+<style>
+  :root{--acc:#FF6600;--bg:#f4f1ec;--card:#fff;--line:#e7e4e0;--muted:#7a756f;--text:#241f1b;--green:#2f9e63;--red:#c0392b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:26px 18px 80px}
+  h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:4px 0 4px}
+  .lede{font-size:13.5px;color:var(--muted);line-height:1.55;margin:0 0 22px}
+  .cols{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+  .mrow{display:flex;gap:11px;align-items:center;padding:8px 0;border-bottom:1px solid #f1ede7;text-decoration:none;color:inherit}
+  .mrow:last-child{border-bottom:none}
+  .mav{flex:none;width:40px;height:40px;border-radius:50%;background:#241f1b center/cover;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .mn{flex:1;min-width:0}
+  .mn b{display:block;font-size:14px}
+  .mn span{font-size:11.5px;color:var(--muted)}
+  .mgo{flex:none;font-size:11.5px;font-weight:700;color:var(--acc)}
+  .pline{font-size:13px;line-height:1.7;color:#4a443e}
+  .pline b{color:#b8791b}
+  .crow{padding:11px 0;border-bottom:1px solid #f1ede7;cursor:pointer}
+  .crow:last-child{border-bottom:none}
+  .ch{display:flex;gap:8px;align-items:baseline}
+  .ch b{font-size:14px}
+  .ch .cw{margin-left:auto;font-size:10.5px;color:#a29b93;flex:none}
+  .cprev{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+  .cbody{display:none;margin-top:10px}
+  .crow.open .cbody{display:block}
+  .crow.open .cprev{display:none}
+  .bubble{max-width:88%;padding:9px 13px;border-radius:13px;font-size:13.5px;line-height:1.5;white-space:pre-wrap;margin-bottom:8px}
+  .them{background:#f4f1ec;border-bottom-left-radius:4px}
+  .mine{background:var(--acc);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+  .mrow2{text-align:right}
+  .who{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#a29b93;margin:0 0 3px}
+  .reply{display:flex;gap:8px;margin-top:10px}
+  .reply textarea{flex:1;border:1px solid var(--line);border-radius:11px;padding:9px 12px;font-size:13.5px;font-family:inherit;min-height:42px;resize:vertical;outline:none}
+  .reply textarea:focus{border-color:var(--acc)}
+  .reply button{flex:none;background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 17px;font-size:13px;font-weight:700;cursor:pointer;align-self:flex-end}
+  .reply button:disabled{opacity:.5}
+  .cmsg{font-size:11.5px;margin-top:6px}.cmsg.ok{color:var(--green)}.cmsg.err{color:var(--red)}
+  .state{color:var(--muted);font-size:13.5px;padding:20px 0;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="hi">My Co·labr</h1>
+  <p class="lede" id="sub">Everything between you and the missionaries you walk with — in one place.</p>
+  <div class="cols">
+    <div>
+      <div class="panel"><h2>Missionaries you follow</h2><div id="mlist"><div class="state">Loading…</div></div></div>
+      <div class="panel"><h2>You've prayed for</h2><div id="plist" class="pline"><div class="state">Loading…</div></div></div>
+    </div>
+    <div class="panel"><h2>Your conversations</h2><div id="clist"><div class="state">Loading…</div></div></div>
+  </div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P=new URLSearchParams(location.search);
+const T=P.get('t')||'', C=P.get('c')||'', K=P.get('k')||'';
+let D=null;
+function fd(at){ if(!at)return''; try{ return new Date(at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }catch(_){ return''; } }
+function first(n){ n=String(n||'').trim(); const w=n.split(/\s+/); return (w.length>1?w.slice(0,-1).join(' '):n).replace(/\s*&\s*/g,' and ')||n; }
+async function load(){
+  try{
+    const r=await fetch('/.netlify/functions/supporter-hub?'+(T?'t='+encodeURIComponent(T):'c='+encodeURIComponent(C)+'&k='+encodeURIComponent(K)));
+    const d=await r.json();
+    if(!r.ok){ document.querySelectorAll('.state').forEach(s=>s.textContent=d.error||'Could not load.'); return; }
+    D=d; render();
+  }catch(_){ document.querySelectorAll('.state').forEach(s=>s.textContent='Could not reach the server.'); }
+}
+function render(){
+  if(D.name) document.getElementById('hi').textContent='Hi, '+first(D.name);
+  // Missionaries they follow — each link carries THAT page's key.
+  const ml=document.getElementById('mlist');
+  ml.innerHTML=(D.subs||[]).length?D.subs.map(s=>{
+    const pg=(D.pages||{})[s.missionary]||{};
+    const av=pg.photo?`<span class="mav" style="background-image:url('${esc(pg.photo)}')"></span>`:`<span class="mav">${esc((s.missionary||'?').charAt(0))}</span>`;
+    return `<a class="mrow" href="index.html?m=${encodeURIComponent(s.missionary)}&t=${encodeURIComponent(s.token)}">${av}<span class="mn"><b>${esc(s.missionary)}</b><span>${esc(pg.location||'')}${s.since?' · following since '+esc(fd(s.since)):''}</span></span><span class="mgo">Open wall →</span></a>`;
+  }).join(''):'<div class="state">No pages yet.</div>';
+  // Prayer memory.
+  const pray={};
+  (D.convos||[]).filter(c=>c.type==='Prayer').forEach(c=>{ if(c.missionary)pray[c.missionary]=(pray[c.missionary]||0)+1; });
+  const pl=document.getElementById('plist');
+  const pk=Object.keys(pray);
+  pl.innerHTML=pk.length?pk.map(m=>`You've prayed for <b>${esc(m)}</b> ${pray[m]===1?'once':pray[m]+' times'}`).join('<br>'):'<div class="state">Tap “I’m praying” on any update — it means more than you know.</div>';
+  // Conversations: anything with words in it, newest activity first.
+  const convos=(D.convos||[]).filter(c=>c.message||(c.thread&&c.thread.length));
+  convos.forEach(c=>{ const last=(c.thread&&c.thread.length)?c.thread[c.thread.length-1]:null; c.lastAt=(last&&last.at)||c.created; c.last=last?last.t:c.message; c.lastFrom=last?last.f:'s'; });
+  convos.sort((a,b)=>String(b.lastAt).localeCompare(String(a.lastAt)));
+  const cl=document.getElementById('clist');
+  if(!convos.length){ cl.innerHTML='<div class="state">No conversations yet — write on any update and it starts here.</div>'; return; }
+  cl.innerHTML=convos.map((c,i)=>{
+    const rows=[{f:'s',t:c.message,at:c.created}].concat(c.thread||[]).filter(x=>x&&x.t);
+    return `<div class="crow" data-i="${i}"><div class="ch"><b>${esc(c.missionary||'Conversation')}</b>${c.updateTitle?`<span style="font-size:11.5px;color:var(--muted)">on “${esc(c.updateTitle)}”</span>`:''}<span class="cw">${esc(fd(c.lastAt))}</span></div>
+      <div class="cprev">${c.lastFrom==='m'?esc(first(c.missionary))+': ':'You: '}${esc(c.last||'')}</div>
+      <div class="cbody">${rows.map(x=>`<div class="${x.f==='s'?'mrow2':''}"><div class="who">${x.f==='s'?'You':esc(c.missionary||'Them')}${x.at?' · '+fd(x.at):''}</div><div class="bubble ${x.f==='s'?'mine':'them'}">${esc(x.t)}</div></div>`).join('')}
+        ${c.k?`<div class="reply"><textarea id="rt${i}" placeholder="Write back…"></textarea><button data-send="${i}">Send</button></div><div class="cmsg" id="rm${i}"></div>`:''}
+      </div></div>`;
+  }).join('');
+  cl.querySelectorAll('.crow').forEach(row=>row.addEventListener('click',e=>{
+    if(e.target.closest('.reply')||e.target.closest('button'))return;
+    row.classList.toggle('open');
+  }));
+  cl.querySelectorAll('[data-send]').forEach(b=>b.addEventListener('click',async()=>{
+    const i=+b.dataset.send, c=convos[i], t=document.getElementById('rt'+i), m=document.getElementById('rm'+i);
+    const msg=t.value.trim(); if(!msg){ m.className='cmsg err'; m.textContent='Write something first.'; return; }
+    b.disabled=true; m.className='cmsg'; m.textContent='Sending…';
+    try{
+      const r=await fetch('/.netlify/functions/thread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({r:c.id,k:c.k,message:msg})});
+      const d=await r.json(); if(!r.ok)throw new Error(d.error||'Could not send.');
+      c.thread=d.thread||c.thread; t.value=''; m.className='cmsg ok'; m.textContent='Sent — they’ll see it in Co·labr and by email.';
+      render(); const row=cl.querySelector('.crow[data-i="'+i+'"]'); if(row)row.classList.add('open');
+    }catch(e){ m.className='cmsg err'; m.textContent=e.message||'Could not send.'; b.disabled=false; }
+  }));
+  // A conversation link opens with that conversation expanded.
+  if(C){ const idx=convos.findIndex(c=>c.id===C); if(idx>=0){ const row=cl.querySelector('.crow[data-i="'+idx+'"]'); if(row){ row.classList.add('open'); row.scrollIntoView({behavior:'smooth',block:'center'}); } } }
+}
+load();
+</script>
+</body>
+</html>

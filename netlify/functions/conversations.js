@@ -120,8 +120,8 @@ exports.handler = async function (event) {
       html: `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px;color:#241f1b">
         <p style="font-size:15px">Hi ${esc(toName)},</p>
         <div style="font-size:15px;line-height:1.55;white-space:pre-wrap">${esc(msg)}</div>
-        ${site ? `<p style="margin:20px 0"><a href="${site}/thread.html?r=${cd.id}&k=${tkey}" style="background:#FF6600;color:#fff;font-weight:700;text-decoration:none;border-radius:10px;padding:11px 20px;display:inline-block">Reply →</a></p>
-        <p style="font-size:12px;color:#7a756f">That link keeps your whole conversation together in one place.</p>` : ''}
+        ${site ? `<p style="margin:20px 0"><a href="${site}/my.html?c=${cd.id}&k=${tkey}" style="background:#FF6600;color:#fff;font-weight:700;text-decoration:none;border-radius:10px;padding:11px 20px;display:inline-block">Reply →</a></p>
+        <p style="font-size:12px;color:#7a756f">That link opens your own Co·labr page — this conversation, every missionary you follow, all in one place.</p>` : ''}
       </div>`,
       replyTo: sess.email || '', fromName: `${myName} via Co-Labr`
     });

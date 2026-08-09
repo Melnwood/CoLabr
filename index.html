@@ -696,6 +696,8 @@ async function load(){
     if(!RAILS.picks){ const jr=document.getElementById('jvrail'); if(jr) jr.style.display='none'; }
     if(raw.locked){ renderLocked(raw); return; }
     VIEWER=raw.viewer||null;
+    // Home chip: a supporter hops to their own Co·labr hub from any wall.
+    if(VIEWTOK&&!(VIEWER&&VIEWER.staff)) setHomeChip('my.html?t='+encodeURIComponent(VIEWTOK),'My Co·labr');
     // Owner lens: the missionary is looking at their own wall as one supporter circle.
     if(VIEWER&&VIEWER.preview&&!document.getElementById('lensbar')){
       const ex=new URL(location.href); ex.searchParams.delete('as');
@@ -1355,8 +1357,20 @@ document.addEventListener('click',e=>{
 
 /* ---- Across Josiah Venture rail + peer share-and-approve ---- */
 var ME=null, MYPAGE='';
+// The way home, top of every wall: supporters to their hub, members to the dashboard.
+function setHomeChip(href,label){
+  let a=document.getElementById('homechip');
+  if(!a){
+    const cta=document.querySelector('.topcta'); if(!cta)return;
+    a=document.createElement('a'); a.id='homechip';
+    a.style.cssText='font-size:12.5px;font-weight:700;text-decoration:none;color:#241f1b;background:#fff;border:1px solid #e7e4e0;border-radius:20px;padding:8px 14px';
+    cta.prepend(a);
+  }
+  a.href=href; a.textContent=label;
+}
 async function initShare(){
   try{ const r=await fetch('/.netlify/functions/me?full=1'); if(r.ok){ ME=await r.json(); MYPAGE=(ME.miss&&ME.miss.name)||''; } }catch(_){}
+  if(ME) setHomeChip('manage.html','My Dashboard');
   loadFeatured();
 }
 async function loadFeatured(){

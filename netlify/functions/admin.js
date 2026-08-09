@@ -297,7 +297,7 @@ exports.handler = async function (event) {
       thread.push({ f: 'm', t: b.message.trim(), at: new Date().toISOString() });
       let tkey = c['Thread Key'] || '';
       if (!tkey) tkey = crypto.randomBytes(16).toString('hex');
-      const threadUrl = `${site}/thread.html?r=${b.id}&k=${tkey}`;
+      const threadUrl = `${site}/my.html?c=${b.id}&k=${tkey}`;
       const html =
         `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px;color:#241f1b">
           <p style="font-size:15px">Hi ${escH(supporter)},</p>
