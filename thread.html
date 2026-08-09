@@ -51,7 +51,7 @@ function render(){
   // Back to home base: the missionary's conversation table, or the supporter's own hub.
   const back=mineIsM
     ? '<a href="messages.html" style="font-size:13px;color:var(--muted);text-decoration:none">← All conversations</a>'
-    : (K?'<a href="my.html?c='+encodeURIComponent(R)+'&k='+encodeURIComponent(K)+'" style="font-size:13px;color:var(--muted);text-decoration:none">← My Co·labr</a>':'');
+    : (K?'<a href="my.html?c='+encodeURIComponent(R)+'&k='+encodeURIComponent(K)+'" style="font-size:13px;color:var(--muted);text-decoration:none">← My Co·labr Dashboard</a>':'');
   document.getElementById('head').innerHTML=back+
     `<h1 style="margin-top:12px">${esc(mineIsM ? D.name : (D.missionary||'Your missionaries'))}</h1>
      <p class="sub">${D.updateTitle?('Started on “'+esc(D.updateTitle)+'” · '):''}every reply on both sides is kept here.</p>`;

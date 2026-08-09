@@ -697,7 +697,7 @@ async function load(){
     if(raw.locked){ renderLocked(raw); return; }
     VIEWER=raw.viewer||null;
     // Home chip: a supporter hops to their own Co·labr hub from any wall.
-    if(VIEWTOK&&!(VIEWER&&VIEWER.staff)) setHomeChip('my.html?t='+encodeURIComponent(VIEWTOK),'My Co·labr');
+    if(VIEWTOK&&!(VIEWER&&VIEWER.staff)) setHomeChip('my.html?t='+encodeURIComponent(VIEWTOK),'My Co·labr Dashboard');
     // Owner lens: the missionary is looking at their own wall as one supporter circle.
     if(VIEWER&&VIEWER.preview&&!document.getElementById('lensbar')){
       const ex=new URL(location.href); ex.searchParams.delete('as');
