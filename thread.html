@@ -71,6 +71,7 @@ async function load(){
       if(d.signin){ document.getElementById('msgs').innerHTML='<div class="state">This conversation is yours — sign in to open it.<br><br><a href="login.html?next='+encodeURIComponent('thread.html?r='+R)+'" style="background:var(--acc);color:#fff;font-weight:700;text-decoration:none;border-radius:10px;padding:11px 22px;display:inline-block">Sign in →</a></div>'; return; }
       document.getElementById('msgs').innerHTML='<div class="state">'+esc(d.error||'Could not open this conversation.')+'</div>'; return;
     }
+    if(d.you==='m'){ location.replace('messages.html?c='+encodeURIComponent(R)); return; }
     D=d; YOU=d.you||'s'; render();
   }catch(_){ document.getElementById('msgs').innerHTML='<div class="state">Could not reach the server.</div>'; }
 }

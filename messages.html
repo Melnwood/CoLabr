@@ -224,7 +224,7 @@ function build(){
     return lname(a).localeCompare(lname(b))||a.name.localeCompare(b.name);
   });
 }
-let FLT='';
+let FLT='', OPENROW='';
 document.getElementById('pfind').addEventListener('input',e=>{ FLT=e.target.value.trim().toLowerCase(); renderPeople(); });
 function renderPeople(){
   const el=document.getElementById('people');
@@ -400,6 +400,11 @@ function openPerson(k){
     if(!was){ el.classList.add('on'); showLatest(); }
   }));
   const first=cv.querySelector('.tstr'); if(first){ first.classList.add('on'); requestAnimationFrame(showLatest); }
+  // Deep link from an email: open the exact string the reply lives in.
+  if(OPENROW){
+    const dsi=strings.findIndex(s=>s.g.rows.some(r=>r.id===OPENROW)); OPENROW='';
+    if(dsi>=0){ cv.querySelectorAll('.tstr').forEach(x=>x.classList.remove('on')); const del=cv.querySelector('.tstr[data-si="'+dsi+'"]'); if(del){ del.classList.add('on'); requestAnimationFrame(showLatest); } }
+  }
   cv.querySelectorAll('[data-tr]').forEach(el=>el.addEventListener('click',()=>translateBubble(+el.dataset.tr,el)));
   cv.querySelectorAll('[data-rs]').forEach(b=>b.addEventListener('click',()=>sendToString(p,strings[+b.dataset.rs].target,+b.dataset.rs)));
   const ns=document.getElementById('newstr');
@@ -462,7 +467,7 @@ async function startString(p){
 async function load(){
   try{
     const r=await fetch('/.netlify/functions/conversations');
-    if(r.status===401){ location.href='login.html?next='+encodeURIComponent('messages.html'); return; }
+    if(r.status===401){ location.href='login.html?next='+encodeURIComponent('messages.html'+location.search); return; }
     const d=await r.json();
     if(!r.ok){ document.getElementById('people').innerHTML='<div class="state">'+esc(d.error||'Could not load.')+'</div>'; return; }
     DATA=d; build(); renderPeople();
@@ -470,7 +475,7 @@ async function load(){
     // Arrived from an email's Reply button (?c=<conversation id>): open that person.
     else{
       const c=new URLSearchParams(location.search).get('c');
-      if(c){ const hit=PEOPLE.find(p=>p.rows.some(r=>r.id===c)); if(hit) openPerson(hit.key); }
+      if(c){ const hit=PEOPLE.find(p=>p.rows.some(r=>r.id===c)); if(hit){ OPENROW=c; openPerson(hit.key); } }
     }
   }catch(_){ document.getElementById('people').innerHTML='<div class="state">Could not reach the server.</div>'; }
 }
