@@ -93,10 +93,19 @@ async function translateAll(key, strings, lang) {
 }
 async function claude(key, prompt, maxTokens) {
   const model = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
-  const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }) });
-  const jd = await res.json();
-  return (((jd.content || [])[0]) || {}).text || '';
+  // Rate limits happen on bulk runs — back off and retry instead of silently
+  // skipping a language (a skipped language = an untranslated wall card).
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }) });
+    const jd = await res.json();
+    if (res.status === 429 || (jd.error && /rate|overloaded/i.test(jd.error.type || jd.error.message || ''))) {
+      await new Promise(r => setTimeout(r, 15000 * (attempt + 1)));
+      continue;
+    }
+    return (((jd.content || [])[0]) || {}).text || '';
+  }
+  return '';
 }
 async function putJson(token, bucket, name, obj) {
   const r = await fetch(`https://storage.googleapis.com/upload/storage/v1/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(name)}`,
