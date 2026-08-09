@@ -34,7 +34,7 @@ exports.handler = async function (event) {
 
   const blocks = Array.isArray(b.blocks) ? b.blocks : [];
   // Strip the composer's inline format markers for the plain-text Body/Excerpt.
-  const stripFmt = t => String(t || '').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\+\+([^+]+)\+\+/g, '$1').replace(/_([^_\n]+)_/g, '$1');
+  const stripFmt = t => String(t || '').replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\+\+([^+]+)\+\+/g, '$1').replace(/_([^_\n]+)_/g, '$1');
   const bodyText = blocks.filter(x => ['heading','text','quote','prayer','praise','signoff'].includes(x.type))
     .map(x => stripFmt(x.text || ''))
     .concat(blocks.filter(x => x.type === 'hero').map(x => x.heading || ''))

@@ -546,7 +546,8 @@ function render(){
     el.addEventListener('pointerdown',e=>e.preventDefault());   // keep the textarea selection
     el.addEventListener('click',()=>{
       const ta=el.closest('.blk').querySelector('textarea[data-f="text"]');
-      if(ta) wrapSel(ta,el.dataset.w);
+      if(!ta) return;
+      if(el.dataset.w==='link') linkSel(ta); else wrapSel(ta,el.dataset.w);
     });
   });
   c.querySelectorAll('.cdot[data-cb]').forEach(el=>el.addEventListener('click',()=>{
@@ -617,18 +618,31 @@ function setupFocus(el){
 }
 /* Format bar: **bold**, _italic_, ++larger++ — wraps/unwraps the selection. */
 function fmtBar(b){
-  return `<div class="fbar"><button type="button" class="fbtn" data-w="**" title="Bold"><b>B</b></button><button type="button" class="fbtn" data-w="_" title="Italic"><i>I</i></button><button type="button" class="fbtn" data-w="++" title="Larger text">A<sup>+</sup></button></div>`;
+  return `<div class="fbar"><button type="button" class="fbtn" data-w="**" title="Bold (⌘B)"><b>B</b></button><button type="button" class="fbtn" data-w="_" title="Italic (⌘I)"><i>I</i></button><button type="button" class="fbtn" data-w="++" title="Larger text">A<sup>+</sup></button><button type="button" class="fbtn" data-w="link" title="Link (⌘K)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline;vertical-align:-2px"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></button></div>`;
 }
-// Cmd/Ctrl+B and Cmd/Ctrl+I while typing — same markers as the toolbar buttons.
+// Cmd/Ctrl+B, +I, +K while typing — same markers as the toolbar buttons.
 document.addEventListener('keydown',e=>{
   if(!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey) return;
   const k=e.key.toLowerCase();
-  if(k!=='b'&&k!=='i') return;
+  if(k!=='b'&&k!=='i'&&k!=='k') return;
   const ta=document.activeElement;
   if(!ta||ta.tagName!=='TEXTAREA'||ta.dataset.f!=='text'||!ta.closest('#canvas')) return;
   e.preventDefault();
-  wrapSel(ta,k==='b'?'**':'_');
+  if(k==='k') linkSel(ta); else wrapSel(ta,k==='b'?'**':'_');
 });
+// Turn the selected words into a hyperlink: [words](https://…)
+function linkSel(ta){
+  const s=ta.selectionStart??ta.value.length, e2=ta.selectionEnd??ta.value.length;
+  const sel=ta.value.slice(s,e2)||'link text';
+  let url=prompt('Where should “'+sel.slice(0,40)+'” link to?','https://');
+  if(url==null) { ta.focus(); return; }
+  url=url.trim();
+  if(!/^https?:\/\/.+\..+/.test(url)){ alert('Paste a full address starting with https://'); ta.focus(); return; }
+  const ins='['+sel+']('+url+')';
+  ta.value=ta.value.slice(0,s)+ins+ta.value.slice(e2);
+  ta.focus(); const p=s+ins.length; try{ta.setSelectionRange(p,p);}catch(_){}
+  ta.dispatchEvent(new Event('input'));
+}
 function wrapSel(ta,m){
   const s0=ta.selectionStart,e0=ta.selectionEnd,v=ta.value;
   const sel=v.slice(s0,e0), before=v.slice(0,s0), after=v.slice(e0);
@@ -1121,9 +1135,12 @@ function signGuess(pageName,userName){
 function pvEmbed(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/)))return 'https://www.youtube.com/embed/'+m[1];if((m=v.match(/vimeo\.com\/(\d+)/)))return 'https://player.vimeo.com/video/'+m[1];return '';}
 function pvFmt(t){
   let x=esc(t||'');
+  const lk=[];
+  x=x.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,(m,txt,u)=>{lk.push('<a href="'+u+'" target="_blank" rel="noopener" style="color:var(--acc);font-weight:600">'+txt+'</a>');return '\u0000'+(lk.length-1)+'\u0000';});
   x=x.replace(/\*\*([^*\n][^*]*?)\*\*/g,'<b>$1</b>');
   x=x.replace(/\+\+([^+\n][^+]*?)\+\+/g,'<span style="font-size:1.4em;line-height:1.4">$1</span>');
   x=x.replace(/_([^_\n]+)_/g,'<i>$1</i>');
+  x=x.replace(/\u0000(\d+)\u0000/g,(m,i)=>lk[+i]);
   return x.replace(/\n/g,'<br>');
 }
 function pvBlockHtml(bk){

@@ -14,11 +14,16 @@ function wrap(inner, site, manage) {
 function renderBlocks(blocks, site) {
   const GIVE = 'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969';
   // **bold**, _italic_, ++larger++ from the composer's format bar.
-  const em = s => esc(s || '')
-    .replace(/\*\*([^*\n][^*]*?)\*\*/g, '<b>$1</b>')
-    .replace(/\+\+([^+\n][^+]*?)\+\+/g, '<span style="font-size:1.35em;line-height:1.4">$1</span>')
-    .replace(/_([^_\n]+)_/g, '<i>$1</i>')
-    .replace(/\n/g, '<br>');
+  const em = s => {
+    let x = esc(s || '');
+    const lk = [];
+    x = x.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, txt, u) => { lk.push('<a href="' + u + '" target="_blank" style="color:#FF6600;font-weight:600">' + txt + '</a>'); return '\u0000' + (lk.length - 1) + '\u0000'; });
+    x = x.replace(/\*\*([^*\n][^*]*?)\*\*/g, '<b>$1</b>')
+      .replace(/\+\+([^+\n][^+]*?)\+\+/g, '<span style="font-size:1.35em;line-height:1.4">$1</span>')
+      .replace(/_([^_\n]+)_/g, '<i>$1</i>');
+    x = x.replace(/\u0000(\d+)\u0000/g, (m, i) => lk[+i]);
+    return x.replace(/\n/g, '<br>');
+  };
   return (blocks || []).map(bk => {
     switch (bk.type) {
       case 'hero': return `${bk.url ? `<img src="${esc(bk.url)}" style="width:100%;border-radius:12px;margin:0 0 14px">` : ''}${bk.heading ? `<h2 style="font-size:22px;font-weight:800;margin:0 0 6px">${esc(bk.heading)}</h2>` : ''}${bk.sub ? `<p style="color:#7a756f;margin:0 0 14px">${esc(bk.sub)}</p>` : ''}`;
