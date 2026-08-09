@@ -241,6 +241,13 @@
             <button class="photobtn" id="pgnameSave" type="button" style="margin-top:9px">Save name</button>
             <div class="savenote" id="pgnameMsg"></div>
             <div class="hint" style="margin-top:8px">Renaming is safe — links your supporters already have keep working.</div>
+            <div class="hint" style="margin:12px 0 6px">Sign-off</div>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+              <input id="pgsign" style="flex:1;min-width:160px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit" placeholder="e.g. Mel and Amy">
+              <button class="photobtn" id="pgsignSave" type="button">Save</button>
+            </div>
+            <div class="savenote" id="pgsignMsg"></div>
+            <div class="hint" style="margin-top:6px">Every update closes “With love, <span id="pgsignPeek">…</span>” — the builder fills it in for you.</div>
             <div class="hint" style="margin:12px 0 6px">Giving link</div>
             <input id="pggive" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit" placeholder="https://… your organization's giving page for you">
             <button class="photobtn" id="pggiveSave" type="button" style="margin-top:9px">Save link</button>
@@ -627,8 +634,20 @@ async function loadProfile(){
     else { av.textContent=(d.name||'?').trim().charAt(0).toUpperCase(); }
     const ni=document.getElementById('pgname'); if(ni&&!ni.value) ni.value=d.name||'';
     const gi=document.getElementById('pggive'); if(gi&&!gi.value) gi.value=d.give||'';
+    const so=(d.signoff||'').replace(/^with love,?\s*/i,'').trim();
+    const si=document.getElementById('pgsign'); if(si&&!si.value) si.value=so;
+    const pk=document.getElementById('pgsignPeek'); if(pk) pk.textContent=so||'your names';
   }catch(e){}
 }
+document.getElementById('pgsignSave').addEventListener('click',async()=>{
+  const si=document.getElementById('pgsign'), msg=document.getElementById('pgsignMsg');
+  msg.className='savenote'; msg.textContent='Saving…';
+  try{
+    const d=await api('setSignoff',{names:si.value.trim()});
+    msg.className='savenote ok'; msg.textContent='Saved — updates now close “With love, '+d.signoff+'.”';
+    const pk=document.getElementById('pgsignPeek'); if(pk) pk.textContent=d.signoff;
+  }catch(e){ msg.className='savenote err'; msg.textContent=e.message; }
+});
 document.getElementById('pggiveSave').addEventListener('click',async()=>{
   const gi=document.getElementById('pggive'), msg=document.getElementById('pggiveMsg');
   msg.className='savenote'; msg.textContent='Saving…';

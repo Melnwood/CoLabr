@@ -37,7 +37,7 @@ exports.handler = async function (event) {
 
   const fields = {
     [MF.name]: name, [MF.email]: s.email,
-    [MF.signoff]: signoff ? ('With love,\n' + signoff) : ''
+    [MF.signoff]: signoff   // names only — the composer adds "With love," itself
   };
   if (location) fields[MF.location] = location;
 

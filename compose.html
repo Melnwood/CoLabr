@@ -218,6 +218,13 @@
     #canvas .blk.justadded{outline:2px solid var(--acc);outline-offset:3px;border-radius:12px}
     .fmtview{background:#fffdf9;border:1px dashed var(--line);border-radius:9px;padding:10px 12px;font-size:14px;line-height:1.6;color:var(--text);cursor:text;min-height:20px;white-space:normal}
     .fmtview:hover{border-color:var(--acc)}
+    /* Preview footer — the pressable bottom of the real reader */
+    .pvtry{border:1px solid var(--line);background:#fff;border-radius:22px;padding:10px 18px;font-size:13.5px;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--font)}
+    .pvtry:hover{border-color:var(--acc);color:var(--acc)}
+    #pvsheet .give{background:#fbf7ef;border:1px solid #eadfc8;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    #pvsheet .give .t{font-weight:800;font-size:15px}
+    #pvsheet .give .d{font-size:12.5px;color:var(--muted);flex:1;min-width:140px}
+    #pvsheet .give a{background:var(--acc);color:#fff;font-weight:800;font-size:13.5px;padding:10px 22px;border-radius:22px;text-decoration:none}
     /* Embedded in the dashboard overlay: no site chrome, just the creator + a close button. */
     body.embed .top{display:none}
     body.embed .wrap{padding-top:10px}
@@ -381,7 +388,7 @@ async function guard(){
     ME_ADMIN=!!me.admin;
     if(me.upload) UPLOAD_READY=me.upload.ready;
     // Personal sign-off default: the missionary's chosen first names, or a best guess.
-    const signNames=(me.miss&&me.miss.signoff)||signGuess((me.miss&&me.miss.name)||'',me.name||'');
+    const signNames=((me.miss&&me.miss.signoff)||signGuess((me.miss&&me.miss.name)||'',me.name||'')).replace(/^with love,?\s*/i,'').trim();
     if(signNames) DEF.signoff.text='With love,\n'+signNames;
     // Give blocks default to this missionary's own designated fund when they have one.
     if(me.miss&&me.miss.give) DEF.give.url=me.miss.give;
@@ -487,6 +494,41 @@ function offerRestore(){
   });
   bar.querySelector('#drDiscard').addEventListener('click',()=>{ clearStash(); bar.remove(); });
 }
+/* ---- Real undo: every change to the update is a snapshot. Cmd+Z steps back,
+   Cmd+Shift+Z steps forward. (While typing inside a text box, the browser's own
+   text undo applies; step outside the box and Cmd+Z undoes structure too.) ---- */
+let HIST=[], HP=-1, applyingHist=false, histT=null;
+function snapshot(){
+  if(applyingHist) return;
+  try{
+    const s=JSON.stringify({title:document.getElementById('title').value,blocks});
+    if(HIST[HP]===s) return;
+    HIST=HIST.slice(0,HP+1); HIST.push(s);
+    if(HIST.length>60) HIST.shift();
+    HP=HIST.length-1;
+  }catch(_){}
+}
+function applyHist(s){
+  applyingHist=true;
+  try{
+    const st=JSON.parse(s);
+    document.getElementById('title').value=st.title||'';
+    blocks=st.blocks||[]; seq=Math.max(0,...blocks.map(b=>+b.id||0))+1;
+    render();
+  }catch(_){}
+  applyingHist=false;
+}
+function undoHist(){ if(HP>0){ HP--; applyHist(HIST[HP]); } }
+function redoHist(){ if(HP<HIST.length-1){ HP++; applyHist(HIST[HP]); } }
+document.addEventListener('keydown',e=>{
+  if(!(e.metaKey||e.ctrlKey)||e.altKey||e.key.toLowerCase()!=='z') return;
+  const el=document.activeElement;
+  if(el&&(el.tagName==='TEXTAREA'||el.tagName==='INPUT')) return;   // native text undo while typing
+  e.preventDefault();
+  if(e.shiftKey) redoHist(); else undoHist();
+});
+document.addEventListener('input',e=>{ const el=e.target; if(el&&el.closest&&(el.closest('#canvas')||el.id==='title')){ clearTimeout(histT); histT=setTimeout(()=>{ syncFromDOM(); snapshot(); },700); } });
+
 /* Deleted a section by accident? Undo puts it back exactly where it was. */
 let UNDO=[], undoTimer=null;
 function showUndo(label){
@@ -512,9 +554,8 @@ function undoDelete(){
   if(UNDO.length){ document.getElementById('undotext').textContent='Removed '+(NAME[UNDO[UNDO.length-1].b.type]||'Block'); clearTimeout(undoTimer); undoTimer=setTimeout(()=>{bar.style.display='none';},10000); }
   else if(bar) bar.style.display='none';
 }
-document.addEventListener('keydown',e=>{
-  if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key==='z'&&UNDO.length&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'')){ e.preventDefault(); undoDelete(); }
-});
+// (Cmd+Z is handled by the snapshot history above — deletion is just another snapshot;
+// this bar remains as the friendly one-click way back.)
 function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.stringify(DEF[t]))};
   let pos=(at==null||at>blocks.length)?blocks.length:at;
   // The sign-off always stays the very last block — nothing ever lands below it.
@@ -624,6 +665,7 @@ function render(){
     if(ta.value.trim()) showView();
   });
   samplePalette();
+  snapshot();   // every rendered state joins the Cmd+Z history
 }
 /* ---- block accent colors: real org brand colors + banner shades + free pick ---- */
 let BRAND_PAL=null;                                   // [{c:'#FF6600',t:'JV'},…] from National Orgs
@@ -1189,7 +1231,7 @@ function pvBlockHtml(bk){
   if(bk.type==='heading') return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;
   if(bk.type==='divider') return `<hr class="rhr">`;
   if(bk.type==='signoff') return `<p class="rsign">${pvFmt(bk.text)}</p>`;
-  if(bk.type==='give') return `<span class="rgive"${C?` style="background:${C}"`:''}>${esc(bk.label||'Give')}</span>`;
+  if(bk.type==='give') return `<a class="rgive" href="${esc(bk.url||DEF.give.url)}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer${C?`;background:${C}`:''}">${esc(bk.label||'Give')}</a>`;
   if(bk.type==='numbers'){const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]);if(!it.length)return '';return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`;}
   if(bk.type==='text') return `<p class="rtext">${pvFmt(bk.text)}</p>`;
   if(bk.type==='photo'){if(!bk.url)return '';let h=`<img class="rimg" src="${esc(bk.url)}" alt="">`;if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`;return h;}
@@ -1220,12 +1262,24 @@ document.getElementById('previewBtn').addEventListener('click',()=>{
     }
     return pvBlockHtml(bk);
   }).join('')||'<p class="rtext" style="color:#8a7550">Nothing here yet — add some sections first.</p>';
+  // The bottom of the real reader, fully pressable: Give opens their actual giving page;
+  // Pray/Message explain themselves (they record real supporters on the live wall only).
+  const giveUrl=esc(DEF.give.url);
+  const footer=`<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:22px 0 8px;padding-top:16px;border-top:1px solid #eee9e2">
+      <button type="button" class="pvtry" data-say="On your live wall, this records their prayer with their name — it lands in your Responses.">I'm praying</button>
+      <button type="button" class="pvtry" data-say="On your live wall, this opens the message box — public encouragement or a private note to you.">Send a note</button>
+      <a class="rgive" href="${giveUrl}" target="_blank" rel="noopener" style="text-decoration:none">Give</a>
+    </div>
+    <div class="give" style="margin-top:10px"><div class="t">Partner with us</div><div class="d">Every gift is designated for our work.</div><a href="${giveUrl}" target="_blank" rel="noopener">Give</a></div>`;
   document.getElementById('pvsheet').innerHTML=`<div class="rcov">${cover?`<img src="${esc(cover)}" alt="" style="object-position:${cfoc}">`:''}<button class="x" id="pvx" type="button">×</button></div>
     <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>
     <div class="rmeta"><span>${esc(dateStr)}</span></div>
-    ${body}</div>`;
+    ${body}${footer}</div>`;
   document.getElementById('pvov').classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('pvx').addEventListener('click',pvClose);
+  document.querySelectorAll('#pvsheet .pvtry').forEach(b=>b.addEventListener('click',()=>{
+    alert(b.dataset.say+'\n\n(Taps in Preview aren’t counted — only real supporters on your wall are.)');
+  }));
 });
 function pvClose(){document.getElementById('pvov').classList.remove('open');document.body.style.overflow='';}
 document.getElementById('pvov').addEventListener('click',e=>{if(e.target.id==='pvov')pvClose();});
