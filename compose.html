@@ -412,6 +412,34 @@ const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, 
 const NAME={hero:'Banner',heading:'Heading',text:'Text',photo:'Photo',video:'Video',numbers:'Numbers',quote:'Quote',prayer:'Prayer request',praise:'Praise',give:'Give button',signoff:'Sign-off',divider:'Divider'};
 document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
   b.addEventListener('pointerdown',e=>beginDrag(e,'new',{type:b.dataset.t,label:NAME[b.dataset.t]})));
+/* Deleted a section by accident? Undo puts it back exactly where it was. */
+let UNDO=[], undoTimer=null;
+function showUndo(label){
+  let bar=document.getElementById('undobar');
+  if(!bar){
+    bar=document.createElement('div'); bar.id='undobar';
+    bar.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:130;background:#241f1b;color:#fff;font-size:13.5px;padding:11px 11px 11px 18px;border-radius:26px;box-shadow:0 14px 40px rgba(0,0,0,.35);display:flex;align-items:center;gap:12px;max-width:88vw';
+    bar.innerHTML='<span id="undotext"></span><button id="undobtn" style="background:var(--acc,#FF6600);color:#fff;border:none;border-radius:18px;padding:8px 16px;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit">Undo</button>';
+    document.body.appendChild(bar);
+    document.getElementById('undobtn').addEventListener('click',undoDelete);
+  }
+  document.getElementById('undotext').textContent='Removed '+label;
+  bar.style.display='flex';
+  clearTimeout(undoTimer);
+  undoTimer=setTimeout(()=>{bar.style.display='none';},10000);
+}
+function undoDelete(){
+  const it=UNDO.pop(); if(!it)return;
+  syncFromDOM();
+  blocks.splice(Math.min(it.at,blocks.length),0,it.b);
+  render();
+  const bar=document.getElementById('undobar');
+  if(UNDO.length){ document.getElementById('undotext').textContent='Removed '+(NAME[UNDO[UNDO.length-1].b.type]||'Block'); clearTimeout(undoTimer); undoTimer=setTimeout(()=>{bar.style.display='none';},10000); }
+  else if(bar) bar.style.display='none';
+}
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key==='z'&&UNDO.length&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'')){ e.preventDefault(); undoDelete(); }
+});
 function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.stringify(DEF[t]))};
   let pos=(at==null||at>blocks.length)?blocks.length:at;
   // The sign-off always stays the very last block — nothing ever lands below it.
@@ -461,7 +489,13 @@ function render(){
     ${fieldHtml(b)}</div>`).join('');
   c.querySelectorAll('[data-up]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();move(+el.dataset.up,-1);}));
   c.querySelectorAll('[data-down]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();move(+el.dataset.down,1);}));
-  c.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{syncFromDOM();blocks.splice(+el.dataset.del,1);render();}));
+  c.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{
+    syncFromDOM();
+    const i=+el.dataset.del, removed=blocks[i];
+    UNDO.push({b:removed,at:i});
+    blocks.splice(i,1); render();
+    showUndo(NAME[removed.type]||'Block');
+  }));
   c.querySelectorAll('[data-grip]').forEach(el=>el.addEventListener('pointerdown',e=>beginDrag(e,'move',{from:+el.dataset.grip,label:NAME[blocks[+el.dataset.grip].type]})));
   c.querySelectorAll('[data-drop]').forEach(setupDrop);
   c.querySelectorAll('[data-vdrop]').forEach(setupVideoDrop);
