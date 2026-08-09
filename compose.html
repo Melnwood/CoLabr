@@ -217,8 +217,15 @@
       .buildzone .brail .pbtn{width:auto}
     }
     #canvas .blk.justadded{outline:2px solid var(--acc);outline-offset:3px;border-radius:12px}
-    .fmtview{background:#fffdf9;border:1px dashed var(--line);border-radius:9px;padding:10px 12px;font-size:14px;line-height:1.6;color:var(--text);cursor:text;min-height:20px;white-space:normal}
-    .fmtview:hover{border-color:var(--acc)}
+    /* Rich text boxes — what you see is what supporters get; no markers, ever. */
+    .rte{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 13px;font-size:14.5px;line-height:1.6;background:#faf7f2;color:var(--text);min-height:44px;outline:none;overflow-wrap:break-word}
+    .rte:focus{outline:2px solid var(--acc);outline-offset:0;background:#fff}
+    .rte:empty:before{content:attr(data-ph);color:#a99f92;pointer-events:none}
+    .rte .big,.rte font[size]{font-size:1.4em;line-height:1.4}
+    .rte b{font-weight:800}
+    .rte a{color:var(--acc);text-decoration:underline;text-underline-offset:2px;cursor:text}
+    .alopt{min-width:30px;height:26px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-family:var(--font);font-size:11.5px;color:var(--text);padding:0 9px}
+    .alopt.on{border-color:var(--acc);color:var(--acc);font-weight:800}
     /* Preview footer — the pressable bottom of the real reader */
     .pvtry{border:1px solid var(--line);background:#fff;border-radius:22px;padding:10px 18px;font-size:13.5px;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--font)}
     .pvtry:hover{border-color:var(--acc);color:var(--acc)}
@@ -568,15 +575,20 @@ function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fieldHtml(b){
   if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${(b.fx!=null?+b.fx:50)}% ${(b.fy!=null?+b.fy:50)}%"><div class="focband" style="top:${((b.fy!=null?+b.fy:50)*0.4074).toFixed(1)}%"><span class="focbandlab">The wall banner shows this strip</span></div><span class="focushint">Drag the photo up or down to place it</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
-  if(b.type==='praise') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="Something to praise God for…">${esc(b.text)}</textarea>`+colorRow(b);
+  if(b.type==='praise') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="Something to praise God for…">${marks2html(b.text)}</div>`+colorRow(b);
   if(b.type==='heading') return `<input data-id="${b.id}" data-f="text" placeholder="Section heading" value="${esc(b.text)}">`+colorRow(b);
   if(b.type==='divider') return `<div style="color:var(--muted);font-size:12.5px;padding:2px 0">A divider bar will appear here between sections.</div>`;
-  if(b.type==='signoff') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="With love, …">${esc(b.text)}</textarea>`;
+  if(b.type==='signoff') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="With love, …">${marks2html(b.text)}</div>`;
   if(b.type==='give') return `<input data-id="${b.id}" data-f="label" placeholder="Button text (e.g. Give)" value="${esc(b.label)}"><input class="urlin" data-id="${b.id}" data-f="url" placeholder="Giving link (URL)" value="${esc(b.url)}">`+colorRow(b);
-  if(b.type==='button') return `<input data-id="${b.id}" data-f="label" placeholder="Button text (e.g. Watch the video, RSVP, Read more)" value="${esc(b.label)}"><input class="urlin" data-id="${b.id}" data-f="url" placeholder="Where it goes (https://…)" value="${esc(b.url)}"><div class="hint">Starts in your brand color — pick another below if you want.</div>`+colorRow(b);
+  if(b.type==='button'){
+    const al=b.align||'left';
+    return `<input data-id="${b.id}" data-f="label" placeholder="Button text (e.g. Watch the video, RSVP, Read more)" value="${esc(b.label)}"><input class="urlin" data-id="${b.id}" data-f="url" placeholder="Where it goes (https://…)" value="${esc(b.url)}">
+    <div class="crow"><span class="crowlab">Align</span>${['left','center','right'].map(a=>`<button type="button" class="alopt${al===a?' on':''}" data-alset="${b.id}" data-al="${a}">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}</div>
+    <div class="hint">Starts in your brand color — pick another below if you want. Buttons always sit on their own line.</div>`+colorRow(b);
+  }
   if(b.type==='numbers') return `<div class="two"><input data-id="${b.id}" data-f="a" placeholder="Number (e.g. 100)" value="${esc(b.a)}"><input data-id="${b.id}" data-f="al" placeholder="Label (e.g. camps)" value="${esc(b.al)}"></div><div class="two"><input data-id="${b.id}" data-f="b" placeholder="Number" value="${esc(b.b)}"><input data-id="${b.id}" data-f="bl" placeholder="Label" value="${esc(b.bl)}"></div><div class="two"><input data-id="${b.id}" data-f="c" placeholder="Number" value="${esc(b.c)}"><input data-id="${b.id}" data-f="cl" placeholder="Label" value="${esc(b.cl)}"></div>`;
-  if(b.type==='text') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="Write this section…">${esc(b.text)}</textarea>`;
-  if(b.type==='prayer') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="A prayer request…">${esc(b.text)}</textarea>`+colorRow(b);
+  if(b.type==='text') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="Write this section…">${marks2html(b.text)}</div>`;
+  if(b.type==='prayer') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="A prayer request…">${marks2html(b.text)}</div>`+colorRow(b);
   if(b.type==='photo') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a photo here, or tap to choose from Photos / desktop</div><input type="file" accept="image/*" hidden></div><input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><div class="two"><input data-id="${b.id}" data-f="caption" placeholder="Caption (optional)" value="${esc(b.caption)}"></div>`;
   if(b.type==='video'){
     const done=b.url&&/storage\.googleapis\.com/.test(b.url);
@@ -597,7 +609,7 @@ function fieldHtml(b){
     }
     const hint=done?(b.captions&&b.captions.length?'✓ Video uploaded':(b.lang?'✓ Video uploaded — hit Translate below to check the subtitles':'✓ Video uploaded — choose the spoken language below')):'Tap to upload a video file — it gets subtitled automatically';
     return `<div class="drop" data-vdrop="${b.id}"><div class="dinner">${hint}</div><input type="file" accept="video/*" hidden><div class="vprog" style="display:none;height:6px;background:#eae7e2;border-radius:5px;margin-top:9px;overflow:hidden"><div class="vbar" style="height:100%;width:0;background:var(--acc,#FF6600);transition:width .2s"></div></div></div><select class="urlin" data-id="${b.id}" data-f="lang">${langOpts(b.lang)}</select>${sub}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste a YouTube/Vimeo link (no auto‑captions)" value="${esc(b.url)}">`; }
-  if(b.type==='quote') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="“A quote from someone…”">${esc(b.text)}</textarea><div class="two"><input data-id="${b.id}" data-f="by" placeholder="— who said it" value="${esc(b.by)}"></div>`+colorRow(b);
+  if(b.type==='quote') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="“A quote from someone…”">${marks2html(b.text)}</div><div class="two"><input data-id="${b.id}" data-f="by" placeholder="— who said it" value="${esc(b.by)}"></div>`+colorRow(b);
   return '';
 }
 function render(){
@@ -620,15 +632,26 @@ function render(){
   c.querySelectorAll('[data-grip]').forEach(el=>el.addEventListener('pointerdown',e=>beginDrag(e,'move',{from:+el.dataset.grip,label:NAME[blocks[+el.dataset.grip].type]})));
   c.querySelectorAll('[data-drop]').forEach(setupDrop);
   c.querySelectorAll('[data-vdrop]').forEach(setupVideoDrop);
+  c.querySelectorAll('[data-alset]').forEach(el=>el.addEventListener('click',()=>{
+    syncFromDOM();
+    const b=blocks.find(x=>String(x.id)===el.dataset.alset); if(!b)return;
+    b.align=el.dataset.al; render();
+  }));
   c.querySelectorAll('[data-vgo]').forEach(el=>el.addEventListener('click',()=>startTranslate(el.dataset.vgo)));
   c.querySelectorAll('[data-vtx]').forEach(el=>el.addEventListener('click',()=>openSubOverlay(el.dataset.vtx)));
   c.querySelectorAll('[data-focus]').forEach(setupFocus);
   c.querySelectorAll('.fbtn').forEach(el=>{
     el.addEventListener('pointerdown',e=>e.preventDefault());   // keep the textarea selection
     el.addEventListener('click',()=>{
-      const ta=el.closest('.blk').querySelector('textarea[data-f="text"]');
-      if(!ta) return;
-      if(el.dataset.w==='link') linkSel(ta); else wrapSel(ta,el.dataset.w);
+      const ed=el.closest('.blk').querySelector('.rte');
+      if(!ed) return;
+      ed.focus();
+      const w=el.dataset.w;
+      if(w==='**') document.execCommand('bold');
+      else if(w==='_') document.execCommand('italic');
+      else if(w==='++') bigSel();
+      else if(w==='link') linkRte();
+      ed.dispatchEvent(new Event('input',{bubbles:true}));
     });
   });
   c.querySelectorAll('.cdot[data-cb]').forEach(el=>el.addEventListener('click',()=>{
@@ -653,18 +676,15 @@ function render(){
     inp.onchange=()=>apply(true);      // picker closed — repaint with the new color
     inp.click();
   }));
-  // Show the formatting for real: when you're not typing in a text section, it renders
-  // bold/italic/large exactly as supporters will see it. Click it to edit the raw text.
-  c.querySelectorAll('textarea[data-f="text"]').forEach(ta=>{
-    const view=document.createElement('div'); view.className='fmtview'; view.title='Click to edit';
-    ta.after(view);
-    const showView=()=>{ const t=ta.value;
-      if(!t.trim()){ view.style.display='none'; ta.style.display=''; return; }
-      view.innerHTML=pvFmt(t); view.style.display='block'; ta.style.display='none'; };
-    const edit=()=>{ view.style.display='none'; ta.style.display=''; ta.focus(); try{ta.setSelectionRange(ta.value.length,ta.value.length);}catch(_){} };
-    view.addEventListener('click',edit);
-    ta.addEventListener('blur',()=>setTimeout(()=>{ if(document.activeElement!==ta) showView(); },140));
-    if(ta.value.trim()) showView();
+  // Rich text hygiene: pasted content arrives as plain text (no Word soup),
+  // and links inside the editor don't navigate away while editing.
+  c.querySelectorAll('.rte').forEach(ed=>{
+    ed.addEventListener('paste',e=>{
+      e.preventDefault();
+      const t=(e.clipboardData||window.clipboardData).getData('text/plain');
+      document.execCommand('insertText',false,t);
+    });
+    ed.addEventListener('click',e=>{ const a=e.target.closest('a'); if(a) e.preventDefault(); });
   });
   samplePalette();
   snapshot();   // every rendered state joins the Cmd+Z history
@@ -702,15 +722,15 @@ function setupFocus(el){
 function fmtBar(b){
   return `<div class="fbar"><button type="button" class="fbtn" data-w="**" title="Bold (⌘B)"><b>B</b></button><button type="button" class="fbtn" data-w="_" title="Italic (⌘I)"><i>I</i></button><button type="button" class="fbtn" data-w="++" title="Larger text">A<sup>+</sup></button><button type="button" class="fbtn" data-w="link" title="Link (⌘K)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline;vertical-align:-2px"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></button></div>`;
 }
-// Cmd/Ctrl+B, +I, +K while typing — same markers as the toolbar buttons.
+// Cmd/Ctrl+B and +I are native in rich text boxes; Cmd/Ctrl+K adds a link.
 document.addEventListener('keydown',e=>{
   if(!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey) return;
-  const k=e.key.toLowerCase();
-  if(k!=='b'&&k!=='i'&&k!=='k') return;
-  const ta=document.activeElement;
-  if(!ta||ta.tagName!=='TEXTAREA'||ta.dataset.f!=='text'||!ta.closest('#canvas')) return;
+  if(e.key.toLowerCase()!=='k') return;
+  const ed=document.activeElement;
+  if(!ed||!ed.classList||!ed.classList.contains('rte')) return;
   e.preventDefault();
-  if(k==='k') linkSel(ta); else wrapSel(ta,k==='b'?'**':'_');
+  linkRte();
+  ed.dispatchEvent(new Event('input',{bubbles:true}));
 });
 // Turn the selected words into a hyperlink: [words](https://…)
 function linkSel(ta){
@@ -1072,7 +1092,8 @@ async function uploadPhoto(f,zone,urlIn,prev){
 }
 function syncFromDOM(){
   document.querySelectorAll('#canvas [data-id]').forEach(inp=>{
-    const b=blocks.find(x=>x.id==inp.dataset.id); if(b) b[inp.dataset.f]=inp.value;
+    const b=blocks.find(x=>x.id==inp.dataset.id); if(!b) return;
+    b[inp.dataset.f]=inp.classList.contains('rte')?rteRead(inp):inp.value;
   });
 }
 function move(i,dir){ const j=i+dir; if(j<0||j>=blocks.length)return; const t=blocks[i];blocks[i]=blocks[j];blocks[j]=t; render(); }
@@ -1216,6 +1237,56 @@ function signGuess(pageName,userName){
   return (userName||'').split(' ')[0]||'';
 }
 function pvEmbed(v){let m;if((m=v.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/)))return 'https://www.youtube.com/embed/'+m[1];if((m=v.match(/vimeo\.com\/(\d+)/)))return 'https://player.vimeo.com/video/'+m[1];return '';}
+/* ---- True rich text: the writer sees bold AS bold, never coding markers.
+   Markers (**, _, ++, [](url)) remain the storage format the wall/emails/translations
+   speak — these two functions translate invisibly in both directions. ---- */
+function marks2html(t){
+  let x=esc(t||'');
+  const lk=[];
+  x=x.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,(m,txt,u)=>{lk.push('<a href="'+u+'">'+txt+'</a>');return ' '+(lk.length-1)+' ';});
+  x=x.replace(/\*\*([^*\n][^*]*?)\*\*/g,'<b>$1</b>');
+  x=x.replace(/\+\+([^+\n][^+]*?)\+\+/g,'<span class="big">$1</span>');
+  x=x.replace(/_([^_\n]+)_/g,'<i>$1</i>');
+  x=x.replace(/ (\d+) /g,(m,i)=>lk[+i]);
+  return x.replace(/\n/g,'<br>');
+}
+function html2marks(node){
+  let out='';
+  node.childNodes.forEach(n=>{
+    if(n.nodeType===3){ out+=n.nodeValue.replace(/ /g,' '); return; }
+    if(n.nodeType!==1) return;
+    const tag=n.tagName;
+    if(tag==='BR'){ out+='\n'; return; }
+    const inner=html2marks(n);
+    if(!inner&&tag!=='DIV'&&tag!=='P') return;
+    if(tag==='B'||tag==='STRONG') out+='**'+inner+'**';
+    else if(tag==='I'||tag==='EM') out+='_'+inner+'_';
+    else if(tag==='A'&&n.getAttribute('href')) out+='['+inner.replace(/[\[\]]/g,'')+']('+n.getAttribute('href')+')';
+    else if((n.classList&&n.classList.contains('big'))||(tag==='FONT'&&+(n.getAttribute('size')||0)>=5)||(n.style&&/1\.[2-9]|1\.4/.test(n.style.fontSize||''))) out+='++'+inner+'++';
+    else if(tag==='DIV'||tag==='P'){ if(out&&!out.endsWith('\n')) out+='\n'; out+=inner; }
+    else out+=inner;
+  });
+  return out;
+}
+function rteRead(ed){
+  return html2marks(ed).replace(/\*\*\*\*|\+\+\+\+|__/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+function bigSel(){
+  const s=window.getSelection(); if(!s.rangeCount) return;
+  const r=s.getRangeAt(0); if(r.collapsed) return;
+  const span=document.createElement('span'); span.className='big';
+  try{ r.surroundContents(span); }
+  catch(_){ document.execCommand('fontSize',false,'5'); }   // selection crosses nodes — font tag mapped back to ++
+}
+function linkRte(){
+  const s=window.getSelection();
+  const hasSel=s.rangeCount&&!s.getRangeAt(0).collapsed;
+  let url=prompt('Where should this link to?','https://');
+  if(url==null) return; url=url.trim();
+  if(!/^https?:\/\/.+\..+/.test(url)){ alert('Paste a full address starting with https://'); return; }
+  if(hasSel) document.execCommand('createLink',false,url);
+  else document.execCommand('insertHTML',false,'<a href="'+url.replace(/"/g,'')+'">'+esc(url.replace(/^https?:\/\//,''))+'</a>');
+}
 function pvFmt(t){
   let x=esc(t||'');
   const lk=[];
@@ -1234,7 +1305,7 @@ function pvBlockHtml(bk){
   if(bk.type==='divider') return `<hr class="rhr">`;
   if(bk.type==='signoff') return `<p class="rsign">${pvFmt(bk.text)}</p>`;
   if(bk.type==='give') return `<a class="rgive" href="${esc(bk.url||DEF.give.url)}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer${C?`;background:${C}`:''}">${esc(bk.label||'Give')}</a>`;
-  if(bk.type==='button') return bk.url?`<a class="rgive" href="${esc(bk.url)}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer${C?`;background:${C}`:''}">${esc(bk.label||'Open')}</a>`:'';
+  if(bk.type==='button') return bk.url?`<div style="text-align:${['center','right'].includes(bk.align)?bk.align:'left'}"><a class="rgive" href="${esc(bk.url)}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer${C?`;background:${C}`:''}">${esc(bk.label||'Open')}</a></div>`:'';
   if(bk.type==='numbers'){const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]);if(!it.length)return '';return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`;}
   if(bk.type==='text') return `<p class="rtext">${pvFmt(bk.text)}</p>`;
   if(bk.type==='photo'){if(!bk.url)return '';let h=`<img class="rimg" src="${esc(bk.url)}" alt="">`;if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`;return h;}

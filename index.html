@@ -1135,7 +1135,7 @@ function bodyHtml(u,dedupeCover){
       if(bk.type==='divider') return `<hr class="rhr">`;
       if(bk.type==='signoff') return `<p class="rsign">${fmt(bk.text)}</p>`;
       if(bk.type==='give'){const C=blockColor(bk);return `<a class="rgive"${C?` style="background:${C}"`:''} href="${esc(bk.url||GIVE)}" target="_blank" rel="noopener">${esc(bk.label||'Give')}</a>`;}
-      if(bk.type==='button'){if(!bk.url)return '';const C=blockColor(bk);return `<a class="rgive"${C?` style="background:${C}"`:''} href="${esc(bk.url)}" target="_blank" rel="noopener">${esc(bk.label||'Open')}</a>`;}
+      if(bk.type==='button'){if(!bk.url)return '';const C=blockColor(bk);const al=['center','right'].includes(bk.align)?bk.align:'left';return `<div style="text-align:${al}"><a class="rgive"${C?` style="background:${C}"`:''} href="${esc(bk.url)}" target="_blank" rel="noopener">${esc(bk.label||'Open')}</a></div>`;}
       if(bk.type==='numbers'){ const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]); if(!it.length)return ''; return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`; }
       if(bk.type==='text') return `<p class="rtext">${fmt(bk.text)}</p>`;
       if(bk.type==='photo'){ if(!bk.url) return ''; let h=`<img class="rimg" src="${esc(bk.url)}" alt="" onerror="this.style.display='none'">`; if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`; return h; }
