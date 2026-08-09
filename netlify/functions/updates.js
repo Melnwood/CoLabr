@@ -60,8 +60,11 @@ exports.handler = async function (event) {
   // ACTIVE subscriber of this missionary, or a signed-in staff session (inside the org).
   // Without proof: the landing card only — identity + ask-to-follow, no updates.
   let viewer = null;   // { audience } for supporters, { staff:true } for staff
+  // Staff first: a signed-in member browsing (even via an emailed supporter link)
+  // is one of US — never stamped as a supporter visit, never counted as engagement.
+  try { if (sessionFromEvent(event)) viewer = { staff: true }; } catch (e) {}
   const vt = (q.t || '').trim();
-  if (vt && /^[a-f0-9]{16,64}$/i.test(vt)) {
+  if (!viewer && vt && /^[a-f0-9]{16,64}$/i.test(vt)) {
     try {
       const tf = encodeURIComponent(`AND({Token}='${vt}',{Missionary}='${missionary.replace(/'/g, "")}',{Active}=1)`);
       const trr = await fetch(`https://api.airtable.com/v0/${BASE}/${SUBS}?maxRecords=1&filterByFormula=${tf}`, { headers: auth });

@@ -185,6 +185,24 @@
   .nav a:hover{box-shadow:0 6px 15px rgba(60,40,20,.14);transform:translateY(-1px);border-color:#d8cdb6}
   .nav a:active{transform:translateY(0);box-shadow:0 1px 2px rgba(60,40,20,.08);background:#f6f2ec}
   .nav a:focus-visible{outline:2px solid #241f1b;outline-offset:2px}
+  /* Your page card: photo+name share the top row; every field runs full width. */
+  .pgrow{display:flex;gap:14px;align-items:center}
+  .pgline{display:flex;gap:8px;align-items:flex-start}
+  .pgline input,.pgline textarea{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit}
+  .pgline textarea{resize:vertical}
+  .pgline .photobtn{flex:none}
+  .pgsub{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0 2px}
+  .pglink{background:none;border:none;color:var(--acc);font-weight:700;font-size:12px;cursor:pointer;padding:0;font-family:inherit}
+  .pglab{margin:14px 0 5px}
+  .pgnote{font-weight:400;color:var(--muted)}
+  /* Keep writing: drafts + the last three updates, one click back into the builder. */
+  #quicklist{display:flex;gap:9px;flex-wrap:wrap}
+  .qchip{display:block;text-decoration:none;color:var(--text);border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:10px 14px;max-width:230px;transition:.12s}
+  .qchip:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 6px 14px rgba(60,40,20,.1)}
+  .qchip b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qchip span{font-size:11px;color:var(--muted)}
+  .qchip.qdraft{background:#fff8f2;border-color:#ffd9bd}
+  .qchip.qdraft span{color:#c96a1e;font-weight:700}
   /* Help chat — floating bubble, bottom right; the norm for support. */
   #helpfab{position:fixed;right:20px;bottom:20px;z-index:180;width:52px;height:52px;border-radius:50%;background:var(--text);color:#fff;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(36,31,27,.35);display:flex;align-items:center;justify-content:center}
   #helpfab:hover{transform:translateY(-2px)}
@@ -228,6 +246,10 @@
     <div class="detailrow" id="detailrow"></div>
     <div class="zmain">
     <div class="zcol">
+      <div class="panel" id="quickPanel" style="display:none">
+        <h2>Keep writing</h2>
+        <div id="quicklist"></div>
+      </div>
       <div class="panel inbox" id="inboxPanel">
         <h2>Responses <span class="ib zero" id="unread">0 new</span><a id="refreshresp">Refresh</a><a href="inbox.html" style="margin-left:2px">View all &rarr;</a></h2>
         <div id="inbox"><div class="state">Loading…</div></div>
@@ -246,31 +268,30 @@
     <div class="zcol">
       <div class="panel" id="pagePanel">
         <h2>Your page <span class="hint">Who your wall says you are</span></h2>
-        <div style="display:flex;gap:16px;align-items:flex-start">
-          <div style="flex:none;text-align:center">
-            <div class="photoav" id="photoAv"></div>
-            <button class="photobtn" id="photoBtn" type="button" style="margin-top:9px;font-size:12px;padding:7px 12px">Change photo…</button>
-            <input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" style="display:none">
-            <div class="savenote" id="photoMsg"></div>
-          </div>
+        <div class="pgrow">
+          <div class="photoav" id="photoAv"></div>
           <div style="flex:1;min-width:0">
-            <div class="hint" style="margin-bottom:6px">Page name</div>
-            <input id="pgname" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14.5px;font-family:inherit" placeholder="e.g. The Ellenwood Family">
-            <button class="photobtn" id="pgnameSave" type="button" style="margin-top:9px">Save name</button>
+            <div class="hint" style="margin-bottom:5px">Page name</div>
+            <div class="pgline">
+              <input id="pgname" placeholder="e.g. The Ellenwood Family">
+              <button class="photobtn" id="pgnameSave" type="button">Save</button>
+            </div>
             <div class="savenote" id="pgnameMsg"></div>
-            <div class="hint" style="margin-top:8px">Renaming is safe — links your supporters already have keep working.</div>
-            <div class="hint" style="margin:12px 0 6px">Sign-off</div>
-            <textarea id="pgsign" rows="3" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit;resize:vertical" placeholder="Your words, your lines — e.g.&#10;All for Him,&#10;Mel"></textarea>
-            <button class="photobtn" id="pgsignSave" type="button" style="margin-top:9px">Save</button>
-            <div class="savenote" id="pgsignMsg"></div>
-            <div class="hint" style="margin-top:6px">This exact text closes every update — nothing is added around it.<span id="pgsignPeek" style="display:none"></span></div>
-            <div class="hint" style="margin:12px 0 6px">Giving link</div>
-            <input id="pggive" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit" placeholder="https://… your organization's giving page for you">
-            <button class="photobtn" id="pggiveSave" type="button" style="margin-top:9px">Save link</button>
-            <div class="savenote" id="pggiveMsg"></div>
-            <div class="hint" style="margin-top:6px">Every Give button on your wall and updates sends supporters here. Leave it blank to use Josiah Venture's general fund.</div>
           </div>
         </div>
+        <div class="pgsub"><button class="pglink" id="photoBtn" type="button">Change photo…</button><input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" style="display:none"><span class="savenote" id="photoMsg" style="margin:0"></span><span class="hint">Renaming is safe — old links keep working.</span></div>
+        <div class="hint pglab">Sign-off <span class="pgnote">closes every update, exactly as written</span></div>
+        <div class="pgline">
+          <textarea id="pgsign" rows="2" placeholder="Your words, your lines — e.g.&#10;All for Him,&#10;Mel"></textarea>
+          <button class="photobtn" id="pgsignSave" type="button">Save</button>
+        </div>
+        <div class="savenote" id="pgsignMsg"></div><span id="pgsignPeek" style="display:none"></span>
+        <div class="hint pglab">Giving link <span class="pgnote">where every Give button sends supporters · blank = JV general fund</span></div>
+        <div class="pgline">
+          <input id="pggive" placeholder="https://… your organization's giving page for you">
+          <button class="photobtn" id="pggiveSave" type="button">Save</button>
+        </div>
+        <div class="savenote" id="pggiveMsg"></div>
       </div>
       <div class="panel appearance" id="appearance">
         <h2>Supporter page style <span class="hint">How your supporters see your updates</span></h2>
@@ -499,7 +520,18 @@ function renderTop(){
   if(!top.length){ el.innerHTML='<div class="state" style="padding:12px 0">No open data yet.</div>'; return; }
   el.innerHTML=top.map((r,i)=>`<div class="trow"><span class="rank">${i+1}</span><a class="tt" href="compose.html?id=${r.id}" style="color:inherit;text-decoration:none">${esc(r.title)}</a><span class="op">${r.opens.toLocaleString()}</span></div>`).join('');
 }
+function renderQuick(){
+  const drafts=ROWS.filter(r=>r.status==='Draft').slice(0,5);
+  const recent=ROWS.filter(r=>r.status!=='Draft').slice(0,3);
+  const items=drafts.map(r=>({...r,q:'Draft — keep going'})).concat(recent.map(r=>({...r,q:r.status==='Processing'?'Processing':(r.date||'')})));
+  const panel=document.getElementById('quickPanel');
+  if(!items.length){ panel.style.display='none'; return; }
+  document.getElementById('quicklist').innerHTML=items.map(r=>
+    `<a class="qchip${r.status==='Draft'?' qdraft':''}" href="compose.html?id=${r.id}"><b>${esc(r.title)}</b><span>${esc(r.q)}</span></a>`).join('');
+  panel.style.display='block';
+}
 function renderList(){
+  renderQuick();
   const rows=statusF==='all'?ROWS:ROWS.filter(r=>r.status===statusF);
   const list=document.getElementById('list');
   if(!rows.length){ list.innerHTML='<div class="state">No updates here.</div>'; return; }
