@@ -201,8 +201,10 @@
   .qchip:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 6px 14px rgba(60,40,20,.1)}
   .qchip b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .qchip span{font-size:11px;color:var(--muted)}
-  .qchip.qdraft{background:#fff8f2;border-color:#ffd9bd}
+  .qchip.qdraft{background:#fff8f2;border-color:#ffd9bd;position:relative;padding-right:30px}
   .qchip.qdraft span{color:#c96a1e;font-weight:700}
+  .qchip .qx{position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;border:1px solid #ffd9bd;background:#fff;color:#c96a1e;font-size:11px;cursor:pointer;line-height:1;padding:0}
+  .qchip .qx:hover{background:#c0392b;border-color:#c0392b;color:#fff}
   /* Help chat — floating bubble, bottom right; the norm for support. */
   #helpfab{position:fixed;right:20px;bottom:20px;z-index:180;width:52px;height:52px;border-radius:50%;background:var(--text);color:#fff;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(36,31,27,.35);display:flex;align-items:center;justify-content:center}
   #helpfab:hover{transform:translateY(-2px)}
@@ -246,10 +248,6 @@
     <div class="detailrow" id="detailrow"></div>
     <div class="zmain">
     <div class="zcol">
-      <div class="panel" id="quickPanel" style="display:none">
-        <h2>Keep writing</h2>
-        <div id="quicklist"></div>
-      </div>
       <div class="panel inbox" id="inboxPanel">
         <h2>Responses <span class="ib zero" id="unread">0 new</span><a id="refreshresp">Refresh</a><a href="inbox.html" style="margin-left:2px">View all &rarr;</a></h2>
         <div id="inbox"><div class="state">Loading…</div></div>
@@ -257,6 +255,10 @@
       <div class="panel" id="sharePanel" style="display:none">
         <h2>Feature requests <span class="ib zero" id="sharecount">0</span></h2>
         <div id="sharelist"></div>
+      </div>
+      <div class="panel" id="quickPanel" style="display:none">
+        <h2>Drafts <span class="hint">click to keep writing</span></h2>
+        <div id="quicklist"></div>
       </div>
       <div class="panel" id="updatesPanel">
         <div class="listhead"><h2 id="listtoggle" class="acc-h">All updates <span class="chev" id="chev">▸</span> <span class="cnt" id="listcnt"></span> <span class="cnt" id="latestpeek"></span></h2>
@@ -481,8 +483,8 @@ function renderAll(){
     `<span class="d"><b>${ROWS.length}</b> updates all-time</span><span class="d"><b>${opensAll.toLocaleString()}</b> opens all-time</span><span class="d"><b>${pub}</b> published</span><span class="d"><b>${dr}</b> drafts</span>`;
   const lc=document.getElementById('listcnt'); if(lc) lc.textContent=ROWS.length?('('+ROWS.length+')'):'';
   const lp=document.getElementById('latestpeek');
-  if(lp){ const latest=ROWS.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
-    lp.textContent=latest?('· Latest: “'+latest.title+'” — '+fmtD(latest.date)):''; }
+  if(lp){ const latest=ROWS.filter(r=>r.status!=='Draft')[0]||ROWS[0];
+    lp.textContent=latest?('· “'+latest.title+'”'):''; }
   renderChart(); renderTop(); renderList();
 }
 function kpi(v,l,acc){ return `<div class="kpi${acc?' acc':''}"><b>${v}</b><span>${l}</span></div>`; }
@@ -521,14 +523,18 @@ function renderTop(){
   el.innerHTML=top.map((r,i)=>`<div class="trow"><span class="rank">${i+1}</span><a class="tt" href="compose.html?id=${r.id}" style="color:inherit;text-decoration:none">${esc(r.title)}</a><span class="op">${r.opens.toLocaleString()}</span></div>`).join('');
 }
 function renderQuick(){
-  const drafts=ROWS.filter(r=>r.status==='Draft').slice(0,5);
-  const recent=ROWS.filter(r=>r.status!=='Draft').slice(0,3);
-  const items=drafts.map(r=>({...r,q:'Draft — keep going'})).concat(recent.map(r=>({...r,q:r.status==='Processing'?'Processing':(r.date||'')})));
+  const drafts=ROWS.filter(r=>r.status==='Draft').slice(0,8);
   const panel=document.getElementById('quickPanel');
-  if(!items.length){ panel.style.display='none'; return; }
-  document.getElementById('quicklist').innerHTML=items.map(r=>
-    `<a class="qchip${r.status==='Draft'?' qdraft':''}" href="compose.html?id=${r.id}"><b>${esc(r.title)}</b><span>${esc(r.q)}</span></a>`).join('');
+  if(!drafts.length){ panel.style.display='none'; return; }
+  document.getElementById('quicklist').innerHTML=drafts.map(r=>
+    `<a class="qchip qdraft" href="compose.html?id=${r.id}"><button type="button" class="qx" data-qdel="${r.id}" data-t="${esc(r.title)}" title="Delete this draft">✕</button><b>${esc(r.title)}</b><span>${r.date?fmtD(r.date):'Draft'}</span></a>`).join('');
   panel.style.display='block';
+  document.querySelectorAll('#quicklist [data-qdel]').forEach(x=>x.addEventListener('click',async e=>{
+    e.preventDefault(); e.stopPropagation();
+    if(!confirm('Delete the draft “'+x.dataset.t+'” for good?'))return;
+    try{ await api('delete',{id:x.dataset.qdel}); ROWS=(await api('list')).rows; renderAll(); }
+    catch(err){ alert(err.message); }
+  }));
 }
 function renderList(){
   renderQuick();
