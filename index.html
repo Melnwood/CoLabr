@@ -344,6 +344,10 @@
   .rtab{font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
   .rtab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
   .rform input,.rform textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;margin-bottom:9px;outline:none;color:var(--text)}
+  .rform input[type=hidden]{display:none;margin:0}
+  .rfrom{font-size:12.5px;color:#6b6357;background:#faf6ef;border:1px solid #efe4cd;border-radius:9px;padding:9px 13px;margin-bottom:9px}
+  .rfrom b{color:var(--text)}
+  .rfrom span{color:#a29b93;font-size:11.5px}
   .rform textarea{min-height:82px;resize:vertical}
   .rform .send{background:var(--acc);color:#fff;font-weight:700;font-size:14px;padding:11px 22px;border:none;border-radius:9px;cursor:pointer}
   .rhint{font-size:11.5px;color:var(--muted);margin:-2px 0 10px}
@@ -1218,8 +1222,13 @@ function respondHTML(u){
     <div class="prayrow" id="respondRow"><button class="praybtn" id="prayBtn">${licon('pray',15)} I'm praying</button><span class="praycount" id="prayCount"></span></div>
     <div class="rtabs"><button class="rtab on" data-m="Encouragement">Leave encouragement</button><button class="rtab" data-m="Note">Send a note</button></div>
     <div class="rform">
-      <input id="rName" placeholder="Your name">
-      <input id="rEmail" placeholder="Email (optional)" type="email">
+      ${(function(){
+        // We already KNOW who this is — never make them type their own name.
+        const who=(VIEWER&&VIEWER.name)?{name:VIEWER.name,email:VIEWER.email||''}:(ME?{name:MYPAGE||ME.name||ME.email,email:ME.email||''}:null);
+        return who
+          ?`<div class="rfrom">From <b>${esc(who.name)}</b>${who.email?` <span>· ${esc(who.email)}</span>`:''} → to ${esc(FAMSHORT)}</div><input id="rName" type="hidden" value="${esc(who.name)}"><input id="rEmail" type="hidden" value="${esc(who.email)}">`
+          :`<input id="rName" placeholder="Your name"><input id="rEmail" placeholder="Email (optional)" type="email">`;
+      })()}
       <textarea id="rMsg" placeholder="Write something…"></textarea>
       <div class="rhint" id="rHint">Public — shown under this update so others can be encouraged too.</div>
       <button class="send" id="rSend">Send</button>
@@ -1233,8 +1242,7 @@ function wireRespond(u){
   respondMode='Encouragement';
   const q=id=>document.getElementById(id);
   const hint=q('rHint');
-  // Known supporter: their name and email come with their key — no retyping.
-  if(VIEWER&&VIEWER.name){ if(q('rName')&&!q('rName').value)q('rName').value=VIEWER.name; if(q('rEmail')&&!q('rEmail').value&&VIEWER.email)q('rEmail').value=VIEWER.email; }
+  // Known people are locked in by respondHTML — nothing to prefill here.
   q('prayBtn').addEventListener('click',async()=>{
     const btn=q('prayBtn'); if(btn.classList.contains('done'))return;
     try{ const d=await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim(),t:VIEWTOK||undefined});
