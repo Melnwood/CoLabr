@@ -391,6 +391,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.getElemen
 document.addEventListener('click',e=>{
   const a=e.target.closest('a[href^="compose.html"]');
   if(!a||e.metaKey||e.ctrlKey||e.shiftKey||e.button!==0) return;
+  if(a.closest('#quicklist')) return;   // draft tiles go STRAIGHT into the builder, no popup
   e.preventDefault(); openCompose(a.getAttribute('href'));
 });
 function fmtD(d){ try{ const x=new Date(d+'T12:00:00'); if(!isNaN(x)) return x.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }catch(e){} return d||''; }

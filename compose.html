@@ -432,12 +432,48 @@ async function guard(){
   }catch{ location.replace('login.html'); }
 }
 let editId=null;
+let SRV_STATUS='';   // status of the loaded record — autosave only ever touches drafts
+
+/* ---- Drafts save THEMSELVES to the server as you work. Stop anywhere — typing,
+   mid-block, closing the laptop — and the draft in your Drafts tiles is current.
+   Published updates are never auto-touched; those still save only when you say so. ---- */
+let AUTOT=null, AUTOBUSY=false;
+function scheduleAutosave(){ clearTimeout(AUTOT); AUTOT=setTimeout(autoSaveDraft,5000); }
+function autonote(t){
+  let n=document.getElementById('autonote');
+  if(!n){ n=document.createElement('span'); n.id='autonote'; n.style.cssText='font-size:12px;color:#2f9e63;font-weight:600;align-self:center'; const a=document.querySelector('.actions'); if(a)a.appendChild(n); }
+  if(n) n.textContent=t;
+}
+async function autoSaveDraft(){
+  if(AUTOBUSY){ scheduleAutosave(); return; }
+  if(SRV_STATUS&&SRV_STATUS!=='Draft') return;
+  syncFromDOM();
+  const title=document.getElementById('title').value.trim();
+  const clean=blocks.map(b=>{const o={type:b.type};for(const k in b){if(k!=='id'&&k!=='type')o[k]=(typeof b[k]==='string')?b[k].trim():b[k];}return o;})
+    .filter(b=> b.type==='divider' || b.type==='give' || Object.keys(b).some(k=>k!=='type' && b[k] && (Array.isArray(b[k])?b[k].length:String(b[k]).length)));
+  const meaty=clean.some(b=>(b.text&&b.text.trim())||(b.url&&String(b.url).trim())||(b.heading&&b.heading.trim()));
+  if(title.length<3||!meaty) return;   // nothing worth a draft yet
+  AUTOBUSY=true;
+  try{
+    const payload={publish:false,title,date:document.getElementById('date').value,type:document.getElementById('type').value,audiences:[...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a),blocks:clean};
+    if(editId) payload.id=editId;
+    const r=await fetch('/.netlify/functions/create-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(r.ok){
+      if(!editId&&d.id){ editId=d.id; SRV_STATUS='Draft'; }
+      autonote('Draft saved '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+      clearStash();   // the server copy is now the safety net
+    }
+  }catch(_){}
+  AUTOBUSY=false;
+}
 async function loadForEdit(id){
   try{
     const r=await fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'get',id})});
     if(r.status===401){location.replace('login.html');return;}
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not load.');
     const rec=d.record; editId=rec.id;
+    SRV_STATUS=(rec.status&&rec.status.name)?rec.status.name:(rec.status||'Draft');
     document.getElementById('title').value=rec.title||'';
     if(rec.date) document.getElementById('date').value=rec.date;
     if(rec.type) document.getElementById('type').value=rec.type;
@@ -538,7 +574,7 @@ document.addEventListener('keydown',e=>{
   e.preventDefault();
   if(e.shiftKey) redoHist(); else undoHist();
 });
-document.addEventListener('input',e=>{ const el=e.target; if(el&&el.closest&&(el.closest('#canvas')||el.id==='title')){ clearTimeout(histT); histT=setTimeout(()=>{ syncFromDOM(); snapshot(); },700); } });
+document.addEventListener('input',e=>{ const el=e.target; if(el&&el.closest&&(el.closest('#canvas')||el.id==='title')){ clearTimeout(histT); histT=setTimeout(()=>{ syncFromDOM(); snapshot(); },700); scheduleAutosave(); } });
 
 /* Deleted a section by accident? Undo puts it back exactly where it was. */
 let UNDO=[], undoTimer=null;
@@ -694,6 +730,7 @@ function render(){
   });
   samplePalette();
   snapshot();   // every rendered state joins the Cmd+Z history
+  scheduleAutosave();
 }
 /* ---- block accent colors: real org brand colors + banner shades + free pick ---- */
 let BRAND_PAL=null;                                   // [{c:'#FF6600',t:'JV'},…] from National Orgs
@@ -1210,11 +1247,14 @@ async function submit(publish){
   }
   const bp=document.getElementById('publish'),bd=document.getElementById('saveDraft');
   bp.disabled=bd.disabled=true; bp.textContent=publish?'Publishing…':'Publish now';
+  clearTimeout(AUTOT); AUTOBUSY=true;   // manual save owns the wire now
   try{
     const r=await fetch('/.netlify/functions/create-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     if(r.status===401){location.replace('login.html');return;}
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.');
     clearStash();   // it's safely in Airtable now — the local safety copy has done its job
+    if(!editId&&d.id) editId=d.id;
+    SRV_STATUS=publish?(d.status||'Published'):'Draft';
     // First sign-off they've ever written? Offer to make it their standing one.
     try{
       const soText=((clean.find(x=>x.type==='signoff')||{}).text||'').trim();
@@ -1232,10 +1272,11 @@ async function submit(publish){
       show('ok', (publish?(held?'Almost there!':'Changes published — <a href="'+ME_WALL+'">view on your site →</a>'):'Changes saved as a draft.')+subNote);
     } else {
       show('ok', (publish?(held?'Almost there!':(payload.emailChoice==='send'?'Published and emailed to your supporters! <a href="'+ME_WALL+'">View it on your site →</a>':payload.emailChoice==='wall'?'Published to your wall — no emails sent. <a href="'+ME_WALL+'">View it →</a>':'Published! It’s live now — <a href="'+ME_WALL+'">view it on your site →</a>'))+'':'Saved as a draft. Publish it from Manage when you’re ready.')+subNote);
-      document.getElementById('title').value=''; blocks=[]; add('text');
+      document.getElementById('title').value=''; blocks=[]; editId=null; SRV_STATUS=''; add('text');
     }
   }catch(e){ show('err', e.message); }
   bp.disabled=bd.disabled=false; bp.textContent='Publish now';
+  AUTOBUSY=false;
 }
 function show(kind,html){const m=document.getElementById('msg');m.className='msg '+kind;m.innerHTML=html;m.scrollIntoView({behavior:'smooth',block:'nearest'});}
 document.getElementById('publish').addEventListener('click',()=>submit(true));
