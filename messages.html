@@ -159,7 +159,7 @@ function build(){
     const p=map[k]=map[k]||{key:k,name:row.name,email:row.email,items:[],rows:[],prayed:0};
     if(!p.email&&row.email)p.email=row.email;
     p.rows.push(row);
-    if(row.type==='Prayer'){ p.prayed++; if(!row.message){ p.items.push({kind:'pray',at:row.created}); } }
+    if(row.type==='Prayer'){ p.prayed++; if(!row.message){ p.items.push({kind:'pray',at:row.created,updateId:row.updateId,updateTitle:row.updateTitle}); } }
     if(row.message){
       p.items.push({kind:'msg',f:'s',t:row.message,at:row.created,updateId:row.updateId,updateTitle:row.updateTitle,rowId:row.id});
     }
@@ -179,7 +179,7 @@ function build(){
     const k='mis:'+row.missionary.toLowerCase();
     const p=map[k]=map[k]||{key:k,name:row.missionary,email:'',items:[],rows:[],prayed:0,flip:true};
     p.rows.push(row);
-    if(row.type==='Prayer'&&!row.message){ p.items.push({kind:'pray',at:row.created,byMe:true}); }
+    if(row.type==='Prayer'&&!row.message){ p.items.push({kind:'pray',at:row.created,byMe:true,updateId:row.updateId,updateTitle:row.updateTitle}); }
     if(row.message){ p.items.push({kind:'msg',f:'s',t:row.message,at:row.created,updateId:row.updateId,updateTitle:row.updateTitle}); }
     (row.thread||[]).forEach((x,i)=>{ if(x&&x.t)p.items.push({kind:'msg',f:x.f==='m'?'m':'s',t:x.t,at:x.at||row.created,ord:i}); });
   });
@@ -303,14 +303,14 @@ function openPerson(k){
   }
   // One card per STRING: each response/direct message is its own thread, labeled by
   // the update it started on. Exactly one card is open — no doubt which string you're in.
-  const strings=p.rows.filter(r=>r.message||(r.thread&&r.thread.length)).map(r=>{
+  const strings=p.rows.filter(r=>r.message||(r.thread&&r.thread.length)||r.type==='Prayer').map(r=>{
     const msgs=[{f:'s',t:r.message,at:r.created}].concat(r.thread||[]).filter(x=>x&&x.t);
     const lastAt=msgs.length?(msgs[msgs.length-1].at||r.created):r.created;
     return {r,msgs,lastAt};
   }).sort((a,b)=>String(b.lastAt).localeCompare(String(a.lastAt)));
   TRTXT=[];
   let html=`<div class="chead"><div class="backlist" id="backlist">← All people</div><h3>${esc(p.name)}</h3><div class="cfacts">${facts.join(' · ')||'From your wall'}</div></div><div class="stream" id="stream">`;
-  const pills=p.items.filter(x=>x.kind==='pray'||x.kind==='give');
+  const pills=p.items.filter(x=>(x.kind==='pray'&&!x.updateId)||x.kind==='give');
   if(pills.length){
     html+=`<div class="pillrow">`+pills.slice(-6).map(x=>x.kind==='pray'
       ?`<span class="minipill">${licon('pray',11)} ${x.byMe?'You prayed':'Prayed'} · ${esc(fmtD(x.at))}</span>`
@@ -319,12 +319,14 @@ function openPerson(k){
   if(!strings.length) html+=`<div class="state">No conversations yet — start one below.</div>`;
   strings.forEach((s,si)=>{
     const r=s.r;
-    const label=r.updateTitle?'On \u201c'+esc(r.updateTitle)+'\u201d':(r.type==='Message'?'Direct conversation':esc(r.type||'Note'));
+    const isPray=r.type==='Prayer'&&!r.message;
+    const label=isPray?(r.updateTitle?'Prayed on \u201c'+esc(r.updateTitle)+'\u201d':'Prayed for you'):(r.updateTitle?'On \u201c'+esc(r.updateTitle)+'\u201d':(r.type==='Message'?'Direct conversation':esc(r.type||'Note')));
     const u=r.updateId&&DATA.updates[r.updateId];
     html+=`<div class="tstr" data-si="${si}">
-      <button type="button" class="tsh" data-ts="${si}"><span class="tslab">${label}</span><span class="tsmeta">${s.msgs.length} message${s.msgs.length===1?'':'s'} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
+      <button type="button" class="tsh" data-ts="${si}"><span class="tslab">${label}</span><span class="tsmeta">${s.msgs.length?s.msgs.length+' message'+(s.msgs.length===1?'':'s'):'prayer'} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
       <div class="tsb">
         ${(u&&u.cover)?`<div class="ucard"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||r.updateTitle)}</div></div>`:''}
+        ${isPray?`<div class="praypill" style="align-self:flex-start;margin:6px 0 2px">${licon('pray')} ${p.flip?'You prayed for this':esc(p.name)+(plural(p.name)?' were':' was')+' praying'} · ${esc(fmtD(r.created))}</div>`:''}
         ${s.msgs.map(x=>{
           const mine=x.f===p.mineF;
           let b=`<div class="bub ${mine?'m':'s'}">${esc(x.t)}</div>`;
