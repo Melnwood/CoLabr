@@ -32,7 +32,15 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 .phead h2{font-size:26px;font-weight:800;margin:0}
 .phead .porg{font-size:13px;color:var(--muted)}
 .ulist{display:flex;flex-direction:column;gap:12px}
-.uitem{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.uitem{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;cursor:pointer}
+.uitem:hover{border-color:#d8d4cf}
+.reng{margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
+.reng h4{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.rpray{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--text);border-radius:20px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer}
+.rpray.done{background:var(--text);color:#fff}
+.reng textarea{display:block;width:100%;box-sizing:border-box;margin:12px 0 8px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;min-height:64px;resize:vertical}
+.rsend{background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer}
+.rengmsg{font-size:12.5px;margin-top:8px}.rengmsg.ok{color:#2f9e63}.rengmsg.err{color:#c0392b}
 .uthumb{width:120px;flex:none;background:#e9e2d5;background-size:cover;background-position:center}
 .ub{flex:1;padding:14px 14px 14px 2px;min-width:0}
 .udate{font-size:11.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
@@ -171,7 +179,7 @@ function renderDir(){
   const el=document.getElementById('dir');
   if(!show.length){ el.innerHTML='<div class="state">No teammate pages here yet.</div>'; return; }
   el.innerHTML=show.map(m=>{const i=ms.indexOf(m);return `<div class="mcard" data-i="${i}">
-      <div class="mcov"${m.latest&&m.latest.cover?` style="background-image:url('${esc(m.latest.cover)}')"`:''}><span class="mcount">${m.count} update${m.count===1?'':'s'}</span></div>
+      <div class="mcov"${m.latest&&m.latest.cover?` style="background-image:url('${esc(m.latest.cover)}');background-position:${esc((m.latest.focus||'50% 50%'))}"`:''}><span class="mcount">${m.count} update${m.count===1?'':'s'}</span></div>
       <div class="mbody"><div class="mnamerow">${m.photo?`<div class="mav" style="background-image:url('${esc(m.photo)}')"></div>`:`<div class="mav">${esc((m.name||'?').trim().charAt(0).toUpperCase())}</div>`}<div class="mname">${esc(m.name)}</div></div>${m.org?`<div class="morg">${esc(m.org)}</div>`:''}${m.location?`<div class="mloc">${esc(m.location)}</div>`:''}
       ${m.latest?`<div class="mlatest">Latest: <b>${esc(m.latest.title)}</b></div>`:''}</div></div>`;}).join('');
   el.querySelectorAll('[data-i]').forEach(c=>c.addEventListener('click',()=>openTeammate(window._ms[+c.dataset.i])));
@@ -191,12 +199,13 @@ async function openTeammate(m){
     if(!CUR.length){ list.innerHTML='<div class="state">No published updates yet.</div>'; return; }
     list.innerHTML=CUR.map((u,i)=>{
       const disp=view(u);
-      return `<div class="uitem">${u.cover?`<div class="uthumb" style="background-image:url('${esc(u.cover)}')"></div>`:''}
+      return `<div class="uitem" data-open="${i}">${u.cover?`<div class="uthumb" style="background-image:url('${esc(u.cover)}');background-position:${cfocus(u)}"></div>`:''}
       <div class="ub"><div class="udate">${fmtDate(u.rawdate)}</div><div class="ut">${esc(disp.title)}</div>
       <div class="ux">${esc(firstText(disp.blocks)||u.excerpt||'')}</div>
-      <div class="uact"><button data-read="${i}">Read</button><button class="feat" data-feat="${i}">${licon('globe')} Feature on my wall</button></div></div></div>`;
+      <div class="uact"><button data-read="${i}">Read Now</button><button class="feat" data-feat="${i}">${licon('globe')} Feature on my wall</button></div></div></div>`;
     }).join('');
-    list.querySelectorAll('[data-read]').forEach(b=>b.addEventListener('click',()=>openReader(+b.dataset.read)));
+    // The whole card opens the update — only the Feature button does its own thing.
+    list.querySelectorAll('[data-open]').forEach(c=>c.addEventListener('click',e=>{ if(e.target.closest('.feat'))return; openReader(+c.dataset.open); }));
     list.querySelectorAll('[data-feat]').forEach(b=>b.addEventListener('click',()=>feature(CUR[+b.dataset.feat])));
   }catch(e){ list.innerHTML='<div class="state">Could not load updates.</div>'; }
 }
@@ -211,10 +220,12 @@ function view(u){
   return {title:u.title, blocks:u.blocks||[], translatedFrom:''};
 }
 function firstText(blocks){ const b=(blocks||[]).find(x=>x&&(x.type==='text'||x.type==='heading')); return b?b.text:''; }
+// The crop the missionary chose for the banner — never crop heads off.
+function cfocus(u){ const b=((u&&u.blocks)||[]).find(x=>x&&(x.type==='hero'||x.type==='photo')&&x.url===u.cover); return b?`${b.fx!=null?+b.fx:50}% ${b.fy!=null?+b.fy:50}%`:'50% 50%'; }
 function fmtDate(s){ if(!s)return''; const p=s.split('-'); const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${M[(+p[1]||1)-1]} ${+p[2]||''}, ${p[0]}`; }
 
-function openReader(i){ openReaderU(CUR[i], document.getElementById('pname').textContent); }
-function openReaderU(u, label){
+function openReader(i){ const n=document.getElementById('pname').textContent; openReaderU(CUR[i], n, n); }
+function openReaderU(u, label, mname){
   if(!u)return; const disp=view(u);
   const body=(disp.blocks||[]).map(bk=>{
     if(bk.type==='text'||bk.type==='heading') return `<p class="rtext">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
@@ -228,10 +239,41 @@ function openReaderU(u, label){
   document.getElementById('sheet').innerHTML=`<div class="rcov">${u.cover?`<img src="${esc(u.cover)}" alt="" onerror="this.style.display='none'">`:''}<button class="x" id="rx">×</button></div>
     <div class="rbody"><div class="rk">${esc(label||'')}</div><h2>${esc(disp.title)}</h2>
     <div class="rmeta">${fmtDate(u.rawdate)}</div>${note}${body}
-    <button class="rfeat" id="rfeat">${licon('globe')} Feature this on my wall</button></div>`;
+    <button class="rfeat" id="rfeat">${licon('globe')} Feature this on my wall</button>
+    ${(mname&&u.id)?`<div class="reng"><h4>Respond</h4>
+      <div class="rengrow"><button class="rpray" id="bPray">${licon('pray',15)} I’m praying</button></div>
+      <textarea id="bNote" placeholder="Send a note…"></textarea>
+      <button class="rsend" id="bSend">Send a note</button>
+      <div class="rengmsg" id="bMsg"></div></div>`:''}</div>`;
   document.getElementById('reader').classList.add('open'); document.body.style.overflow='hidden';
   document.getElementById('rx').addEventListener('click',closeReader);
   document.getElementById('rfeat').addEventListener('click',()=>feature(u));
+  if(mname&&u.id) wireEng(u, mname);
+}
+// Pray + note from the team side — the server knows who you are from your sign-in.
+function wireEng(u, mname){
+  const q=id=>document.getElementById(id);
+  const post=async payload=>{
+    const r=await fetch('/.netlify/functions/respond',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Could not send.'); return d;
+  };
+  q('bPray').addEventListener('click',async()=>{
+    const btn=q('bPray'); if(btn.classList.contains('done'))return;
+    try{ const d=await post({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:mname});
+      btn.classList.add('done');
+      btn.textContent=d.test?'✓ Test only — this is your own page':'✓ Praying — they’ll know it’s you';
+    }catch(e){}
+  });
+  q('bSend').addEventListener('click',async()=>{
+    const out=q('bMsg'), msg=(q('bNote').value||'').trim();
+    if(!msg){ out.className='rengmsg err'; out.textContent='Write something first.'; return; }
+    q('bSend').disabled=true; out.className='rengmsg'; out.textContent='Sending…';
+    try{ const d=await post({type:'Note',updateId:u.id,updateTitle:u.title,missionary:mname,message:msg});
+      out.className='rengmsg ok'; out.textContent=d.test?'Test only — notes to your own page aren’t sent.':'Sent — they’ll see it’s from you.';
+      q('bNote').value='';
+    }catch(e){ out.className='rengmsg err'; out.textContent=e.message||'Could not send.'; }
+    finally{ q('bSend').disabled=false; }
+  });
 }
 function closeReader(){document.getElementById('reader').classList.remove('open');document.getElementById('sheet').innerHTML='';document.body.style.overflow='';}
 document.getElementById('reader').addEventListener('click',e=>{if(e.target.id==='reader')closeReader();});
@@ -265,12 +307,13 @@ async function loadPresident(){
     if(!PRES.length){ el.innerHTML='<div class="state">Nothing here yet — the first president’s note will appear as soon as it’s uploaded.</div>'; return; }
     el.innerHTML=PRES.map((u,i)=>{
       const disp=view(u);
-      return `<div class="uitem">${u.cover?`<div class="uthumb" style="background-image:url('${esc(u.cover)}')"></div>`:''}
+      return `<div class="uitem" data-popen="${i}">${u.cover?`<div class="uthumb" style="background-image:url('${esc(u.cover)}');background-position:${cfocus(u)}"></div>`:''}
       <div class="ub"><div class="udate">${fmtDate(u.rawdate)}</div><div class="ut">${esc(disp.title)}</div>
       <div class="ux">${esc(firstText(disp.blocks)||u.excerpt||'')}</div>
-      <div class="uact"><button data-pread="${i}">Read</button><button class="feat" data-pfeat="${i}">${licon('globe')} Feature on my wall</button></div></div></div>`;
+      <div class="uact"><button data-pread="${i}">Read Now</button><button class="feat" data-pfeat="${i}">${licon('globe')} Feature on my wall</button></div></div></div>`;
     }).join('');
-    el.querySelectorAll('[data-pread]').forEach(b=>b.addEventListener('click',()=>openReaderU(PRES[+b.dataset.pread],'Josiah Venture · President\u2019s Monthly')));
+    el.querySelectorAll('[data-popen]').forEach(c=>c.addEventListener('click',e=>{ if(e.target.closest('.feat'))return; openReaderU(PRES[+c.dataset.popen],'Josiah Venture · President’s Monthly','Josiah Venture'); }));
+    el.querySelectorAll('[data-pread]').forEach(b=>b.addEventListener('click',e=>e.stopPropagation()||openReaderU(PRES[+b.dataset.pread],'Josiah Venture · President\u2019s Monthly','Josiah Venture')));
     el.querySelectorAll('[data-pfeat]').forEach(b=>b.addEventListener('click',()=>feature(PRES[+b.dataset.pfeat])));
   }catch(e){ el.innerHTML='<div class="state">Could not load the president’s updates.</div>'; }
 }
@@ -295,7 +338,7 @@ async function openPrayerUpdate(item){
   try{
     const r=await fetch('/.netlify/functions/updates?m='+encodeURIComponent(item.author||''));
     const d=await r.json(); const u=((d&&d.updates)||[]).find(x=>x.id===item.id);
-    if(u) openReaderU(u, item.author||'');
+    if(u) openReaderU(u, item.author||'', item.author||'');
     else toast('Could not open that update.');
   }catch(_){ toast('Could not open that update.'); }
 }
@@ -308,4 +351,5 @@ fetch('/.netlify/functions/me?full=1').then(r=>r.ok?r.json():null).then(me=>{
   if(me&&me.miss&&me.miss.name){document.querySelectorAll('a[href="index.html"]').forEach(a=>a.href='index.html?m='+encodeURIComponent(me.miss.name));}
 });
 </script>
+<script src="help.js"></script>
 </body></html>

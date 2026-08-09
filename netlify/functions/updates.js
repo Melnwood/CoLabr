@@ -81,6 +81,13 @@ exports.handler = async function (event) {
     } catch (e) {}
   }
   if (!viewer) { try { if (sessionFromEvent(event)) viewer = { staff: true }; } catch (e) {} }
+  // Owner lens: a signed-in member can see the wall exactly as one supporter circle
+  // sees it (?as=International|National|Both). Audience gates apply for real, but it
+  // stays a staff session — nothing is ever counted from a preview.
+  const asLens = (q.as || '').trim().toLowerCase();
+  if (viewer && viewer.staff && ['international', 'national', 'both'].includes(asLens)) {
+    viewer = { staff: true, preview: true, audience: asLens.charAt(0).toUpperCase() + asLens.slice(1) };
+  }
   // Default page: this missionary OR legacy untagged updates. Teammate page: exact match only.
   const formula = isDefault
     ? `AND({Status}='Published', OR(LEN(ARRAYJOIN({Missionary}))=0, FIND('${nameEsc}', ARRAYJOIN({Missionary}))>0))`
@@ -117,7 +124,7 @@ exports.handler = async function (event) {
       .filter(u => {
         const natOnly = u.aud.some(a => /in-country|national/i.test(a)) && !u.aud.some(a => /international/i.test(a));
         if (!natOnly) return true;
-        if (viewer && viewer.staff) return true;
+        if (viewer && viewer.staff && !viewer.preview) return true;
         return !!(viewer && (viewer.audience === 'National' || viewer.audience === 'Both'));
       })
       .sort((a, b) => (b.rawdate).localeCompare(a.rawdate) || (b.created || '').localeCompare(a.created || ''));

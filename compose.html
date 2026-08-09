@@ -173,7 +173,7 @@
         <button type="button" class="pbtn" data-t="praise"><svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.2 5.6.8-4 4 1 5.6L12 16l-5.1 2.6 1-5.6-4-4 5.6-.8z"/></svg> Praise</button>
         <button type="button" class="pbtn" data-t="give"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg> Give button</button>
         <button type="button" class="pbtn" data-t="button"><svg viewBox="0 0 24 24"><rect x="3" y="8.5" width="18" height="7" rx="3.5"/><path d="M15 12h3"/></svg> Button</button>
-        <button type="button" class="pbtn" data-t="signoff"><svg viewBox="0 0 24 24"><path d="M3 21l4-1L18 9l-3-3L4 17z"/><path d="M14 6l3 3"/></svg> Sign-off</button>
+        <button type="button" class="pbtn" data-t="signoff" id="pbtnsignoff" style="display:none"><svg viewBox="0 0 24 24"><path d="M3 21l4-1L18 9l-3-3L4 17z"/><path d="M14 6l3 3"/></svg> Sign-off</button>
         <button type="button" class="pbtn" data-t="divider"><svg viewBox="0 0 24 24"><path d="M3 12h18"/></svg> Divider</button>
       </div>
       </div>
@@ -244,6 +244,9 @@
     .actions .btn svg{vertical-align:-2px;margin-right:5px}
     .focusbox{width:100%;aspect-ratio:16/9;background-size:cover;border-radius:10px;margin:8px 0 2px;position:relative;cursor:grab;touch-action:none;border:1px solid var(--line);overflow:hidden}
     .focusbox:active{cursor:grabbing}
+    .focprevlab{font-size:11px;color:var(--muted);margin-top:9px}
+    .focprev{width:100%;aspect-ratio:3/1;background-size:cover;border:1px solid var(--line);border-radius:10px;position:relative;overflow:hidden;margin:5px 0 2px}
+    .focprev .fph{position:absolute;left:14px;bottom:9px;color:#fff;font-weight:800;font-size:15px;letter-spacing:-.01em;text-shadow:0 1px 10px rgba(0,0,0,.5)}
     /* The 16:9 frame is the reader/card crop; the marked strip is the wall banner (3:1).
        Band height = (16/9)/(3/1) = 59.26% of the frame; it rides with the focal point. */
     .focband{position:absolute;left:0;right:0;height:59.26%;border-top:2px dashed rgba(255,255,255,.95);border-bottom:2px dashed rgba(255,255,255,.95);box-shadow:0 0 0 999px rgba(20,15,10,.5);pointer-events:none}
@@ -395,6 +398,9 @@ async function guard(){
     const r=await fetch('/.netlify/functions/me?full=1'); if(!r.ok) throw 0;
     const me=await r.json();
     ME_ADMIN=!!me.admin;
+    // Sign-off is set once in Page settings and always included automatically —
+    // the palette module is a super-admin tool only.
+    if(ME_ADMIN){ const sb=document.getElementById('pbtnsignoff'); if(sb) sb.style.display=''; }
     if(me.upload) UPLOAD_READY=me.upload.ready;
     // Personal sign-off default: the missionary's chosen first names, or a best guess.
     // Their saved sign-off, verbatim — no words are ever added around it.
@@ -613,7 +619,7 @@ function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.
   if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); el.classList.add('justadded'); setTimeout(()=>el.classList.remove('justadded'),1100); } }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fieldHtml(b){
-  if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${(b.fx!=null?+b.fx:50)}% ${(b.fy!=null?+b.fy:50)}%"><div class="focband" style="top:${((b.fy!=null?+b.fy:50)*0.4074).toFixed(1)}%"><span class="focbandlab">The wall banner shows this strip</span></div><span class="focushint">Drag the photo up or down to place it</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
+  if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${(b.fx!=null?+b.fx:50)}% ${(b.fy!=null?+b.fy:50)}%"><div class="focband" style="top:${((b.fy!=null?+b.fy:50)*0.4074).toFixed(1)}%"><span class="focbandlab">The wall banner shows this strip</span></div><span class="focushint">Drag the strip to what matters — faces, not sky</span></div><div class="focprevlab">On your wall banner and in every card, supporters see this crop:</div><div class="focprev" data-fprev="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${(b.fx!=null?+b.fx:50)}% ${(b.fy!=null?+b.fy:50)}%"><span class="fph">${esc(b.heading||'Your headline')}</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
   if(b.type==='praise') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="Something to praise God for…">${marks2html(b.text)}</div>`+colorRow(b);
   if(b.type==='heading') return `<input data-id="${b.id}" data-f="text" placeholder="Section heading" value="${esc(b.text)}">`+colorRow(b);
   if(b.type==='divider') return `<div style="color:var(--muted);font-size:12.5px;padding:2px 0">A divider bar will appear here between sections.</div>`;
@@ -755,10 +761,13 @@ function setupFocus(el){
     drag=true;sx=e.clientX;sy=e.clientY;bx=(b.fx!=null?+b.fx:50);by=(b.fy!=null?+b.fy:50);try{el.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
   el.addEventListener('pointermove',e=>{if(!drag)return;const b=blocks.find(x=>String(x.id)===id);if(!b)return;
     const r=el.getBoundingClientRect();
-    b.fx=Math.round(Math.max(0,Math.min(100,bx-(e.clientX-sx)/r.width*100)));
-    b.fy=Math.round(Math.max(0,Math.min(100,by-(e.clientY-sy)/r.height*100)));
+    // Drag DOWN = frame moves down the photo (shows a lower strip) — the frame
+    // follows the finger, not the image.
+    b.fx=Math.round(Math.max(0,Math.min(100,bx+(e.clientX-sx)/r.width*100)));
+    b.fy=Math.round(Math.max(0,Math.min(100,by+(e.clientY-sy)/r.height*100)));
     el.style.backgroundPosition=b.fx+'% '+b.fy+'%';
-    const band=el.querySelector('.focband'); if(band) band.style.top=(b.fy*0.4074).toFixed(1)+'%';});
+    const band=el.querySelector('.focband'); if(band) band.style.top=(b.fy*0.4074).toFixed(1)+'%';
+    const pv=document.querySelector('[data-fprev="'+id+'"]'); if(pv) pv.style.backgroundPosition=b.fx+'% '+b.fy+'%';});
   ['pointerup','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>{drag=false;}));
 }
 /* Format bar: **bold**, _italic_, ++larger++ — wraps/unwraps the selection. */

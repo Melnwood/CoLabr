@@ -4,7 +4,7 @@ const { sessionFromEvent } = require('./_auth');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const UPDATES = 'tbl7aVErl35Qw36QZ';
 const MISS = 'tbli1L8AO0JUDL7Wl';
-const U_MISS = 'fldpNShY6OSQBSbx0', U_TITLE = 'fldhkHAXyvqtrx3cu', U_COVER = 'fldsU5p6r9LzdeTF7', U_DATE = 'fldvi8dFkZBFANacG';
+const U_MISS = 'fldpNShY6OSQBSbx0', U_TITLE = 'fldhkHAXyvqtrx3cu', U_COVER = 'fldsU5p6r9LzdeTF7', U_DATE = 'fldvi8dFkZBFANacG', U_FOCUS = 'fldPfHW8WdHgHK921';
 const M_NAME = 'fldPYSQwxoQJGb0Zd', M_ORG = 'fldCQ8c1Eu6SXmY98', M_LOC = 'fld0mx3Sp4JnNnIfc', M_PHOTO = 'fldiXSCuELTQiiT08';
 
 exports.handler = async function (event) {
@@ -20,7 +20,7 @@ exports.handler = async function (event) {
     (md.records || []).forEach(r => { const f = r.fields || {}; map[r.id] = { id: r.id, name: f[M_NAME] || '', org: f[M_ORG] || '', location: f[M_LOC] || '', photo: f[M_PHOTO] || '', count: 0, latest: null }; });
 
     // All published updates → tally per missionary.
-    const flds = `&fields%5B%5D=${U_MISS}&fields%5B%5D=${U_TITLE}&fields%5B%5D=${U_COVER}&fields%5B%5D=${U_DATE}`;
+    const flds = `&fields%5B%5D=${U_MISS}&fields%5B%5D=${U_TITLE}&fields%5B%5D=${U_COVER}&fields%5B%5D=${U_DATE}&fields%5B%5D=${U_FOCUS}`;
     const base = `https://api.airtable.com/v0/${BASE}/${UPDATES}?pageSize=100&returnFieldsByFieldId=true&filterByFormula=${encodeURIComponent("{Status}='Published'")}${flds}`;
     let url = base;
     while (url) {
@@ -28,8 +28,8 @@ exports.handler = async function (event) {
       const d = await r.json();
       (d.records || []).forEach(rec => {
         const f = rec.fields || {}; const title = f[U_TITLE]; if (!title) return;
-        const date = f[U_DATE] || '', cover = f[U_COVER] || '';
-        (f[U_MISS] || []).forEach(mid => { const m = map[mid]; if (!m) return; m.count++; if (!m.latest || date > m.latest.date) m.latest = { title, cover, date }; });
+        const date = f[U_DATE] || '', cover = f[U_COVER] || '', focus = f[U_FOCUS] || '';
+        (f[U_MISS] || []).forEach(mid => { const m = map[mid]; if (!m) return; m.count++; if (!m.latest || date > m.latest.date) m.latest = { title, cover, date, focus }; });
       });
       url = d.offset ? `${base}&offset=${d.offset}` : '';
     }

@@ -637,7 +637,7 @@ function maybeTour(){
   const F=PAGE_FIRST||FAMSHORT;
   const steps=[
     {i:licon('heart',34),h:'Welcome — this wall is for you',p:'You\u2019re part of '+esc(F)+'\u2019s support team, so everything they share lives here: every update, photo, and video, going back years. Scroll anytime, from any email.'},
-    {i:licon('chat',34),h:'Tap any update to read it',p:'Inside you can do three things: tap <b>I\u2019m praying</b> so they know you\u2019re standing with them, <b>write a message</b> — public encouragement or a private note straight to them — and <b>give</b> toward their ministry.'},
+    {i:licon('chat',34),h:'Tap any update to read it',p:'Inside you can do three things: tap <b>I\u2019m praying</b> so they know you\u2019re standing with them, <b>write a message</b> — public encouragement or a note straight to them — and <b>give</b> toward their ministry.'},
     {i:licon('globe',34),h:'Read in your language',p:'Use the language picker up top and the whole wall — even video subtitles — switches to the language of your heart. Change how you get emails anytime from the link in any update.'}
   ];
   let i=0;
@@ -688,6 +688,14 @@ async function load(){
     if(!RAILS.picks){ const jr=document.getElementById('jvrail'); if(jr) jr.style.display='none'; }
     if(raw.locked){ renderLocked(raw); return; }
     VIEWER=raw.viewer||null;
+    // Owner lens: the missionary is looking at their own wall as one supporter circle.
+    if(VIEWER&&VIEWER.preview&&!document.getElementById('lensbar')){
+      const ex=new URL(location.href); ex.searchParams.delete('as');
+      const bb=document.createElement('div'); bb.id='lensbar';
+      bb.style.cssText='position:sticky;top:0;z-index:120;background:#0D1B2A;color:#fff;font-size:12.5px;font-weight:600;padding:9px 14px;text-align:center';
+      bb.innerHTML='You are seeing this page as a <b>'+esc(VIEWER.audience||'')+'</b> supporter — exactly what that circle sees. Clicks here are never counted. <a href="'+ex.pathname+ex.search+'" style="color:#FFC24B;margin-left:8px">Exit preview</a>';
+      document.body.prepend(bb);
+    }
     // Co-brand: national pages (a national-org member writing in their own language) switch brand by
     // reader language and show the "Josiah Venture | <country>" mark for English readers.
     const pg = raw.page || {};
@@ -1169,7 +1177,7 @@ async function openReader(i){
   const cf=coverFocus(u);
   const media=emb?`<iframe src="${emb}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`:(u.cover?`<img src="${u.cover}" alt=""${cf?` style="object-position:${cf}"`:''} onerror="this.style.display='none'">`:'');
   sheet.innerHTML=`<div class="rcov">${media}<button class="x" id="rx">×</button>${ME?'<button class="rmore" id="rmore" aria-label="More">⋯</button>':''}</div>
-    ${ME?`<div class="rmoremenu" id="rmoremenu"><button id="rshareBtn">${licon('globe',13)} Share this on my international wall</button></div>`:''}
+    ${ME?`<div class="rmoremenu" id="rmoremenu">${(MYPAGE&&MYPAGE===FAMILY)?`<button id="reditBtn">✎ Edit this update</button>`:''}<button id="rshareBtn">${licon('globe',13)} Share this on my international wall</button></div>`:''}
     <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>
     <div class="rmeta"><span>${u.date}, ${u.y}</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#7a756f" stroke-width="1.9"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>${(u.opens||0).toLocaleString()} opens</span></div>
     ${tnote}
@@ -1184,6 +1192,8 @@ async function openReader(i){
     if(mb&&mm){ mb.addEventListener('click',e=>{e.stopPropagation();mm.classList.toggle('on');}); }
     const sb=document.getElementById('rshareBtn');
     if(sb)sb.addEventListener('click',()=>{ if(mm)mm.classList.remove('on'); shareUpdate(u.id); });
+    const eb=document.getElementById('reditBtn');
+    if(eb)eb.addEventListener('click',()=>{ location.href='compose.html?id='+u.id; });
   }
   showCaptions(sheet);
   wireOverlays(sheet,uu);
@@ -1196,7 +1206,7 @@ function respondHTML(u){
   return `<div class="eng">
     <h4>Respond to the ${FAMSHORT}</h4>
     <div class="prayrow" id="respondRow"><button class="praybtn" id="prayBtn">${licon('pray',15)} I'm praying</button><span class="praycount" id="prayCount"></span></div>
-    <div class="rtabs"><button class="rtab on" data-m="Encouragement">Leave encouragement</button><button class="rtab" data-m="Note">Send a private note</button></div>
+    <div class="rtabs"><button class="rtab on" data-m="Encouragement">Leave encouragement</button><button class="rtab" data-m="Note">Send a note</button></div>
     <div class="rform">
       <input id="rName" placeholder="Your name">
       <input id="rEmail" placeholder="Email (optional)" type="email">
@@ -1217,9 +1227,11 @@ function wireRespond(u){
   if(VIEWER&&VIEWER.name){ if(q('rName')&&!q('rName').value)q('rName').value=VIEWER.name; if(q('rEmail')&&!q('rEmail').value&&VIEWER.email)q('rEmail').value=VIEWER.email; }
   q('prayBtn').addEventListener('click',async()=>{
     const btn=q('prayBtn'); if(btn.classList.contains('done'))return;
-    try{ await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim(),t:VIEWTOK||undefined});
-      btn.classList.add('done'); btn.textContent='✓ Praying — thank you';
-      loadEngagement(u.id);
+    try{ const d=await postResp({type:'Prayer',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name:(q('rName').value||'').trim(),t:VIEWTOK||undefined});
+      btn.classList.add('done');
+      // Your own page is a test bench — the click never lands in your real numbers.
+      btn.textContent = (d&&d.test) ? '✓ Test only — your own page' : '✓ Praying — thank you';
+      if(!(d&&d.test)) loadEngagement(u.id);
     }catch(e){ /* ignore */ }
   });
   document.querySelectorAll('.rtab').forEach(t=>t.addEventListener('click',()=>{
@@ -1232,8 +1244,10 @@ function wireRespond(u){
     if(!message){ out.className='rmsg err'; out.textContent='Please write a message.'; return; }
     q('rSend').disabled=true; out.className='rmsg'; out.textContent='Sending…';
     try{
-      await postResp({type:respondMode,updateId:u.id,updateTitle:u.title,missionary:FAMILY,name,email:(q('rEmail').value||'').trim(),message,public:respondMode==='Encouragement',t:VIEWTOK||undefined});
-      out.className='rmsg ok'; out.textContent = respondMode==='Encouragement' ? 'Thank you — your encouragement is posted below.' : 'Thank you — your note was sent privately to the family.';
+      const d=await postResp({type:respondMode,updateId:u.id,updateTitle:u.title,missionary:FAMILY,name,email:(q('rEmail').value||'').trim(),message,public:respondMode==='Encouragement',t:VIEWTOK||undefined});
+      out.className='rmsg ok';
+      out.textContent = (d&&d.test) ? 'Test only — responses to your own page aren’t counted or sent.'
+        : (respondMode==='Encouragement' ? 'Thank you — your encouragement is posted below.' : 'Thank you — your note was sent to the family.');
       q('rMsg').value='';
       if(respondMode==='Encouragement') loadEngagement(u.id);
     }catch(e){ out.className='rmsg err'; out.textContent=e.message||'Could not send.'; }

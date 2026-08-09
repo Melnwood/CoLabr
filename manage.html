@@ -298,6 +298,12 @@
           <button class="photobtn" id="pggiveSave" type="button">Save</button>
         </div>
         <div class="savenote" id="pggiveMsg"></div>
+        <div class="hint pglab">See your page as a supporter <span class="pgnote">audience gates apply for real — nothing you click is counted</span></div>
+        <div class="pgsub" id="lensrow" style="margin-top:2px">
+          <a class="pglink" id="lensIntl" href="#" target="_blank" rel="noopener">International supporter</a>
+          <a class="pglink" id="lensNat" href="#" target="_blank" rel="noopener">National-org supporter</a>
+          <a class="pglink" id="lensBoth" href="#" target="_blank" rel="noopener">Supporter of both</a>
+        </div>
       </div>
       <div class="panel appearance" id="appearance">
         <h2>Supporter page style <span class="hint">How your supporters see your updates</span></h2>
@@ -575,6 +581,12 @@ async function liveStrip(){
     // Point "View site" at THIS person's own wall, not the site default.
     const vs=document.querySelector('.nav a[href="index.html"]');
     if(vs&&me.miss.name) vs.href='index.html?m='+encodeURIComponent(me.miss.name);
+    // "See your page as…" lenses — the wall with one supporter circle's eyes.
+    if(me.miss.name){
+      const wall='index.html?m='+encodeURIComponent(me.miss.name)+'&notour=1&as=';
+      const L={lensIntl:'International',lensNat:'National',lensBoth:'Both'};
+      Object.keys(L).forEach(id=>{ const a=document.getElementById(id); if(a) a.href=wall+L[id]; });
+    }
     const el=document.getElementById('livestrip'); el.style.display='flex';
     if(me.miss.live){
       el.style.background='#eafaf1'; el.style.border='1px solid #bfe6cf';

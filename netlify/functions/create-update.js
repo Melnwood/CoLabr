@@ -67,6 +67,11 @@ exports.handler = async function (event) {
   if (blocks.length) fields['Blocks'] = JSON.stringify(blocks);
   if (b.audiences && b.audiences.length) fields['Audiences'] = b.audiences;
   const cover = b.cover || firstPhoto; if (cover) fields['Cover Image URL'] = cover;
+  // The crop the missionary chose lives with the cover, so every card shows the faces.
+  if (cover) {
+    const cb = blocks.find(x => (x.type === 'hero' || x.type === 'photo') && x.url === cover) || {};
+    fields['Cover Focus'] = `${cb.fx != null ? +cb.fx : 50}% ${cb.fy != null ? +cb.fy : 50}%`;
+  }
   const video = b.video || firstVideo; if (video) fields['Video URL'] = video;
 
   try {

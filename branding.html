@@ -280,5 +280,6 @@ fetch('/.netlify/functions/me?full=1').then(r=>r.ok?r.json():null).then(me=>{
   if(me&&me.miss&&me.miss.name){document.querySelectorAll('a[href="index.html"]').forEach(a=>a.href='index.html?m='+encodeURIComponent(me.miss.name));}
 });
 </script>
+<script src="help.js"></script>
 </body>
 </html>
