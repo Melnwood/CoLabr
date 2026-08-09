@@ -179,7 +179,7 @@ function renderDir(){
   const el=document.getElementById('dir');
   if(!show.length){ el.innerHTML='<div class="state">No teammate pages here yet.</div>'; return; }
   el.innerHTML=show.map(m=>{const i=ms.indexOf(m);return `<div class="mcard" data-i="${i}">
-      <div class="mcov"${m.latest&&m.latest.cover?` style="background-image:url('${esc(m.latest.cover)}');background-position:${esc((m.latest.focus||'50% 50%'))}"`:''}><span class="mcount">${m.count} update${m.count===1?'':'s'}</span></div>
+      <div class="mcov"${m.latest&&m.latest.cover?` style="background-image:url('${esc(m.latest.cover)}');background-position:${esc((m.latest.focus||'50% 35%'))}"`:''}><span class="mcount">${m.count} update${m.count===1?'':'s'}</span></div>
       <div class="mbody"><div class="mnamerow">${m.photo?`<div class="mav" style="background-image:url('${esc(m.photo)}')"></div>`:`<div class="mav">${esc((m.name||'?').trim().charAt(0).toUpperCase())}</div>`}<div class="mname">${esc(m.name)}</div></div>${m.org?`<div class="morg">${esc(m.org)}</div>`:''}${m.location?`<div class="mloc">${esc(m.location)}</div>`:''}
       ${m.latest?`<div class="mlatest">Latest: <b>${esc(m.latest.title)}</b></div>`:''}</div></div>`;}).join('');
   el.querySelectorAll('[data-i]').forEach(c=>c.addEventListener('click',()=>openTeammate(window._ms[+c.dataset.i])));
@@ -221,7 +221,7 @@ function view(u){
 }
 function firstText(blocks){ const b=(blocks||[]).find(x=>x&&(x.type==='text'||x.type==='heading')); return b?b.text:''; }
 // The crop the missionary chose for the banner — never crop heads off.
-function cfocus(u){ const b=((u&&u.blocks)||[]).find(x=>x&&(x.type==='hero'||x.type==='photo')&&x.url===u.cover); return b?`${b.fx!=null?+b.fx:50}% ${b.fy!=null?+b.fy:50}%`:'50% 50%'; }
+function cfocus(u){ const b=((u&&u.blocks)||[]).find(x=>x&&(x.type==='hero'||x.type==='photo')&&x.url===u.cover); return (b&&(b.fx!=null||b.fy!=null))?`${b.fx!=null?+b.fx:50}% ${b.fy!=null?+b.fy:50}%`:'50% 35%'; }
 function fmtDate(s){ if(!s)return''; const p=s.split('-'); const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${M[(+p[1]||1)-1]} ${+p[2]||''}, ${p[0]}`; }
 
 function openReader(i){ const n=document.getElementById('pname').textContent; openReaderU(CUR[i], n, n); }

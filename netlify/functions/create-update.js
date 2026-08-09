@@ -68,9 +68,12 @@ exports.handler = async function (event) {
   if (b.audiences && b.audiences.length) fields['Audiences'] = b.audiences;
   const cover = b.cover || firstPhoto; if (cover) fields['Cover Image URL'] = cover;
   // The crop the missionary chose lives with the cover, so every card shows the faces.
+  // Never chosen → bias upward (faces live in the upper third; center-crop cuts heads).
   if (cover) {
     const cb = blocks.find(x => (x.type === 'hero' || x.type === 'photo') && x.url === cover) || {};
-    fields['Cover Focus'] = `${cb.fx != null ? +cb.fx : 50}% ${cb.fy != null ? +cb.fy : 50}%`;
+    fields['Cover Focus'] = (cb.fx != null || cb.fy != null)
+      ? `${cb.fx != null ? +cb.fx : 50}% ${cb.fy != null ? +cb.fy : 50}%`
+      : '50% 35%';
   }
   const video = b.video || firstVideo; if (video) fields['Video URL'] = video;
 

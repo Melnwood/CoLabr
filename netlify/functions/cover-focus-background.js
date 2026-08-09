@@ -27,7 +27,11 @@ exports.handler = async function (event) {
       const cover = c['Cover Image URL'] || '';
       let blocks = []; try { blocks = JSON.parse(c['Blocks'] || '[]'); } catch {}
       const cb = blocks.find(x => x && (x.type === 'hero' || x.type === 'photo') && x.url === cover) || {};
-      const focus = `${cb.fx != null ? +cb.fx : 50}% ${cb.fy != null ? +cb.fy : 50}%`;
+      // No focal point ever chosen (imports, undragged banners): bias upward —
+      // faces live in the upper third; center-cropping cuts heads off.
+      const focus = (cb.fx != null || cb.fy != null)
+        ? `${cb.fx != null ? +cb.fx : 50}% ${cb.fy != null ? +cb.fy : 50}%`
+        : '50% 35%';
       if ((c['Cover Focus'] || '') === focus) continue;
       const pr = await fetch(api, { method: 'PATCH', headers: auth,
         body: JSON.stringify({ records: [{ id: rec.id, fields: { 'Cover Focus': focus } }], typecast: true }) });
