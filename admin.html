@@ -139,18 +139,21 @@
 
   <div class="sect">Test drive</div>
   <div class="panel" id="tdpanel">
-    <b class="t">Replay any first-time experience</b>
-    <p class="sub" style="margin:0 0 10px">Use a <b>plus-alias</b> email so nothing real is ever touched, and a <b>private/incognito window</b> so the site forgets you between runs.</p>
-    <ul class="recipes">
-      <li><b>Outsider joining:</b> private window → colabr.netlify.app → Take a tour → Create your page → sign in with the <i>email option</i> as <code>yourname+out1@gmail.com</code>.</li>
-      <li><b>JV staff first run:</b> same, but sign in by email as <code>mellenwood+staff1@josiahventure.com</code> — join page, test mode, the works.</li>
-      <li><b>Supporter's first visit:</b> open your wall with <code>&amp;tourreset=1</code> added to a supporter link — the welcome walkthrough plays again.</li>
-    </ul>
-    <div class="mrow">
-      <input id="tdemail" placeholder="persona+alias@… to wipe and replay">
-      <button id="tdwipe">Wipe persona</button>
+    <b class="t">See it as a brand-new person</b>
+    <p class="sub" style="margin:0 0 12px">One click switches you into a disposable test account and starts you at the front door — landing page, create your page, onboarding, composer, all of it. It resets itself every time, so you can do it over and over. <b>To come back to being you:</b> Sign out, then sign in with Google.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="/.netlify/functions/testdrive?go=outsider" style="background:var(--acc);color:#fff;text-decoration:none;font-weight:800;font-size:13.5px;border-radius:10px;padding:12px 20px">→ New person outside JV</a>
+      <a href="/.netlify/functions/testdrive?go=jvstaff" style="background:var(--teal);color:#04211e;text-decoration:none;font-weight:800;font-size:13.5px;border-radius:10px;padding:12px 20px">→ New person inside JV</a>
     </div>
-    <div id="tdmsg"></div>
+    <p class="sub" style="margin:12px 0 0">Supporter's first visit: open your own wall from any supporter email link and add <code style="background:var(--panel2);border-radius:5px;padding:1px 6px">&amp;tourreset=1</code> — the welcome walkthrough plays again.</p>
+    <details style="margin-top:12px">
+      <summary style="cursor:pointer;font-size:12.5px;color:var(--muted)">Advanced: wipe a test persona by email</summary>
+      <div class="mrow" style="margin-top:10px">
+        <input id="tdemail" placeholder="persona+alias@… to wipe and replay">
+        <button id="tdwipe">Wipe persona</button>
+      </div>
+      <div id="tdmsg"></div>
+    </details>
   </div>
 
   <div class="foot">Super admins are set by the platform's ADMIN_EMAILS list — right now that's Mel and Noah. Everything on this page acts platform-wide; page-level things (your updates, your people) live on your regular dashboard.</div>
