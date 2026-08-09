@@ -157,6 +157,8 @@
       <div class="winhint">Your saved templates — and ones the team shares — live here. “Save as template” below adds to them.</div>
       </div>
 
+      <div class="buildzone">
+      <div class="brail">
       <div class="win">
       <div class="winlab">Building blocks</div>
       <div class="palette" id="palette">
@@ -175,6 +177,9 @@
       </div>
       </div>
 
+      </div>
+
+      <div class="bmain">
       <div class="win">
       <div class="winlab">Your update</div>
       <div class="canvas" id="canvas"></div>
@@ -188,11 +193,34 @@
         <button class="btn tpl" id="saveTpl" type="button">Save as template</button>
       </div>
       <div class="msg" id="msg"></div>
+      </div>
+      </div>
     </div>
   </div>
 
   <style>
     .win{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px 14px;margin:0 0 14px;box-shadow:0 2px 10px rgba(60,40,20,.05)}
+    /* Building zone: the block palette floats on the LEFT and stays with you;
+       the update you're building holds the center, and each added block glides
+       into the middle of the screen beside the palette. */
+    .buildzone{display:grid;grid-template-columns:176px minmax(0,1fr);gap:16px;align-items:start}
+    .buildzone .brail{position:sticky;top:12px}
+    .buildzone .brail .win{padding:12px 12px 10px;margin-bottom:0}
+    .buildzone .brail .palette{display:flex;flex-direction:column;gap:6px}
+    .buildzone .brail .pbtn{width:100%;justify-content:flex-start;text-align:left}
+    .buildzone .bmain{min-width:0}
+    @media(max-width:820px){
+      .buildzone{grid-template-columns:1fr}
+      .buildzone .brail{position:static}
+      .buildzone .brail .palette{flex-direction:row;flex-wrap:wrap}
+      .buildzone .brail .pbtn{width:auto}
+    }
+    #canvas .blk.justadded{outline:2px solid var(--acc);outline-offset:3px;border-radius:12px}
+    /* Embedded in the dashboard overlay: no site chrome, just the creator + a close button. */
+    body.embed .top{display:none}
+    body.embed .wrap{padding-top:10px}
+    #embedx{display:none;position:fixed;top:12px;right:14px;z-index:150;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--text);font-size:17px;cursor:pointer;box-shadow:0 6px 18px rgba(60,40,20,.18)}
+    body.embed #embedx{display:block}
     .winlab{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:0 0 10px}
     .winhint{font-size:12.5px;color:var(--muted);margin-top:8px}
     .actions .btn svg{vertical-align:-2px;margin-right:5px}
@@ -408,6 +436,13 @@ aud.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c.classL
 
 // ---- block builder ----
 let blocks=[], seq=1;
+// Opened from the dashboard as an overlay? Drop the chrome, add a close button.
+if(new URLSearchParams(location.search).get('embed')==='1'){
+  document.body.classList.add('embed');
+  const x=document.createElement('button'); x.id='embedx'; x.type='button'; x.textContent='✕'; x.title='Close';
+  x.addEventListener('click',()=>{ try{parent.postMessage('colabr:closeCompose','*');}catch(_){ location.href='manage.html'; } });
+  document.body.appendChild(x);
+}
 const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, photo:{url:'',caption:''}, video:{url:'',lang:''}, numbers:{a:'',al:'',b:'',bl:'',c:'',cl:''}, quote:{text:'',by:''}, prayer:{text:''}, praise:{text:''}, give:{label:'Give',url:'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969'}, signoff:{text:'With love,\nthe Ellenwoods'}, divider:{} };
 const NAME={hero:'Banner',heading:'Heading',text:'Text',photo:'Photo',video:'Video',numbers:'Numbers',quote:'Quote',prayer:'Prayer request',praise:'Praise',give:'Give button',signoff:'Sign-off',divider:'Divider'};
 document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
@@ -444,7 +479,10 @@ function add(t,at){ syncFromDOM(); const nb={id:seq++,type:t,...JSON.parse(JSON.
   let pos=(at==null||at>blocks.length)?blocks.length:at;
   // The sign-off always stays the very last block — nothing ever lands below it.
   if(t!=='signoff'){ const so=blocks.map(x=>x.type).lastIndexOf('signoff'); if(so>=0&&pos>so) pos=so; }
-  blocks.splice(pos,0,nb); render(); }
+  blocks.splice(pos,0,nb); render();
+  // The block you just added glides to the middle of the screen and glows briefly.
+  const el=document.querySelectorAll('#canvas .blk')[pos];
+  if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); el.classList.add('justadded'); setTimeout(()=>el.classList.remove('justadded'),1100); } }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fieldHtml(b){
   if(b.type==='hero') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a banner photo here, or tap to choose</div><input type="file" accept="image/*" hidden></div>${b.url?`<div class="focusbox" data-focus="${b.id}" style="background-image:url('${esc(b.url)}');background-position:${(b.fx!=null?+b.fx:50)}% ${(b.fy!=null?+b.fy:50)}%"><div class="focband" style="top:${((b.fy!=null?+b.fy:50)*0.4074).toFixed(1)}%"><span class="focbandlab">The wall banner shows this strip</span></div><span class="focushint">Drag the photo up or down to place it</span></div>`:''}<input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><input data-id="${b.id}" data-f="heading" placeholder="Headline (shown over the banner)" value="${esc(b.heading)}"><input data-id="${b.id}" data-f="sub" placeholder="Small line under it (optional)" value="${esc(b.sub)}">`;
@@ -557,6 +595,16 @@ function setupFocus(el){
 function fmtBar(b){
   return `<div class="fbar"><button type="button" class="fbtn" data-w="**" title="Bold"><b>B</b></button><button type="button" class="fbtn" data-w="_" title="Italic"><i>I</i></button><button type="button" class="fbtn" data-w="++" title="Larger text">A<sup>+</sup></button></div>`;
 }
+// Cmd/Ctrl+B and Cmd/Ctrl+I while typing — same markers as the toolbar buttons.
+document.addEventListener('keydown',e=>{
+  if(!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey) return;
+  const k=e.key.toLowerCase();
+  if(k!=='b'&&k!=='i') return;
+  const ta=document.activeElement;
+  if(!ta||ta.tagName!=='TEXTAREA'||ta.dataset.f!=='text'||!ta.closest('#canvas')) return;
+  e.preventDefault();
+  wrapSel(ta,k==='b'?'**':'_');
+});
 function wrapSel(ta,m){
   const s0=ta.selectionStart,e0=ta.selectionEnd,v=ta.value;
   const sel=v.slice(s0,e0), before=v.slice(0,s0), after=v.slice(e0);

@@ -185,6 +185,10 @@
   .nav a:hover{box-shadow:0 6px 15px rgba(60,40,20,.14);transform:translateY(-1px);border-color:#d8cdb6}
   .nav a:active{transform:translateY(0);box-shadow:0 1px 2px rgba(60,40,20,.08);background:#f6f2ec}
   .nav a:focus-visible{outline:2px solid #241f1b;outline-offset:2px}
+  /* The update creator pops up OVER the dashboard — you never leave the room. */
+  #composeov{display:none;position:fixed;inset:0;z-index:200;background:rgba(30,24,18,.5);backdrop-filter:blur(2px)}
+  #composeov.on{display:block}
+  #composeov iframe{position:absolute;top:2.5vh;left:50%;transform:translateX(-50%);width:min(1080px,96vw);height:95vh;border:none;border-radius:16px;background:var(--bg);box-shadow:0 40px 100px rgba(0,0,0,.45)}
   .nav a.superadmin{background:#0D1B2A;color:#fff;border-color:#0D1B2A;box-shadow:0 2px 8px rgba(13,27,42,.25)}
   .nav a.superadmin::before{content:'';width:7px;height:7px;border-radius:50%;background:#FF6B5B;margin-right:7px}
   .nav a.superadmin:hover{background:#132a42;border-color:#132a42}
@@ -263,6 +267,31 @@
 
 <script>
 let ROWS=[], statusF='all';
+/* The creator opens as an overlay above the dashboard; closing it refreshes what you see. */
+function openCompose(url){
+  let ov=document.getElementById('composeov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='composeov';
+    ov.innerHTML='<iframe></iframe>';
+    ov.addEventListener('click',e=>{ if(e.target===ov) closeCompose(); });
+    document.body.appendChild(ov);
+  }
+  ov.querySelector('iframe').src=url+(url.includes('?')?'&':'?')+'embed=1';
+  ov.classList.add('on'); document.body.style.overflow='hidden';
+}
+function closeCompose(){
+  const ov=document.getElementById('composeov'); if(!ov)return;
+  ov.classList.remove('on'); ov.querySelector('iframe').src='about:blank';
+  document.body.style.overflow='';
+  location.reload();   // pick up whatever was saved or published
+}
+window.addEventListener('message',e=>{ if(e.data==='colabr:closeCompose') closeCompose(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.getElementById('composeov')&&document.getElementById('composeov').classList.contains('on')) closeCompose(); });
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href^="compose.html"]');
+  if(!a||e.metaKey||e.ctrlKey||e.shiftKey||e.button!==0) return;
+  e.preventDefault(); openCompose(a.getAttribute('href'));
+});
 function fmtD(d){ try{ const x=new Date(d+'T12:00:00'); if(!isNaN(x)) return x.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }catch(e){} return d||''; }
 // Paint the dashboard in the signed-in person's ORG brand: their organization's main
 // color (from Organizations & branding) becomes --acc, so "New update" and every accent
