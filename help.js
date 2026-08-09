@@ -27,7 +27,7 @@
   const wrap=document.createElement('div');
   wrap.innerHTML=`<button id="helpfab" type="button" title="Need help?" aria-label="Need help?"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.5 0-2.9-.4-4.1-1L3 20l1.1-5.2a8.4 8.4 0 1 1 16.9-3.3z"/><path d="M9 10h6M9 13h4"/></svg></button>
   <div id="helpbox">
-    <div id="helphead"><img src="https://storage.googleapis.com/colabr-photos-jv/profile/1786207347023-dum1ek.png" alt="Noah" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.35)"><div style="flex:1;min-width:0">Co·labr help<br><span>Noah reads every message and follows up ASAP</span></div><button id="helpx" type="button" aria-label="Close" style="background:none;border:none;color:#fff;opacity:.8;font-size:17px;cursor:pointer;padding:4px 6px">✕</button></div>
+    <div id="helphead"><img src="/noah-help.png" alt="Noah" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.35)"><div style="flex:1;min-width:0">Co·labr help<br><span>Noah reads every message and follows up ASAP</span></div><button id="helpx" type="button" aria-label="Close" style="background:none;border:none;color:#fff;opacity:.8;font-size:17px;cursor:pointer;padding:4px 6px">✕</button></div>
     <div id="helpmsgs"></div>
     <div id="helprow"><textarea id="helpin" rows="1" placeholder="Ask anything, or tell us what's wrong…"></textarea><button id="helpsend" type="button" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>
   </div>`;
