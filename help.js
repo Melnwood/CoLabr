@@ -8,9 +8,11 @@
   try{ const mr=await fetch('/.netlify/functions/me'); if(!mr.ok) return; }catch(_){ return; }
 
   const css=`
-  #helpfab{position:fixed;right:20px;bottom:20px;z-index:180;width:52px;height:52px;border-radius:50%;background:var(--text,#241f1b);color:#fff;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(36,31,27,.35);display:flex;align-items:center;justify-content:center}
+  #helpfab{position:fixed;right:20px;bottom:20px;z-index:180;width:72px;height:72px;border-radius:50%;background:#fff;border:none;padding:0;cursor:pointer;box-shadow:0 12px 34px rgba(36,31,27,.4);overflow:visible}
   #helpfab:hover{transform:translateY(-2px)}
-  #helpfab svg{width:24px;height:24px;stroke:#fff;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  #helpfab img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;border:3px solid #fff;box-sizing:border-box}
+  #helpbadge{position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;background:var(--acc,#FF6600);border:2.5px solid #fff;display:flex;align-items:center;justify-content:center}
+  #helpbadge svg{width:13px;height:13px;stroke:#fff;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
   #helpbox{display:none;position:fixed;right:20px;bottom:84px;z-index:181;width:min(360px,calc(100vw - 32px));height:min(480px,70vh);background:#fff;border:1px solid var(--line,#e7e4e0);border-radius:16px;box-shadow:0 24px 70px rgba(36,31,27,.3);flex-direction:column;overflow:hidden}
   #helpbox.on{display:flex}
   #helphead{background:var(--text,#241f1b);color:#fff;padding:13px 16px;font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px}
@@ -41,9 +43,9 @@
   const st=document.createElement('style'); st.textContent=css; document.head.appendChild(st);
 
   const wrap=document.createElement('div');
-  wrap.innerHTML=`<button id="helpfab" type="button" title="Need help?" aria-label="Need help?"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.5 0-2.9-.4-4.1-1L3 20l1.1-5.2a8.4 8.4 0 1 1 16.9-3.3z"/><path d="M9 10h6M9 13h4"/></svg></button>
+  wrap.innerHTML=`<button id="helpfab" type="button" title="Need help? Chat with Noah" aria-label="Need help? Chat with Noah"><img src="/noah-help.png" alt=""><span id="helpbadge"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.5 0-2.9-.4-4.1-1L3 20l1.1-5.2a8.4 8.4 0 1 1 16.9-3.3z"/></svg></span></button>
   <div id="helpbox">
-    <div id="helphead"><img src="/noah-help.png" alt="Noah" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.35)"><div style="flex:1;min-width:0">Co·labr help<br><span>Noah reads every message and follows up ASAP</span></div><button id="fbtab" type="button">Found a problem?</button><button id="helpx" type="button" aria-label="Close" style="background:none;border:none;color:#fff;opacity:.8;font-size:17px;cursor:pointer;padding:4px 6px">✕</button></div>
+    <div id="helphead"><img src="/noah-help.png" alt="Noah" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.4)"><div style="flex:1;min-width:0">Co·labr help<br><span>Noah reads every message and follows up ASAP</span></div><button id="fbtab" type="button">Found a problem?</button><button id="helpx" type="button" aria-label="Close" style="background:none;border:none;color:#fff;opacity:.8;font-size:17px;cursor:pointer;padding:4px 6px">✕</button></div>
     <div id="helpmsgs"></div>
     <div id="fbmode">
       <p><b>Sandbox report.</b> Say what you expected and what actually happened. Attach a screenshot (or paste one right into the box) — it goes straight to Mel and onto the fix list.</p>
