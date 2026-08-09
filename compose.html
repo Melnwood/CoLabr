@@ -216,6 +216,8 @@
       .buildzone .brail .pbtn{width:auto}
     }
     #canvas .blk.justadded{outline:2px solid var(--acc);outline-offset:3px;border-radius:12px}
+    .fmtview{background:#fffdf9;border:1px dashed var(--line);border-radius:9px;padding:10px 12px;font-size:14px;line-height:1.6;color:var(--text);cursor:text;min-height:20px;white-space:normal}
+    .fmtview:hover{border-color:var(--acc)}
     /* Embedded in the dashboard overlay: no site chrome, just the creator + a close button. */
     body.embed .top{display:none}
     body.embed .wrap{padding-top:10px}
@@ -569,6 +571,19 @@ function render(){
     inp.onchange=()=>apply(true);      // picker closed — repaint with the new color
     inp.click();
   }));
+  // Show the formatting for real: when you're not typing in a text section, it renders
+  // bold/italic/large exactly as supporters will see it. Click it to edit the raw text.
+  c.querySelectorAll('textarea[data-f="text"]').forEach(ta=>{
+    const view=document.createElement('div'); view.className='fmtview'; view.title='Click to edit';
+    ta.after(view);
+    const showView=()=>{ const t=ta.value;
+      if(!t.trim()){ view.style.display='none'; ta.style.display=''; return; }
+      view.innerHTML=pvFmt(t); view.style.display='block'; ta.style.display='none'; };
+    const edit=()=>{ view.style.display='none'; ta.style.display=''; ta.focus(); try{ta.setSelectionRange(ta.value.length,ta.value.length);}catch(_){} };
+    view.addEventListener('click',edit);
+    ta.addEventListener('blur',()=>setTimeout(()=>{ if(document.activeElement!==ta) showView(); },140));
+    if(ta.value.trim()) showView();
+  });
   samplePalette();
 }
 /* ---- block accent colors: real org brand colors + banner shades + free pick ---- */

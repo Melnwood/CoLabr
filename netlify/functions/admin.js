@@ -182,11 +182,23 @@ exports.handler = async function (event) {
       return resp(200, { ok: true, name: newName });
     }
 
+    if (b.action === 'setGive') {
+      // Their Give buttons point here — their organization's designated fund for them.
+      const url = (b.url || '').toString().trim().slice(0, 500);
+      if (url && !/^https:\/\/.+\..+/.test(url)) return resp(400, { error: 'Paste a full link starting with https://' });
+      const rec = await findMissionary(auth);
+      if (!rec) return resp(404, { error: 'Missionary record not found.' });
+      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: rec.id, fields: { 'Give URL': url } }], typecast: true }) });
+      if (!r.ok) return resp(r.status, { error: 'Could not save the giving link.' });
+      return resp(200, { ok: true, give: url });
+    }
+
     if (b.action === 'getProfile') {
       const rec = await findMissionary(auth);
       if (!rec) return resp(404, { error: 'Missionary record not found.' });
       const f = rec.fields || {};
-      return resp(200, { ok: true, name: f[MIS_NAME] || '', location: f[MIS_LOC] || '', photo: f[MIS_PHOTO] || '' });
+      return resp(200, { ok: true, name: f[MIS_NAME] || '', location: f[MIS_LOC] || '', photo: f[MIS_PHOTO] || '', give: f['fldKf7jxzKIQQ0S6d'] || '' });
     }
 
     if (b.action === 'setPhoto') {

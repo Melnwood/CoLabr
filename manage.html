@@ -241,6 +241,11 @@
             <button class="photobtn" id="pgnameSave" type="button" style="margin-top:9px">Save name</button>
             <div class="savenote" id="pgnameMsg"></div>
             <div class="hint" style="margin-top:8px">Renaming is safe — links your supporters already have keep working.</div>
+            <div class="hint" style="margin:12px 0 6px">Giving link</div>
+            <input id="pggive" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit" placeholder="https://… your organization's giving page for you">
+            <button class="photobtn" id="pggiveSave" type="button" style="margin-top:9px">Save link</button>
+            <div class="savenote" id="pggiveMsg"></div>
+            <div class="hint" style="margin-top:6px">Every Give button on your wall and updates sends supporters here. Leave it blank to use Josiah Venture's general fund.</div>
           </div>
         </div>
       </div>
@@ -621,8 +626,18 @@ async function loadProfile(){
     if(d.photo){ av.style.backgroundImage=`url('${d.photo}')`; av.textContent=''; }
     else { av.textContent=(d.name||'?').trim().charAt(0).toUpperCase(); }
     const ni=document.getElementById('pgname'); if(ni&&!ni.value) ni.value=d.name||'';
+    const gi=document.getElementById('pggive'); if(gi&&!gi.value) gi.value=d.give||'';
   }catch(e){}
 }
+document.getElementById('pggiveSave').addEventListener('click',async()=>{
+  const gi=document.getElementById('pggive'), msg=document.getElementById('pggiveMsg');
+  msg.className='savenote'; msg.textContent='Saving…';
+  try{
+    const d=await api('setGive',{url:gi.value.trim()});
+    msg.className='savenote ok';
+    msg.textContent=d.give?'Saved — your Give buttons now point there.':'Cleared — Give buttons use the Josiah Venture general fund.';
+  }catch(e){ msg.className='savenote err'; msg.textContent=e.message; }
+});
 document.getElementById('pgnameSave').addEventListener('click',async()=>{
   const ni=document.getElementById('pgname'), msg=document.getElementById('pgnameMsg');
   const name=ni.value.trim();
