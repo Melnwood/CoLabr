@@ -396,8 +396,9 @@ async function guard(){
     ME_ADMIN=!!me.admin;
     if(me.upload) UPLOAD_READY=me.upload.ready;
     // Personal sign-off default: the missionary's chosen first names, or a best guess.
-    const signNames=((me.miss&&me.miss.signoff)||signGuess((me.miss&&me.miss.name)||'',me.name||'')).replace(/^with love,?\s*/i,'').trim();
-    if(signNames) DEF.signoff.text='With love,\n'+signNames;
+    // Their saved sign-off, verbatim — no words are ever added around it.
+    MYSIGN=((me.miss&&me.miss.signoff)||'').replace(/\r/g,'').trim();
+    if(MYSIGN) DEF.signoff.text=MYSIGN;
     // Give blocks default to this missionary's own designated fund when they have one.
     if(me.miss&&me.miss.give) DEF.give.url=me.miss.give;
     ME_LIVE=!!(me.miss&&me.miss.live);
@@ -461,7 +462,7 @@ if(new URLSearchParams(location.search).get('embed')==='1'){
   x.addEventListener('click',()=>{ try{parent.postMessage('colabr:closeCompose','*');}catch(_){ location.href='manage.html'; } });
   document.body.appendChild(x);
 }
-const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, photo:{url:'',caption:''}, video:{url:'',lang:''}, numbers:{a:'',al:'',b:'',bl:'',c:'',cl:''}, quote:{text:'',by:''}, prayer:{text:''}, praise:{text:''}, give:{label:'Give',url:'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969'}, button:{label:'',url:''}, signoff:{text:'With love,\nthe Ellenwoods'}, divider:{} };
+const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, photo:{url:'',caption:''}, video:{url:'',lang:''}, numbers:{a:'',al:'',b:'',bl:'',c:'',cl:''}, quote:{text:'',by:''}, prayer:{text:''}, praise:{text:''}, give:{label:'Give',url:'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969'}, button:{label:'',url:''}, signoff:{text:''}, divider:{} };
 const NAME={hero:'Banner',heading:'Heading',text:'Text',photo:'Photo',video:'Video',numbers:'Numbers',quote:'Quote',prayer:'Prayer request',praise:'Praise',give:'Give button',button:'Button',signoff:'Sign-off',divider:'Divider'};
 document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
   b.addEventListener('pointerdown',e=>beginDrag(e,'new',{type:b.dataset.t,label:NAME[b.dataset.t]})));
@@ -506,6 +507,7 @@ function offerRestore(){
    Cmd+Shift+Z steps forward. (While typing inside a text box, the browser's own
    text undo applies; step outside the box and Cmd+Z undoes structure too.) ---- */
 let HIST=[], HP=-1, applyingHist=false, histT=null;
+let MYSIGN='';   // their saved standing sign-off (verbatim)
 function snapshot(){
   if(applyingHist) return;
   try{
@@ -578,7 +580,7 @@ function fieldHtml(b){
   if(b.type==='praise') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="Something to praise God for…">${marks2html(b.text)}</div>`+colorRow(b);
   if(b.type==='heading') return `<input data-id="${b.id}" data-f="text" placeholder="Section heading" value="${esc(b.text)}">`+colorRow(b);
   if(b.type==='divider') return `<div style="color:var(--muted);font-size:12.5px;padding:2px 0">A divider bar will appear here between sections.</div>`;
-  if(b.type==='signoff') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="With love, …">${marks2html(b.text)}</div>`;
+  if(b.type==='signoff') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="How do you sign off? Your words, your lines — e.g. All for Him, ⏎ Mel">${marks2html(b.text)}</div>`;
   if(b.type==='give') return `<input data-id="${b.id}" data-f="label" placeholder="Button text (e.g. Give)" value="${esc(b.label)}"><input class="urlin" data-id="${b.id}" data-f="url" placeholder="Giving link (URL)" value="${esc(b.url)}">`+colorRow(b);
   if(b.type==='button'){
     const al=b.align||'left';
@@ -1209,6 +1211,14 @@ async function submit(publish){
     if(r.status===401){location.replace('login.html');return;}
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Something went wrong.');
     clearStash();   // it's safely in Airtable now — the local safety copy has done its job
+    // First sign-off they've ever written? Offer to make it their standing one.
+    try{
+      const soText=((clean.find(x=>x.type==='signoff')||{}).text||'').trim();
+      if(soText&&!MYSIGN&&confirm('Is this how you want to sign off normally?\n\n“'+soText.replace(/\*\*|\+\+|_/g,'')+'”\n\nYes fills it into Your page — every new update starts with it until you change it.')){
+        fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'setSignoff',names:soText.replace(/\*\*|\+\+|_/g,'')})}).catch(()=>{});
+        MYSIGN=soText; DEF.signoff.text=soText;
+      }
+    }catch(_){}
     const hasVid=clean.some(b=>b.type==='video'&&/storage\.googleapis\.com\/.+\/videos\//.test(b.url||'')&&b.lang);
     const held=d.status==='Processing';
     const vidBlocks=clean.filter(b=>b.type==='video'&&b.url);

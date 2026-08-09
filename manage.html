@@ -260,12 +260,10 @@
             <div class="savenote" id="pgnameMsg"></div>
             <div class="hint" style="margin-top:8px">Renaming is safe — links your supporters already have keep working.</div>
             <div class="hint" style="margin:12px 0 6px">Sign-off</div>
-            <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
-              <input id="pgsign" style="flex:1;min-width:160px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit" placeholder="e.g. Mel and Amy">
-              <button class="photobtn" id="pgsignSave" type="button">Save</button>
-            </div>
+            <textarea id="pgsign" rows="3" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit;resize:vertical" placeholder="Your words, your lines — e.g.&#10;All for Him,&#10;Mel"></textarea>
+            <button class="photobtn" id="pgsignSave" type="button" style="margin-top:9px">Save</button>
             <div class="savenote" id="pgsignMsg"></div>
-            <div class="hint" style="margin-top:6px">Every update closes “With love, <span id="pgsignPeek">…</span>” — the builder fills it in for you.</div>
+            <div class="hint" style="margin-top:6px">This exact text closes every update — nothing is added around it.<span id="pgsignPeek" style="display:none"></span></div>
             <div class="hint" style="margin:12px 0 6px">Giving link</div>
             <input id="pggive" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit" placeholder="https://… your organization's giving page for you">
             <button class="photobtn" id="pggiveSave" type="button" style="margin-top:9px">Save link</button>
@@ -297,7 +295,7 @@
 
   <button id="helpfab" type="button" title="Need help?" aria-label="Need help?"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.5 0-2.9-.4-4.1-1L3 20l1.1-5.2a8.4 8.4 0 1 1 16.9-3.3z"/><path d="M9 10h6M9 13h4"/></svg></button>
   <div id="helpbox">
-    <div id="helphead">Co·labr helper <span>· a real person follows up ASAP</span></div>
+    <div id="helphead"><img src="https://storage.googleapis.com/colabr-photos-jv/profile/1786207347023-dum1ek.png" alt="Noah" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.35)"><div style="flex:1;min-width:0">Co·labr help<br><span>Noah reads every message and follows up ASAP</span></div><button id="helpx" type="button" aria-label="Close" style="background:none;border:none;color:#fff;opacity:.8;font-size:17px;cursor:pointer;padding:4px 6px">✕</button></div>
     <div id="helpmsgs"></div>
     <div id="helprow"><textarea id="helpin" rows="1" placeholder="Ask anything, or tell us what's wrong…"></textarea><button id="helpsend" type="button" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>
   </div>
@@ -340,6 +338,7 @@ async function helpSend(){
   document.getElementById('helpsend').disabled=false;
   inp.focus();
 }
+document.getElementById('helpx').addEventListener('click',()=>document.getElementById('helpbox').classList.remove('on'));
 document.getElementById('helpsend').addEventListener('click',helpSend);
 document.getElementById('helpin').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); helpSend(); } });
 /* The creator opens as an overlay above the dashboard; closing it refreshes what you see. */
@@ -388,7 +387,11 @@ async function orgBrand(me){
 async function guard(){
   try{ const r=await fetch('/.netlify/functions/me?full=1'); if(!r.ok) throw 0; const me=await r.json();
     orgBrand(me);
-    if(me.miss&&me.miss.signoff) document.getElementById('greet').textContent='Welcome back, '+me.miss.signoff;
+    if(me.miss&&me.miss.signoff){
+      const ln=me.miss.signoff.split('\n').map(l=>l.trim()).filter(Boolean);
+      const names=ln.find(l=>!/[,，:]$/.test(l))||ln[0]||'';
+      if(names) document.getElementById('greet').textContent='Welcome back, '+names;
+    }
     const av=me.pic?`<img src="${me.pic}" alt="">`:`<span style="width:26px;height:26px;border-radius:50%;background:#241f1b;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">${(me.email||'?')[0].toUpperCase()}</span>`;
     document.getElementById('who').innerHTML=av+`<span class="wem">${me.email}</span>`;
     document.getElementById('sysMenu').insertAdjacentHTML('afterbegin',`<span class="memail">${me.email}</span>`);
@@ -697,18 +700,16 @@ async function loadProfile(){
     else { av.textContent=(d.name||'?').trim().charAt(0).toUpperCase(); }
     const ni=document.getElementById('pgname'); if(ni&&!ni.value) ni.value=d.name||'';
     const gi=document.getElementById('pggive'); if(gi&&!gi.value) gi.value=d.give||'';
-    const so=(d.signoff||'').replace(/^with love,?\s*/i,'').trim();
-    const si=document.getElementById('pgsign'); if(si&&!si.value) si.value=so;
-    const pk=document.getElementById('pgsignPeek'); if(pk) pk.textContent=so||'your names';
+    const si=document.getElementById('pgsign'); if(si&&!si.value) si.value=(d.signoff||'').trim();
   }catch(e){}
 }
 document.getElementById('pgsignSave').addEventListener('click',async()=>{
   const si=document.getElementById('pgsign'), msg=document.getElementById('pgsignMsg');
   msg.className='savenote'; msg.textContent='Saving…';
   try{
-    const d=await api('setSignoff',{names:si.value.trim()});
-    msg.className='savenote ok'; msg.textContent='Saved — updates now close “With love, '+d.signoff+'.”';
-    const pk=document.getElementById('pgsignPeek'); if(pk) pk.textContent=d.signoff;
+    const d=await api('setSignoff',{names:si.value});
+    msg.className='savenote ok';
+    msg.textContent=d.signoff?'Saved — every new update now closes exactly this way.':'Cleared — the builder will ask you when you write.';
   }catch(e){ msg.className='savenote err'; msg.textContent=e.message; }
 });
 document.getElementById('pggiveSave').addEventListener('click',async()=>{

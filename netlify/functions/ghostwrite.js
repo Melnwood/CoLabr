@@ -60,7 +60,7 @@ The finished update should read 3–5× longer than the notes and feel unmistaka
 
 Also:
 - 5–10 paragraphs, each 1–4 sentences, ready for a supporter update wall.
-- Do NOT include a sign-off line (the composer adds "${signoff || 'their sign-off'}" automatically).
+- Do NOT include a sign-off line (the composer adds "${(signoff || 'their sign-off').replace(/\n/g, ' / ')}" automatically).
 - Title: study the sample titles — theirs carry the update's spiritual center, often a declaration of faith, a question they're living inside, or a single resonant image, never a summary of events and never newsletter-speak ("Spring Update", "News from the field" are failures). Write the title they would have written.
 - If the notes include instructions about tone or length ("keep it short", "more reflective"), obey them.
 ${steerText}

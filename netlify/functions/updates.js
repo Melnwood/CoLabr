@@ -11,7 +11,7 @@ const MIS_LOC = 'fld0mx3Sp4JnNnIfc';
 const MIS_ORG = 'fldCQ8c1Eu6SXmY98';
 const MIS_PHOTO = 'fldiXSCuELTQiiT08';
 const MIS_GIVE = 'fldKf7jxzKIQQ0S6d';
-const MIS_SIGN = 'fldYKpzH4jjV8SN09';   // personal first names, e.g. "Mel and Amy" 
+const MIS_SIGN = 'fldD1inZ2xxgQ3OXv';   // the FULL sign-off, their words, possibly multiline
 const MIS_NATIONAL = 'fld4WE8NRwSrNj7ih';        // National staff (checkbox) — authoritative co-brand switch
 const ORGS_TABLE = 'tbl152sVfqGyrqpJQ';        // National Orgs (brand)
 const ORG_CODE = 'fldYMMDdsP2DgNzmZ', ORG_NAME = 'fldsyU3dpzLdkXI7t';
@@ -134,7 +134,11 @@ exports.handler = async function (event) {
         const mfields = (rec && rec.fields) || {};
         const s = mfields[MIS_STYLE]; if (s) style = (s && s.name) ? s.name : s;
         native = !!mfields[MIS_NATIONAL];
-        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', give: mfields[MIS_GIVE] || '', first: (mfields[MIS_SIGN] || '').trim(), country: '', orgName: '', native,
+        // "first" = the names line of the sign-off (skip closing phrases like "With love,")
+        // — it feeds personal touches like "Mel and Amy's highlights" and the give box.
+        const soLines = (mfields[MIS_SIGN] || '').split('\n').map(l => l.trim()).filter(Boolean);
+        const soFirst = (soLines.find(l => !/[,，:]$/.test(l)) || soLines[0] || '').trim();
+        page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', give: mfields[MIS_GIVE] || '', first: soFirst, country: '', orgName: '', native,
           rails: { hl: !mfields['fldhuobGXx9rv3vaO'], picks: !mfields['fldviqu0XW23doCM2'] } };
       }
     } catch (e) { /* fall back */ }

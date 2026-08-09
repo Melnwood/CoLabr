@@ -183,10 +183,9 @@ exports.handler = async function (event) {
     }
 
     if (b.action === 'setSignoff') {
-      // "With love, Mel and Amy" — the names that close every update. The composer
-      // pre-fills its sign-off block from this.
-      const names = (b.names || '').toString().trim().slice(0, 80);
-      if (names.length < 2) return resp(400, { error: 'Who signs your updates? (like "Mel and Amy")' });
+      // The FULL sign-off, their words, any number of lines — nothing is ever added
+      // around it. The builder pre-fills its sign-off block from this. Blank clears it.
+      const names = (b.names || '').toString().replace(/\r/g, '').trim().slice(0, 300);
       const rec = await findMissionary(auth);
       if (!rec) return resp(404, { error: 'Missionary record not found.' });
       const r = await fetch(`https://api.airtable.com/v0/${BASE}/${MIS_TABLE}`, { method: 'PATCH', headers: auth,
@@ -211,7 +210,7 @@ exports.handler = async function (event) {
       const rec = await findMissionary(auth);
       if (!rec) return resp(404, { error: 'Missionary record not found.' });
       const f = rec.fields || {};
-      return resp(200, { ok: true, name: f[MIS_NAME] || '', location: f[MIS_LOC] || '', photo: f[MIS_PHOTO] || '', give: f['fldKf7jxzKIQQ0S6d'] || '', signoff: f['fldYKpzH4jjV8SN09'] || '' });
+      return resp(200, { ok: true, name: f[MIS_NAME] || '', location: f[MIS_LOC] || '', photo: f[MIS_PHOTO] || '', give: f['fldKf7jxzKIQQ0S6d'] || '', signoff: f['fldD1inZ2xxgQ3OXv'] || '' });
     }
 
     if (b.action === 'setPhoto') {
