@@ -464,6 +464,11 @@ async function load(){
     if(!r.ok){ document.getElementById('people').innerHTML='<div class="state">'+esc(d.error||'Could not load.')+'</div>'; return; }
     DATA=d; build(); renderPeople();
     if(CUR&&PEOPLE.some(p=>p.key===CUR)) openPerson(CUR);
+    // Arrived from an email's Reply button (?c=<conversation id>): open that person.
+    else{
+      const c=new URLSearchParams(location.search).get('c');
+      if(c){ const hit=PEOPLE.find(p=>p.rows.some(r=>r.id===c)); if(hit) openPerson(hit.key); }
+    }
   }catch(_){ document.getElementById('people').innerHTML='<div class="state">Could not reach the server.</div>'; }
 }
 load();

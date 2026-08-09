@@ -122,7 +122,15 @@ function render(){
   // A conversation link opens with that conversation expanded.
   if(C){ const idx=convos.findIndex(c=>c.id===C); if(idx>=0){ const row=cl.querySelector('.crow[data-i="'+idx+'"]'); if(row){ row.classList.add('open'); row.scrollIntoView({behavior:'smooth',block:'center'}); } } }
 }
-load();
+// Members don't live here — a signed-in Co·labr member's conversations (both
+// directions) are on their Conversations tab, so route them straight there.
+(async()=>{
+  try{
+    const r=await fetch('/.netlify/functions/me');
+    if(r.ok){ location.replace('messages.html'+(C?'?c='+encodeURIComponent(C):'')); return; }
+  }catch(_){}
+  load();
+})();
 </script>
 </body>
 </html>
