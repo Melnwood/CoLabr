@@ -191,16 +191,23 @@ function build(){
     p.inF=p.flip?'m':'s';
     p.mineF=p.flip?'s':'m';
     p.unread=p.flip?!!(p.last&&p.last.kind==='msg'&&p.last.f==='m'):p.rows.some(r=>!r.read);
+    // "Waiting on you": THEY spoke last in any string — read or not, it needs an answer.
+    p.needs=p.flip?p.unread:p.rows.some(r=>{
+      if(!(r.message||(r.thread&&r.thread.length)))return false;
+      const th=r.thread||[];
+      return th.length?th[th.length-1].f!=='m':!r.replied;
+    });
     // The last time THEY wrote or prayed — what "recent conversation" means.
     p.lastIn=p.items.reduce((m,x)=>((x.kind==='pray'&&!x.byMe)||x.f===p.inF)&&String(x.at||'')>m?x.at:m,'');
   });
-  // Recent incoming first (newest on top), then everyone else A→Z by last name.
+  // Waiting-on-you first, then other recent activity, then everyone A→Z by last name.
   const lname=p=>{const w=(p.name||'').trim().replace(/&.*$/,'').trim().split(/\s+/);return (w[w.length-1]||'').toLowerCase();};
   const cutoff=new Date(Date.now()-90*24*3600*1000).toISOString();
+  const tier=p=>p.needs?0:((p.unread||p.lastIn>cutoff)?1:2);
   PEOPLE.sort((a,b)=>{
-    const ar=a.unread||a.lastIn>cutoff, br=b.unread||b.lastIn>cutoff;
-    if(ar!==br) return ar?-1:1;
-    if(ar&&br) return String(b.lastIn).localeCompare(String(a.lastIn));
+    const at=tier(a), bt=tier(b);
+    if(at!==bt) return at-bt;
+    if(at<2) return String(b.lastIn).localeCompare(String(a.lastIn));
     return lname(a).localeCompare(lname(b))||a.name.localeCompare(b.name);
   });
 }
@@ -218,7 +225,7 @@ function renderPeople(){
     return `<div class="person${CUR===p.key?' on':''}" data-k="${esc(p.key)}">
       ${SELMODE?`<input type="checkbox" class="psel"${SEL.has(p.key)?' checked':''}${p.email?'':' disabled title="No email"'}>`:''}
       <div class="pav">${esc((p.name||'?').trim().charAt(0).toUpperCase())}</div>
-      <div class="pmain"><div class="pname">${p.unread?'<span class="pdot"></span>':''}${esc(p.name)}${p.flip?'<span class="ptag">you follow</span>':''}</div>
+      <div class="pmain"><div class="pname">${(p.unread||p.needs)?'<span class="pdot"></span>':''}${esc(p.name)}${p.flip?'<span class="ptag">you follow</span>':''}</div>
       <div class="pprev">${esc(prev)}</div></div>
       <div class="pwhen">${p.last?fmtD(p.last.at):''}</div></div>`;
   }).join('');
