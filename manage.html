@@ -185,6 +185,24 @@
   .nav a:hover{box-shadow:0 6px 15px rgba(60,40,20,.14);transform:translateY(-1px);border-color:#d8cdb6}
   .nav a:active{transform:translateY(0);box-shadow:0 1px 2px rgba(60,40,20,.08);background:#f6f2ec}
   .nav a:focus-visible{outline:2px solid #241f1b;outline-offset:2px}
+  /* Help chat — floating bubble, bottom right; the norm for support. */
+  #helpfab{position:fixed;right:20px;bottom:20px;z-index:180;width:52px;height:52px;border-radius:50%;background:var(--text);color:#fff;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(36,31,27,.35);display:flex;align-items:center;justify-content:center}
+  #helpfab:hover{transform:translateY(-2px)}
+  #helpfab svg{width:24px;height:24px;stroke:#fff;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  #helpbox{display:none;position:fixed;right:20px;bottom:84px;z-index:181;width:min(360px,calc(100vw - 32px));height:min(480px,70vh);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 70px rgba(36,31,27,.3);flex-direction:column;overflow:hidden}
+  #helpbox.on{display:flex}
+  #helphead{background:var(--text);color:#fff;padding:13px 16px;font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+  #helphead span{font-weight:500;opacity:.75;font-size:11.5px}
+  #helpmsgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
+  .hmsg{max-width:85%;padding:9px 13px;border-radius:13px;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+  .hmsg.me{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:4px}
+  .hmsg.bot{align-self:flex-start;background:#f4f1ec;color:var(--text);border-bottom-left-radius:4px}
+  .hmsg.think{color:var(--muted);background:#f4f1ec;font-style:italic}
+  #helprow{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+  #helpin{flex:1;border:1px solid var(--line);border-radius:20px;padding:10px 14px;font-size:13.5px;font-family:inherit;outline:none;resize:none;max-height:90px}
+  #helpin:focus{border-color:var(--acc)}
+  #helpsend{background:var(--acc);color:#fff;border:none;border-radius:50%;width:38px;height:38px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center}
+  #helpsend svg{width:17px;height:17px;stroke:#fff;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
   /* The update creator pops up OVER the dashboard — you never leave the room. */
   #composeov{display:none;position:fixed;inset:0;z-index:200;background:rgba(30,24,18,.5);backdrop-filter:blur(2px)}
   #composeov.on{display:block}
@@ -277,8 +295,53 @@
     </div>
   </div>
 
+  <button id="helpfab" type="button" title="Need help?" aria-label="Need help?"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.5 0-2.9-.4-4.1-1L3 20l1.1-5.2a8.4 8.4 0 1 1 16.9-3.3z"/><path d="M9 10h6M9 13h4"/></svg></button>
+  <div id="helpbox">
+    <div id="helphead">Co·labr helper <span>· a real person follows up ASAP</span></div>
+    <div id="helpmsgs"></div>
+    <div id="helprow"><textarea id="helpin" rows="1" placeholder="Ask anything, or tell us what's wrong…"></textarea><button id="helpsend" type="button" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+  </div>
+
 <script>
 let ROWS=[], statusF='all';
+/* ---- Help chat: instant AI answers, every message logged + emailed to the team ---- */
+const HHIST=[];
+function hAdd(role,text,cls){
+  const m=document.createElement('div'); m.className='hmsg '+(cls||(role==='user'?'me':'bot'));
+  m.textContent=text;
+  document.getElementById('helpmsgs').appendChild(m);
+  document.getElementById('helpmsgs').scrollTop=1e6;
+  return m;
+}
+document.getElementById('helpfab').addEventListener('click',()=>{
+  const box=document.getElementById('helpbox');
+  box.classList.toggle('on');
+  if(box.classList.contains('on')){
+    if(!document.getElementById('helpmsgs').children.length)
+      hAdd('assistant','Hi! I’m the Co·labr helper. Ask me anything, or tell me what’s not working — I’ll help right away, and Mel or Noah will follow up with you personally ASAP.');
+    document.getElementById('helpin').focus();
+  }
+});
+async function helpSend(){
+  const inp=document.getElementById('helpin');
+  const text=inp.value.trim(); if(!text) return;
+  inp.value=''; hAdd('user',text);
+  HHIST.push({role:'user',content:text});
+  const think=hAdd('assistant','…','think');
+  document.getElementById('helpsend').disabled=true;
+  try{
+    const r=await fetch('/.netlify/functions/support',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:HHIST.slice(0,-1)})});
+    const d=await r.json();
+    think.remove();
+    const reply=(r.ok&&d.reply)?d.reply:(d.error||'Something hiccuped — your message is logged and the team will follow up ASAP.');
+    hAdd('assistant',reply);
+    HHIST.push({role:'assistant',content:reply});
+  }catch(_){ think.remove(); hAdd('assistant','I couldn’t reach the server — try once more? Your connection may have blinked.'); }
+  document.getElementById('helpsend').disabled=false;
+  inp.focus();
+}
+document.getElementById('helpsend').addEventListener('click',helpSend);
+document.getElementById('helpin').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); helpSend(); } });
 /* The creator opens as an overlay above the dashboard; closing it refreshes what you see. */
 function openCompose(url){
   let ov=document.getElementById('composeov');
