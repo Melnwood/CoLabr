@@ -38,6 +38,29 @@ exports.handler = async function (event) {
       return pr.ok ? r(200, { ok: true }) : r(502, { error: 'Could not update.' });
     }
 
+    // Help-chat oversight: every question anyone asked the bot, with triage status.
+    if (b.action === 'chatList') {
+      if (!isAdmin(sess.email)) return r(403, { error: 'Admins only.' });
+      const CHAT = 'tbl2fdiuKTDNyjVpR';
+      let rows = [];
+      const fr = await fetch(`https://api.airtable.com/v0/${BASE}/${CHAT}?pageSize=100`, { headers: auth });
+      if (fr.ok) {
+        rows = (((await fr.json()).records) || []).map(rec => {
+          const c = rec.fields || {};
+          const st = c['Status'];
+          return { id: rec.id, name: c['Name'] || '', email: c['Email'] || '', message: c['Message'] || '', reply: c['AI Reply'] || '', page: c['Page'] || '', status: (st && st.name) ? st.name : (st || 'New'), created: rec.createdTime || '' };
+        }).sort((a, z) => (z.created || '').localeCompare(a.created || ''));
+      }
+      return r(200, { ok: true, rows });
+    }
+    if (b.action === 'chatStatus') {
+      if (!isAdmin(sess.email)) return r(403, { error: 'Admins only.' });
+      if (!b.id || !b.status) return r(400, { error: 'Missing id/status.' });
+      const pr = await fetch(`https://api.airtable.com/v0/${BASE}/tbl2fdiuKTDNyjVpR`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: b.id, fields: { Status: b.status } }], typecast: true }) });
+      return pr.ok ? r(200, { ok: true }) : r(502, { error: 'Could not update.' });
+    }
+
     // Default: a tester filing a report.
     const note = (b.note || '').toString().trim().slice(0, 3000);
     if (!note) return r(400, { error: 'Describe what you saw first.' });

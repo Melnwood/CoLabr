@@ -114,6 +114,12 @@
     <div class="state" id="fbstate">Loading reports…</div>
     <div id="fblist"></div>
   </div>
+
+  <div class="sect">Help-chat questions</div>
+  <div class="panel" id="chatpanel" style="padding:14px 18px">
+    <div class="state" id="chatstate">Loading questions…</div>
+    <div id="chatlist"></div>
+  </div>
   <style>
     .fbrow{display:flex;gap:12px;align-items:flex-start;border-bottom:1px solid #f0ece6;padding:11px 0}
     .fbrow:last-child{border-bottom:none}
@@ -297,7 +303,32 @@ async function fbLoad(){
     }));
   }catch(e){ st.textContent=e.message||'Could not load reports.'; }
 }
-guard().then(ok=>{ if(ok){ switches(); stats(); fbLoad(); } });
+/* ---- Help-chat questions: everything anyone asked the bot, with triage ---- */
+async function chatLoad(){
+  const st=document.getElementById('chatstate'), list=document.getElementById('chatlist');
+  try{
+    const r=await fetch('/.netlify/functions/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'chatList'})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not load.');
+    const rows=d.rows||[];
+    st.style.display='none';
+    if(!rows.length){ list.innerHTML='<div class="state">No questions yet — every message to the help bubble lands here.</div>'; return; }
+    const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    list.innerHTML=rows.map(x=>{
+      const when=x.created?new Date(x.created).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
+      const done=x.status==='Dealt with';
+      return `<div class="fbrow${done?' done':''}">
+        <div class="fbnote"><b>${esc(x.name||x.email)}</b>: ${esc(x.message)}
+          ${x.reply?`<div class="fbmeta" style="white-space:pre-wrap">Bot answered: ${esc(x.reply.slice(0,180))}${x.reply.length>180?'…':''}</div>`:''}
+          <div class="fbmeta">${when}${x.email?' · '+esc(x.email):''}</div></div>
+        <select data-ch="${x.id}">${['New','Dealt with'].map(s=>`<option${s===x.status?' selected':''}>${s}</option>`).join('')}</select>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-ch]').forEach(sel=>sel.addEventListener('change',async()=>{
+      try{ await fetch('/.netlify/functions/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'chatStatus',id:sel.dataset.ch,status:sel.value})}); chatLoad(); }catch(_){}
+    }));
+  }catch(e){ st.textContent=e.message||'Could not load questions.'; }
+}
+guard().then(ok=>{ if(ok){ switches(); stats(); fbLoad(); chatLoad(); } });
 </script>
 <script src="help.js"></script>
 </body>
