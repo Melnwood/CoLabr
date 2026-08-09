@@ -77,7 +77,9 @@ function render(){
     let when=''; try{ when=r.created?new Date(r.created).toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):''; }catch(e){}
     const canReply=!!r.email;
     const msg=(r.type==='Prayer'&&!r.message)?'<i>is praying for you</i>':esc(r.message);
-    const sent=r.replied&&r.reply?`<div class="sent"><b>You replied</b>${esc(r.reply)}</div>`:'';
+    // The whole back-and-forth, in order — every reply on both sides is kept.
+    const th=(r.thread&&r.thread.length)?r.thread:((r.replied&&r.reply)?[{f:'m',t:r.reply}]:[]);
+    const sent=th.length?`<div class="sent">${th.map(x=>`<b>${x.f==='m'?'You replied':esc(r.name)+' wrote back'}</b>${esc(x.t)}`).join('<hr style="border:none;border-top:1px solid #eee7dc;margin:8px 0">')}</div>`:'';
     const composer=canReply?`<div class="rcompose" id="comp-${r.id}"><textarea id="txt-${r.id}" placeholder="Write ${esc(r.name)} back…"></textarea><button class="send" data-id="${r.id}">Send reply</button><span class="cmsg" id="cmsg-${r.id}"></span></div>`:'';
     const replyBtn=canReply?`<button class="reply replybtn" data-id="${r.id}">${r.replied?'Reply again':'Reply'}</button>`:'';
     const markBtn=r.read?`<button class="markbtn" data-id="${r.id}" data-read="false">Mark unread</button>`:`<button class="markbtn" data-id="${r.id}" data-read="true">Mark done</button>`;
@@ -92,7 +94,7 @@ function render(){
     const id=b.dataset.id, t=document.getElementById('txt-'+id), m=document.getElementById('cmsg-'+id);
     const message=(t.value||'').trim(); if(!message){ m.className='cmsg err'; m.textContent='Write something first.'; return; }
     b.disabled=true; m.className='cmsg'; m.textContent='Sending…';
-    try{ await api('reply',{id,message}); const rr=RESP.find(x=>x.id===id); if(rr){rr.read=true;rr.replied=true;rr.reply=message;} render(); }
+    try{ await api('reply',{id,message}); const rr=RESP.find(x=>x.id===id); if(rr){rr.read=true;rr.replied=true;rr.reply=message;rr.thread=(rr.thread||[]).concat([{f:'m',t:message,at:new Date().toISOString()}]);} render(); }
     catch(e){ b.disabled=false; m.className='cmsg err'; m.textContent=e.message; }
   }));
   list.querySelectorAll('.markbtn').forEach(b=>b.addEventListener('click',async()=>{

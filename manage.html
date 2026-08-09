@@ -207,6 +207,10 @@
   .qchip span{font-size:11px;color:#c96a1e;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
   .qchip .qx{position:absolute;top:8px;right:8px;width:21px;height:21px;border-radius:50%;border:1px solid #ffd9bd;background:#fff;color:#c96a1e;font-size:11px;cursor:pointer;line-height:1;padding:0}
   .qchip .qx:hover{background:#c0392b;border-color:#c0392b;color:#fff}
+  /* Conversation history under a response — every reply on both sides, in order. */
+  .rthread{margin:7px 0 2px;padding-left:10px;border-left:2px solid var(--line)}
+  .tline{font-size:12.5px;line-height:1.5;color:#3c3733;margin-top:4px;white-space:pre-wrap}
+  .tline b{color:var(--acc);font-weight:700}
   /* Help chat — floating bubble, bottom right; the norm for support. */
   #helpfab{position:fixed;right:20px;bottom:20px;z-index:180;width:52px;height:52px;border-radius:50%;background:var(--text);color:#fff;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(36,31,27,.35);display:flex;align-items:center;justify-content:center}
   #helpfab:hover{transform:translateY(-2px)}
@@ -704,12 +708,14 @@ function renderResponses(){
     const reply = canReply ? `<button class="reply replybtn" data-id="${r.id}">Reply</button>` : '';
     const mark = `<button class="markbtn" data-id="${r.id}">Mark done</button>`;
     const msg = (r.type==='Prayer' && !r.message) ? '<i>is praying for you</i>' : esc(r.message);
+    // The conversation so far — a supporter reply re-opens the item, so show the history.
+    const th=(r.thread&&r.thread.length)?`<div class="rthread">${r.thread.map(x=>`<div class="tline"><b>${x.f==='m'?'You':esc(r.name)}:</b> ${esc(x.t)}</div>`).join('')}</div>`:'';
     const composer = canReply ? `<div class="rcompose" id="comp-${r.id}">
         <textarea id="txt-${r.id}" placeholder="Write ${esc(r.name)} back…"></textarea>
         <button class="send" data-id="${r.id}">Send reply</button><span class="cmsg" id="cmsg-${r.id}"></span>
       </div>` : '';
     return `<div class="ritem unread"><span class="rtype ${r.type}">${r.type}</span>
-      <div class="rtx"><b>${esc(r.name)}</b><div class="rm">${msg}</div>
+      <div class="rtx"><b>${esc(r.name)}</b><div class="rm">${msg}</div>${th}
         <div class="rmeta">${r.updateTitle?esc(r.updateTitle)+' · ':''}${when}${r.isPublic?' · public':''}${r.email?(' · '+esc(r.email)):' · no email · can’t reply'}</div>
         ${composer}</div>
       <div class="ract">${reply}${mark}</div></div>`;
@@ -724,7 +730,7 @@ function renderResponses(){
     const id=b.dataset.id; const t=document.getElementById('txt-'+id); const m=document.getElementById('cmsg-'+id);
     const message=(t.value||'').trim(); if(!message){ m.className='cmsg err'; m.textContent='Write something first.'; return; }
     b.disabled=true; m.className='cmsg'; m.textContent='Sending…';
-    try{ await api('reply',{id,message}); const rr=RESP.find(x=>x.id===id); if(rr){rr.read=true;rr.replied=true;rr.reply=message;} renderResponses(); }
+    try{ await api('reply',{id,message}); const rr=RESP.find(x=>x.id===id); if(rr){rr.read=true;rr.replied=true;rr.reply=message;rr.thread=(rr.thread||[]).concat([{f:'m',t:message,at:new Date().toISOString()}]);} renderResponses(); }
     catch(e){ b.disabled=false; m.className='cmsg err'; m.textContent=e.message; }
   }));
 }

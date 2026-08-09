@@ -1,6 +1,7 @@
 // Co-Labr — staff admin actions (list / publish-unpublish / delete).
 // Passcode-gated with EDIT_KEY. Uses AIRTABLE_TOKEN (read+write scope).
 
+const crypto = require('crypto');
 const { sessionFromEvent } = require('./_auth');
 const { sendMail } = require('./_mail');
 const { fireNotify } = require('./_notify');
@@ -249,6 +250,7 @@ exports.handler = async function (event) {
           read: !!c['Read'],
           replied: !!c['Replied'],
           reply: c['Reply'] || '',
+          thread: (() => { try { const t = JSON.parse(c['Thread'] || '[]'); return Array.isArray(t) ? t : []; } catch (e) { return []; } })(),
           updateTitle: c['Update Title'] || '',
           updateId: c['Update ID'] || '',
           created: rec.createdTime
@@ -277,21 +279,33 @@ exports.handler = async function (event) {
       const supporter = c['Name'] || 'friend';
       const title = c['Update Title'] || '';
       const missionary = c['Missionary'] || '';
-      // Who is replying (their JV inbox becomes Reply-To so the conversation continues in Gmail).
+      // Who is replying (their JV inbox stays as a fallback Reply-To, but the button
+      // steers the supporter back into Co-Labr so the whole conversation is kept).
       let replyTo = '';
       const sess = sessionFromEvent(event); if (sess && sess.email) replyTo = sess.email;
       const site = process.env.SITE_BASE || '';
+      // The conversation thread: every reply is recorded, in order, forever.
+      let thread = []; try { thread = JSON.parse(c['Thread'] || '[]'); } catch (e) {}
+      if (!Array.isArray(thread)) thread = [];
+      // Legacy one-shot replies made before threading existed become the first entry.
+      if (!thread.length && c['Reply']) thread.push({ f: 'm', t: c['Reply'], at: '' });
+      thread.push({ f: 'm', t: b.message.trim(), at: new Date().toISOString() });
+      let tkey = c['Thread Key'] || '';
+      if (!tkey) tkey = crypto.randomBytes(16).toString('hex');
+      const threadUrl = `${site}/thread.html?r=${b.id}&k=${tkey}`;
       const html =
         `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px;color:#241f1b">
           <p style="font-size:15px">Hi ${escH(supporter)},</p>
           <div style="font-size:15px;line-height:1.55;white-space:pre-wrap">${escH(b.message.trim())}</div>
+          ${site ? `<p style="margin:20px 0"><a href="${threadUrl}" style="background:#FF6600;color:#fff;font-weight:700;text-decoration:none;border-radius:10px;padding:11px 20px;display:inline-block">Reply to ${escH(missionary || 'them')} →</a></p>
+          <p style="font-size:12px;color:#7a756f">Replying at that link keeps your whole conversation together in one place.</p>` : ''}
           ${title ? `<p style="font-size:12px;color:#7a756f;margin-top:18px">In reply to your message on “${escH(title)}”.</p>` : ''}
         </div>`;
       const mail = await sendMail({ to: toEmail, subject: (title ? `Re: ${title}` : 'A note back from us'), html, replyTo, fromName: (missionary ? `${missionary} via Co-Labr` : 'Co-Labr') });
       if (!mail.ok) return resp(502, { error: 'Could not send the reply: ' + (mail.error || 'email not set up') });
-      // Record the reply and mark handled.
+      // Record the reply in the thread and mark handled.
       await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}`, { method: 'PATCH', headers: auth,
-        body: JSON.stringify({ records: [{ id: b.id, fields: { Reply: b.message.trim(), Replied: true, Read: true } }], typecast: true }) });
+        body: JSON.stringify({ records: [{ id: b.id, fields: { Reply: b.message.trim(), Replied: true, Read: true, Thread: JSON.stringify(thread), 'Thread Key': tkey } }], typecast: true }) });
       return resp(200, { ok: true, via: mail.via });
     }
 

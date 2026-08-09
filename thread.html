@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D1B2A'/%3E%3Ccircle cx='32' cy='34' r='9' fill='%23FF6B5B'/%3E%3C/svg%3E">
+<title>Co·labr — Conversation</title>
+<style>
+  :root{--acc:#FF6600;--bg:#f4f1ec;--card:#fff;--line:#e7e4e0;--muted:#7a756f;--text:#241f1b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:560px;margin:0 auto;padding:26px 18px 80px}
+  h1{font-size:21px;font-weight:800;letter-spacing:-.02em;margin:4px 0 3px}
+  .sub{font-size:12.5px;color:var(--muted);margin:0 0 20px;line-height:1.5}
+  .bubble{max-width:88%;padding:11px 15px;border-radius:15px;font-size:14.5px;line-height:1.55;white-space:pre-wrap;margin-bottom:10px}
+  .them{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .me{background:var(--acc);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
+  .who{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+  .me-row{text-align:right}
+  .compose{margin-top:22px;border-top:1px solid var(--line);padding-top:18px}
+  textarea{display:block;width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit;min-height:84px;resize:vertical;outline:none}
+  textarea:focus{border-color:var(--acc)}
+  .send{margin-top:10px;background:var(--text);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer}
+  .send:disabled{opacity:.55}
+  .msg{font-size:12.5px;margin-top:9px}.msg.ok{color:#2f9e63}.msg.err{color:#c0392b}
+  .state{color:var(--muted);font-size:14px;padding:40px 0;text-align:center}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="head"></div>
+  <div id="msgs"><div class="state">Opening the conversation…</div></div>
+  <div class="compose" id="compose" style="display:none">
+    <textarea id="txt" placeholder="Write your reply…"></textarea>
+    <button class="send" id="send">Send reply</button>
+    <div class="msg" id="out"></div>
+    <p class="note">Your reply is delivered by email too — but it lives here, so the whole conversation stays in one place.</p>
+  </div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P=new URLSearchParams(location.search);
+const R=P.get('r')||'', K=P.get('k')||'';
+let YOU='s', D=null;
+function when(at){ if(!at)return''; try{ return new Date(at).toLocaleDateString(undefined,{month:'short',day:'numeric'}); }catch(_){ return''; } }
+function render(){
+  // "me" is whoever is looking at the page; the original note is always the supporter's.
+  const mineIsM = YOU==='m';
+  const rows=[{f:'s',t:D.message,at:D.created}].concat(D.thread||[]);
+  document.getElementById('head').innerHTML=
+    `<h1>${esc(mineIsM ? D.name : (D.missionary||'Your missionaries'))}</h1>
+     <p class="sub">${D.updateTitle?('Started on “'+esc(D.updateTitle)+'” · '):''}every reply on both sides is kept here.</p>`;
+  document.getElementById('msgs').innerHTML=rows.filter(x=>x&&x.t).map(x=>{
+    const mine=(x.f==='m')===mineIsM;
+    const who=x.f==='m'?(D.missionary||'Them'):D.name;
+    return `<div class="${mine?'me-row':''}"><div class="who">${mine?'You':esc(who)}${x.at?' · '+when(x.at):''}</div><div class="bubble ${mine?'me':'them'}">${esc(x.t)}</div></div>`;
+  }).join('');
+  document.getElementById('compose').style.display='';
+}
+async function load(){
+  try{
+    const r=await fetch('/.netlify/functions/thread?r='+encodeURIComponent(R)+'&k='+encodeURIComponent(K));
+    const d=await r.json();
+    if(!r.ok){ document.getElementById('msgs').innerHTML='<div class="state">'+esc(d.error||'Could not open this conversation.')+'</div>'; return; }
+    D=d; YOU=d.you||'s'; render();
+  }catch(_){ document.getElementById('msgs').innerHTML='<div class="state">Could not reach the server.</div>'; }
+}
+document.getElementById('send').addEventListener('click',async()=>{
+  const t=document.getElementById('txt'), out=document.getElementById('out');
+  const msg=t.value.trim(); if(!msg){ out.className='msg err'; out.textContent='Write something first.'; return; }
+  document.getElementById('send').disabled=true; out.className='msg'; out.textContent='Sending…';
+  try{
+    const r=await fetch('/.netlify/functions/thread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({r:R,k:K,message:msg})});
+    const d=await r.json();
+    if(!r.ok){ out.className='msg err'; out.textContent=d.error||'Could not send.'; }
+    else{ D.thread=d.thread||D.thread; t.value=''; out.className='msg ok'; out.textContent='Sent.'; render(); }
+  }catch(_){ out.className='msg err'; out.textContent='Could not reach the server.'; }
+  document.getElementById('send').disabled=false;
+});
+load();
+</script>
+</body>
+</html>
