@@ -40,7 +40,27 @@ exports.handler = async function (event) {
     [MF.signoff]: signoff ? ('With love,\n' + signoff) : ''
   };
   if (location) fields[MF.location] = location;
-  if (org) fields[MF.org] = org;
+
+  const isJV = /@josiahventure\.com$/i.test(s.email || '');
+  if (isJV) {
+    // JV staff: their country decides. A matching national organization arrives as a
+    // toggle (client-side); ON = the page wears that org's brand and speaks their
+    // language. OFF or no match = Josiah Venture International. Server verifies the
+    // org actually exists before trusting the claim.
+    fields[MF.org] = 'JV';
+    if (b.national && b.natOrg) {
+      const oe = String(b.natOrg).trim().slice(0, 80).replace(/'/g, "");
+      const of = encodeURIComponent(`OR({Name}='${oe}',{Code}='${oe}')`);
+      const orr = await fetch(`https://api.airtable.com/v0/${BASE}/tbl152sVfqGyrqpJQ?maxRecords=1&filterByFormula=${of}`, { headers: auth });
+      if (orr.ok) {
+        const orec = (((await orr.json()).records) || [])[0];
+        if (orec) {
+          fields[MF.org] = (orec.fields || {})['Name'] || oe;
+          fields['National staff'] = true;
+        }
+      }
+    }
+  } else if (org) fields[MF.org] = org;
   // Live is intentionally NOT set: every new page starts in test mode.
   const cr = await fetch(`https://api.airtable.com/v0/${BASE}/${MISS}`, {
     method: 'POST', headers: auth, body: JSON.stringify({ fields, typecast: true })
