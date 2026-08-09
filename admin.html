@@ -109,6 +109,22 @@
     </a>
   </div>
 
+  <div class="sect">Sandbox feedback</div>
+  <div class="panel" id="fbpanel" style="padding:14px 18px">
+    <div class="state" id="fbstate">Loading reports…</div>
+    <div id="fblist"></div>
+  </div>
+  <style>
+    .fbrow{display:flex;gap:12px;align-items:flex-start;border-bottom:1px solid #f0ece6;padding:11px 0}
+    .fbrow:last-child{border-bottom:none}
+    .fbrow.done{opacity:.5}
+    .fbnote{flex:1;min-width:0;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+    .fbmeta{font-size:11.5px;color:#8a847c;margin-top:4px}
+    .fbmeta a{color:#FF6600;font-weight:700;text-decoration:none}
+    .fbrow select{flex:none;font-size:12px;font-family:inherit;border:1px solid #e2ddd5;border-radius:9px;padding:6px 8px;background:#fff}
+    .fbshot{flex:none;width:74px;height:52px;border-radius:8px;object-fit:cover;border:1px solid #e2ddd5}
+  </style>
+
   <div class="sect">Test lab</div>
   <div class="panel" id="ghostpanel">
     <b class="t">Draft an update in your voice</b>
@@ -257,7 +273,31 @@ function stats(){
     }
   }).catch(()=>{});
 }
-guard().then(ok=>{ if(ok){ switches(); stats(); } });
+/* ---- Sandbox feedback: the working list of what testers found ---- */
+async function fbLoad(){
+  const st=document.getElementById('fbstate'), list=document.getElementById('fblist');
+  try{
+    const r=await fetch('/.netlify/functions/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not load.');
+    const rows=d.rows||[];
+    st.style.display='none';
+    if(!rows.length){ list.innerHTML='<div class="state">Nothing reported yet. Testers file reports from the “Found a problem?” tab in the help bubble — on every page.</div>'; return; }
+    const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    list.innerHTML=rows.map(x=>{
+      const when=x.created?new Date(x.created).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'';
+      const done=(x.status==='Fixed'||x.status==='Not a bug');
+      return `<div class="fbrow${done?' done':''}">
+        ${x.shot?`<a href="${esc(x.shot)}" target="_blank" rel="noopener"><img class="fbshot" src="${esc(x.shot)}" alt=""></a>`:''}
+        <div class="fbnote">${esc(x.note)}<div class="fbmeta">${esc(x.name||x.email)} · ${when}${x.page?` · <a href="${esc(x.page)}" target="_blank" rel="noopener">open the page</a>`:''}</div></div>
+        <select data-fb="${x.id}">${['New','Working on it','Fixed','Not a bug'].map(s=>`<option${s===x.status?' selected':''}>${s}</option>`).join('')}</select>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-fb]').forEach(sel=>sel.addEventListener('change',async()=>{
+      try{ await fetch('/.netlify/functions/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'status',id:sel.dataset.fb,status:sel.value})}); fbLoad(); }catch(_){}
+    }));
+  }catch(e){ st.textContent=e.message||'Could not load reports.'; }
+}
+guard().then(ok=>{ if(ok){ switches(); stats(); fbLoad(); } });
 </script>
 <script src="help.js"></script>
 </body>

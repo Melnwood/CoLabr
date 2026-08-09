@@ -331,54 +331,11 @@
     </div>
   </div>
 
-  <button id="helpfab" type="button" title="Need help?" aria-label="Need help?"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.5 0-2.9-.4-4.1-1L3 20l1.1-5.2a8.4 8.4 0 1 1 16.9-3.3z"/><path d="M9 10h6M9 13h4"/></svg></button>
-  <div id="helpbox">
-    <div id="helphead"><img src="/noah-help.png" alt="Noah" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.35)"><div style="flex:1;min-width:0">Co·labr help<br><span>Noah reads every message and follows up ASAP</span></div><button id="helpx" type="button" aria-label="Close" style="background:none;border:none;color:#fff;opacity:.8;font-size:17px;cursor:pointer;padding:4px 6px">✕</button></div>
-    <div id="helpmsgs"></div>
-    <div id="helprow"><textarea id="helpin" rows="1" placeholder="Ask anything, or tell us what's wrong…"></textarea><button id="helpsend" type="button" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>
-  </div>
+  <!-- Help chat + sandbox reports come from the shared help.js widget. -->
+  <script src="help.js"></script>
 
 <script>
 let ROWS=[], statusF='all';
-/* ---- Help chat: instant AI answers, every message logged + emailed to the team ---- */
-const HHIST=[];
-function hAdd(role,text,cls){
-  const m=document.createElement('div'); m.className='hmsg '+(cls||(role==='user'?'me':'bot'));
-  m.textContent=text;
-  document.getElementById('helpmsgs').appendChild(m);
-  document.getElementById('helpmsgs').scrollTop=1e6;
-  return m;
-}
-document.getElementById('helpfab').addEventListener('click',()=>{
-  const box=document.getElementById('helpbox');
-  box.classList.toggle('on');
-  if(box.classList.contains('on')){
-    if(!document.getElementById('helpmsgs').children.length)
-      hAdd('assistant','Hi! I’m the Co·labr helper. Ask me anything, or tell me what’s not working — I’ll help right away, and Mel or Noah will follow up with you personally ASAP.');
-    document.getElementById('helpin').focus();
-  }
-});
-async function helpSend(){
-  const inp=document.getElementById('helpin');
-  const text=inp.value.trim(); if(!text) return;
-  inp.value=''; hAdd('user',text);
-  HHIST.push({role:'user',content:text});
-  const think=hAdd('assistant','…','think');
-  document.getElementById('helpsend').disabled=true;
-  try{
-    const r=await fetch('/.netlify/functions/support',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:HHIST.slice(0,-1)})});
-    const d=await r.json();
-    think.remove();
-    const reply=(r.ok&&d.reply)?d.reply:(d.error||'Something hiccuped — your message is logged and the team will follow up ASAP.');
-    hAdd('assistant',reply);
-    HHIST.push({role:'assistant',content:reply});
-  }catch(_){ think.remove(); hAdd('assistant','I couldn’t reach the server — try once more? Your connection may have blinked.'); }
-  document.getElementById('helpsend').disabled=false;
-  inp.focus();
-}
-document.getElementById('helpx').addEventListener('click',()=>document.getElementById('helpbox').classList.remove('on'));
-document.getElementById('helpsend').addEventListener('click',helpSend);
-document.getElementById('helpin').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); helpSend(); } });
 /* The creator opens as an overlay above the dashboard; closing it refreshes what you see. */
 function openCompose(url){
   let ov=document.getElementById('composeov');

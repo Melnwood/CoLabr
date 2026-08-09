@@ -49,14 +49,19 @@ exports.handler = async function (event) {
         url = d.offset ? `https://api.airtable.com/v0/${BASE}/${RTABLE}?pageSize=100&filterByFormula=${encodeURIComponent(`{Missionary}='${nameEsc}'`)}&offset=${d.offset}` : '';
       }
 
-      // The supporter team — so people who haven't written yet still appear.
+      // The supporter team — EVERYONE, following Airtable's 100-row pages to the end,
+      // so an imported list of hundreds all show up.
       const subs = [];
-      const sr = await fetch(`https://api.airtable.com/v0/${BASE}/${STABLE}?pageSize=100&filterByFormula=${encodeURIComponent(`AND({Missionary}='${nameEsc}',{Active}=1)`)}`, { headers: auth });
-      if (sr.ok) {
-        ((await sr.json()).records || []).forEach(rec => {
+      const subsBase = `https://api.airtable.com/v0/${BASE}/${STABLE}?pageSize=100&filterByFormula=${encodeURIComponent(`AND({Missionary}='${nameEsc}',{Active}=1)`)}`;
+      let surl = subsBase;
+      while (surl) {
+        const sr = await fetch(surl, { headers: auth }); if (!sr.ok) break;
+        const sd = await sr.json();
+        (sd.records || []).forEach(rec => {
           const c = rec.fields || {};
           subs.push({ name: c['Name'] || '', email: (c['Email'] || '').toLowerCase(), since: rec.createdTime || '', lastVisit: c['Last visit'] || '' });
         });
+        surl = sd.offset ? subsBase + '&offset=' + sd.offset : '';
       }
 
       // Cover art for every update that shows up in a conversation.

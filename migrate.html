@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/favicon.png">
+<title>Co·labr — Bring your history</title>
+<style>
+  :root{--acc:#FF6600;--bg:#f4f1ec;--card:#fff;--line:#e7e4e0;--muted:#7a756f;--text:#241f1b;--green:#2f9e63;--red:#c0392b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;padding:26px 20px 90px}
+  .back{font-size:13px;color:var(--muted);text-decoration:none}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:12px 0 6px}
+  .lede{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 22px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:14px}
+  .step.off{opacity:.45;pointer-events:none}
+  .snum{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--text);color:#fff;font-size:13px;font-weight:800;align-items:center;justify-content:center;margin-right:9px}
+  .step h2{display:flex;align-items:center;font-size:16.5px;font-weight:800;margin:0 0 10px}
+  .step p{font-size:13.5px;color:#4a443e;line-height:1.6;margin:0 0 10px}
+  .step ol{font-size:13.5px;line-height:1.7;color:#4a443e;padding-left:20px;margin:0 0 12px}
+  .krow{display:flex;gap:9px}
+  .krow input{flex:1;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14px;font-family:inherit;min-width:0;outline:none}
+  .krow input:focus{border-color:var(--acc)}
+  .btn{background:var(--text);color:#fff;border:none;border-radius:11px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .btn.acc{background:var(--acc)}
+  .btn:disabled{opacity:.55}
+  .msg{font-size:12.5px;line-height:1.5;margin-top:10px}
+  .msg.err{color:var(--red)} .msg.ok{color:var(--green)}
+  .note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}
+  .clist{max-height:330px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;margin:12px 0}
+  .crow{display:flex;gap:10px;align-items:center;padding:9px 13px;border-bottom:1px solid #f1ede7;font-size:13px}
+  .crow:last-child{border-bottom:none}
+  .crow input{width:16px;height:16px;accent-color:var(--acc);flex:none}
+  .crow .ct{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .crow .cd{flex:none;color:var(--muted);font-size:11.5px}
+  .crow .cdone{flex:none;font-size:10.5px;font-weight:800;color:var(--green)}
+  .selrow{display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--muted)}
+  .selrow a{color:var(--acc);font-weight:700;cursor:pointer}
+  .bigbar{height:10px;border-radius:6px;background:#efe9df;overflow:hidden;margin:14px 0 8px}
+  .bigbar i{display:block;height:100%;width:0;background:var(--acc);border-radius:6px;transition:width .6s}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="onboard.html">← Get set up</a>
+  <h1>Bring your history</h1>
+  <p class="lede">Pull every newsletter you've ever sent through Mailchimp onto your Co·labr wall — titles, photos, text, dates, and open counts. Your words land in Co·labr's clean design (email layouts don't survive anywhere), and <b>nothing is ever re-emailed to anyone</b>.</p>
+
+  <div class="step" id="st1">
+    <h2><span class="snum">1</span>Connect your Mailchimp</h2>
+    <p>Co·labr needs a read key from your Mailchimp account. It takes one minute and the key is used only for this import — never stored:</p>
+    <ol>
+      <li>In Mailchimp, click your profile picture → <b>Account &amp; billing</b></li>
+      <li>Open <b>Extras → API keys</b></li>
+      <li>Press <b>Create A Key</b>, name it “Co-Labr”, and copy it</li>
+    </ol>
+    <div class="krow"><input id="key" placeholder="Paste your API key — it ends like …-us21" autocomplete="off"><button class="btn" id="scan">Find my newsletters</button></div>
+    <div class="msg" id="m1"></div>
+  </div>
+
+  <div class="step off" id="st2">
+    <h2><span class="snum">2</span>Choose what comes over</h2>
+    <p id="foundline"></p>
+    <div class="selrow"><a id="selall">Select all</a> · <a id="selnone">Select none</a> · <span id="selc"></span></div>
+    <div class="clist" id="clist"></div>
+    <button class="btn acc" id="go">Import selected</button>
+    <div class="msg" id="m2"></div>
+    <div class="note">Already-imported newsletters are marked and skipped automatically — running this again is always safe.</div>
+  </div>
+
+  <div class="step off" id="st3">
+    <h2><span class="snum">3</span>Importing…</h2>
+    <p id="pline">Working through your newsletters — you can leave this page, the import keeps going.</p>
+    <div class="bigbar"><i id="pbar"></i></div>
+    <div class="msg" id="m3"></div>
+    <p class="note" id="doneline" style="display:none"></p>
+  </div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+let CAMPS=[], KEY='', SELIDS=new Set(), PRE=0;
+function fd(s){ if(!s)return''; try{ return new Date(s).toLocaleDateString(undefined,{month:'short',year:'numeric'}); }catch(_){ return''; } }
+async function scan(){
+  KEY=$('key').value.trim(); const m=$('m1');
+  if(!KEY){ m.className='msg err'; m.textContent='Paste your API key first.'; return; }
+  $('scan').disabled=true; m.className='msg'; m.textContent='Asking Mailchimp for your sent newsletters…';
+  try{
+    const r=await fetch('/.netlify/functions/mailchimp-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:KEY})});
+    if(r.status===401&&!KEY){ location.href='login.html?next=migrate.html'; return; }
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Could not reach Mailchimp.');
+    CAMPS=d.campaigns||[];
+    if(!CAMPS.length){ m.className='msg err'; m.textContent='Mailchimp answered, but no sent campaigns were found on that account.'; $('scan').disabled=false; return; }
+    m.className='msg ok'; m.textContent='Connected ✓';
+    const oldest=CAMPS[CAMPS.length-1], newest=CAMPS[0];
+    $('foundline').innerHTML=`Found <b>${CAMPS.length}</b> sent newsletters, ${esc(fd(oldest.sent))} → ${esc(fd(newest.sent))}${d.page?`, ready to import to <b>${esc(d.page)}</b>`:''}.`;
+    SELIDS=new Set(CAMPS.filter(c=>!c.done).map(c=>c.id));
+    renderList();
+    $('st2').classList.remove('off');
+    $('st2').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){ m.className='msg err'; m.textContent=e.message||'Could not reach Mailchimp.'; }
+  $('scan').disabled=false;
+}
+function renderList(){
+  $('clist').innerHTML=CAMPS.map(c=>`<label class="crow"><input type="checkbox" data-id="${esc(c.id)}"${SELIDS.has(c.id)?' checked':''}${c.done?' disabled':''}>
+    <span class="ct">${esc(c.title)}</span>${c.done?'<span class="cdone">ALREADY IN ✓</span>':''}<span class="cd">${esc(fd(c.sent))}${c.opens?' · '+c.opens+' opens':''}</span></label>`).join('');
+  $('clist').querySelectorAll('input[data-id]').forEach(cb=>cb.addEventListener('change',()=>{ cb.checked?SELIDS.add(cb.dataset.id):SELIDS.delete(cb.dataset.id); count(); }));
+  count();
+}
+function count(){ $('selc').textContent=SELIDS.size+' selected'; $('go').disabled=!SELIDS.size; }
+$('selall').addEventListener('click',()=>{ SELIDS=new Set(CAMPS.filter(c=>!c.done).map(c=>c.id)); renderList(); });
+$('selnone').addEventListener('click',()=>{ SELIDS=new Set(); renderList(); });
+$('scan').addEventListener('click',scan);
+$('key').addEventListener('keydown',e=>{ if(e.key==='Enter')scan(); });
+$('go').addEventListener('click',async()=>{
+  const ids=[...SELIDS]; if(!ids.length)return;
+  $('go').disabled=true; $('m2').className='msg'; $('m2').textContent='Starting the import…';
+  try{
+    await fetch('/.netlify/functions/mailchimp-import-background',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:KEY,ids})});
+    $('m2').textContent=''; $('st3').classList.remove('off'); $('st3').scrollIntoView({behavior:'smooth',block:'start'});
+    watch(ids);
+  }catch(e){ $('m2').className='msg err'; $('m2').textContent='Could not start — try again.'; $('go').disabled=false; }
+});
+async function watch(ids){
+  PRE=0;
+  const tick=async()=>{
+    try{
+      const r=await fetch('/.netlify/functions/mailchimp-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'progress',ids})});
+      const d=await r.json();
+      const done=(d&&d.done)||0;
+      $('pbar').style.width=Math.round(done/ids.length*100)+'%';
+      $('m3').className='msg'; $('m3').textContent=done+' of '+ids.length+' imported…';
+      if(done>=ids.length){
+        $('m3').className='msg ok'; $('m3').textContent='All '+ids.length+' imported ✓';
+        $('doneline').style.display='';
+        $('doneline').innerHTML='Your history is home. <a href="manage.html" style="color:var(--acc);font-weight:700">Open your dashboard →</a> — the imports are on your wall in Co·labr’s design, none of them will ever be re-emailed, and open counts came along for the ride.';
+        return;
+      }
+      if(done===PRE&&tick.stalls++>40){ $('m3').className='msg err'; $('m3').textContent=done+' of '+ids.length+' imported — the rest are taking unusually long. Leave this open or check your dashboard later; re-running the import is always safe.'; return; }
+      if(done!==PRE){ tick.stalls=0; PRE=done; }
+      setTimeout(tick,6000);
+    }catch(_){ setTimeout(tick,10000); }
+  };
+  tick.stalls=0;
+  tick();
+}
+(async()=>{ try{ const r=await fetch('/.netlify/functions/me'); if(!r.ok) location.href='login.html?next=migrate.html'; }catch(_){} })();
+</script>
+<script src="help.js"></script>
+</body>
+</html>

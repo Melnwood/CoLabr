@@ -77,7 +77,7 @@
       <h2>Bring in your past updates</h2>
       <div class="d">If you've been sending newsletters through Mailchimp, Co-Labr can pull your whole history — with photos, videos, and open counts — so nothing is lost.</div>
       <div id="s2body"><span class="pill blue">Checking…</span></div>
-      <div class="note">Full one-click Mailchimp connect is rolling out. In the meantime, once your history is imported it shows here automatically.</div>
+      <div class="note">You'll paste a read-only key from your Mailchimp account — the wizard walks you through every click, nothing is ever re-emailed, and re-running it is always safe.</div>
     </div>
 
     <div class="step locked" id="s3"><div class="num">3</div>
@@ -144,7 +144,7 @@ async function init(){
     const mc=rows.filter(r=>r.source==='Mailchimp import').length;
     const body=document.getElementById('s2body');
     if(mc>0){ body.innerHTML=`<span class="pill">✓ ${mc} past updates imported</span>`; markOk('s2'); }
-    else { body.innerHTML=`<a class="btn ghost" href="mailto:mellenwood@josiahventure.com?subject=Connect%20my%20Mailchimp%20to%20Co-Labr&body=Hi%2C%20please%20help%20connect%20my%20Mailchimp%20so%20my%20past%20updates%20import.">Connect my Mailchimp</a>`; }
+    else { body.innerHTML=`<a class="btn" href="migrate.html">Bring my history &rarr;</a> <span class="pill">Step-by-step, ~3 minutes</span>`; }
   }catch(e){ document.getElementById('s2body').innerHTML='<span class="note">Sign in to check your updates.</span>'; }
 
   // step 3: style picker

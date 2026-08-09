@@ -14,6 +14,8 @@
   h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px}
   .lede{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.5}
   .split{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start}
+  .pcount{font-size:12.5px;font-weight:700;color:var(--muted);margin:0 2px 8px}
+  .pcount b{color:var(--text)}
   .pfind{display:block;width:100%;border:1px solid var(--line);border-radius:22px;padding:10px 15px;font-size:13px;font-family:inherit;margin-bottom:10px;outline:none;background:var(--card)}
   .pfind:focus{border-color:var(--acc)}
   .selbar{margin-bottom:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
@@ -88,6 +90,7 @@
   <p class="lede">One stream per person — every prayer, note, and reply you've ever traded, in one place.</p>
   <div class="split" id="split">
     <div class="pcol">
+      <div class="pcount" id="pcount"></div>
       <input id="pfind" class="pfind" type="search" placeholder="Find a person…">
       <div class="selbar" id="selbar"><button class="selbtn" id="selmode">Write to several people…</button></div>
       <div class="people" id="people"><div class="state">Loading your people…</div></div>
@@ -165,6 +168,8 @@ function renderPeople(){
   const el=document.getElementById('people');
   if(!PEOPLE.length){ el.innerHTML='<div class="state">No supporters yet — when someone joins your wall or writes, they appear here.</div>'; return; }
   const show=FLT?PEOPLE.filter(p=>(p.name+' '+(p.email||'')).toLowerCase().includes(FLT)):PEOPLE;
+  const pc=document.getElementById('pcount');
+  if(pc)pc.innerHTML=FLT?`<b>${show.length}</b> of <b>${PEOPLE.length}</b> people`:`<b>${PEOPLE.length}</b> ${PEOPLE.length===1?'person':'people'} on your list`;
   if(!show.length){ el.innerHTML='<div class="state">No one matches “'+esc(FLT)+'”.</div>'; return; }
   el.innerHTML=show.map((p,i)=>{
     const prev=p.last?(p.last.kind==='pray'?'Prayed for you':((p.last.f==='m'?'You: ':'')+p.last.t)):'No messages yet — say hello';
@@ -234,6 +239,7 @@ function openPerson(k){
   document.getElementById('split').classList.add('open');
   renderPeople();
   const facts=[];
+  if(p.email)facts.push('<b>'+esc(p.email)+'</b>');
   if(p.since)facts.push('Following since <b>'+esc(fmtD(p.since))+'</b>');
   if(p.prayed)facts.push('prayed with you <b>'+p.prayed+(p.prayed===1?' time':' times')+'</b>');
   const wrote=p.rows.filter(r=>r.message).length;
