@@ -41,6 +41,8 @@ exports.handler = async function (event) {
     const gcsToken = await gToken(sa, 'https://www.googleapis.com/auth/devstorage.read_write');
     const src = await detectLang(key, strings.slice(0, 3).join(' \n '));
     const langsDone = [];
+    const inline = { src, tr: {} };   // compact per-language title+excerpt, carried ON the record
+                                      // so the wall's cards/hero translate instantly (no fetch-per-update)
 
     for (const lang of TARGETS) {
       let outStrings;
@@ -55,10 +57,21 @@ exports.handler = async function (event) {
       const payload = { lang, title: outStrings[0], blocks: tb };
       const okUp = await putJson(gcsToken, bucket, `translations/${b.recordId}/${lang}.json`, payload);
       if (okUp) langsDone.push(lang);
+      if (lang !== src) {
+        const bodyBits = items.map((it, idx) => ({ t: it, s: outStrings[idx + 1] }))
+          .filter(x => ['text', 'quote', 'prayer', 'praise'].includes(blocks[x.t.i] && blocks[x.t.i].type))
+          .map(x => x.s);
+        inline.tr[lang] = { title: outStrings[0], ex: bodyBits.join(' ').replace(/\s+/g, ' ').trim().slice(0, 220) };
+      }
     }
 
     // Manifest so the page knows what's available + the source language.
     await putJson(gcsToken, bucket, `translations/${b.recordId}/index.json`, { src, langs: langsDone, names: LNAME });
+    // Inline titles/excerpts onto the record itself — the wall payload already ships this field.
+    try {
+      await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: [{ id: b.recordId, fields: { 'fld9BeSNNbZpUAtd0': JSON.stringify(inline) } }], typecast: true }) });
+    } catch (e) {}
     await log(auth, JSON.stringify({ ok: true, src, langs: langsDone }));
     return j(200);
   } catch (e) { try { await log({ Authorization: 'Bearer ' + process.env.AIRTABLE_TOKEN, 'Content-Type': 'application/json' }, 'EXCEPTION ' + String(e && e.message || e)); } catch {} return j(200); }

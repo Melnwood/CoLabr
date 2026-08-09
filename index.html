@@ -700,6 +700,7 @@ async function load(){
       const y=+p[0]||0, mo=MON[(+p[1]||1)-1]||'', d=+p[2]||'';
       return {...u, y, date:`${mo} ${d}`};
     });
+    applyLangTitles();
     computeTop10(); renderHero(); buildYears(); render(); renderHighlights();
     document.body.classList.add('ready');   // reveal only now, already in the correct style
     maybeTour();
@@ -722,6 +723,17 @@ function renderHighlights(){
     <div class="jvbody"><div class="jvtitle">${esc(x.u.title)}</div><div class="jvex">${esc(x.u.excerpt||'')}</div></div></div>`).join('');
   document.querySelectorAll('#hlrailrow [data-hi]').forEach(el=>el.addEventListener('click',()=>openReader(+el.dataset.hi)));
   rail.style.display='block';
+}
+// The wall browses in the reader's language too: every update carries compact inline
+// translations of its title + excerpt, so cards, hero, and highlights switch with the picker.
+function applyLangTitles(){
+  const lang=(typeof READERLANG!=='undefined'&&READERLANG)?READERLANG:'en';
+  U.forEach(u=>{
+    if(u.title0===undefined){ u.title0=u.title; u.excerpt0=u.excerpt; }
+    const t=(lang!==(u.src||'en'))&&u.tr&&u.tr[lang]?u.tr[lang]:null;
+    u.title=(t&&t.title)||u.title0;
+    u.excerpt=(t&&t.ex)||u.excerpt0;
+  });
 }
 // Feature the newest update as a full-width hero above everything else.
 function renderHero(){
@@ -1135,11 +1147,14 @@ async function openReader(i){
   const src=u.src||'en';               // original language of this update
   const target=READERLANG||'en';       // what the reader wants to read (default English)
   if(target!==src){
-    let tr=(u.tr&&u.tr[target])?u.tr[target]:null;         // inline translation carried on the update
+    // Inline tr only carries title+excerpt for the cards — the full body always comes
+    // from the per-language file, so a stub can never shadow the real translation.
+    let tr=(u.tr&&u.tr[target]&&Array.isArray(u.tr[target].blocks))?u.tr[target]:null;
     if(!tr){ try{ const r=await fetch(TRBASE+'/translations/'+u.id+'/'+target+'.json',{cache:'no-store'});
       if(r.ok){ const d=await r.json(); if(d&&Array.isArray(d.blocks)) tr=d; } }catch(e){} }
     if(tr&&Array.isArray(tr.blocks)){ title=tr.title||title; blocks=tr.blocks;
       tnote=`<div class="trnote">${licon('globe',12)} Shown in ${langName(target)} · AI‑translated from ${(src&&src!=='en')?langName(src):'the original'}</div>`; }
+    else if(u.tr&&u.tr[target]&&u.tr[target].title){ title=u.tr[target].title; }
   }
   const uu={...u,title,blocks};
   const emb=u.video?embedURL(u.video):'';
@@ -1267,7 +1282,9 @@ var READERLANG='';
   const nav=(navigator.language||'en').slice(0,2).toLowerCase();
   READERLANG = saved || (RLANGS.includes(nav)?nav:'en');
   sel.innerHTML=RLANGS.map(l=>`<option value="${l}"${l===READERLANG?' selected':''}>${langName(l)}</option>`).join('');
-  sel.addEventListener('change',()=>{ READERLANG=sel.value; try{localStorage.setItem('colabr_lang',READERLANG);}catch(e){} setMasthead(); refreshBrand(); if(curU){ const idx=U.indexOf(curU); if(idx>=0) openReader(idx); } });
+  sel.addEventListener('change',()=>{ READERLANG=sel.value; try{localStorage.setItem('colabr_lang',READERLANG);}catch(e){} setMasthead(); refreshBrand();
+    if(typeof U!=='undefined'&&U.length){ applyLangTitles(); computeTop10(); renderHero(); render(); renderHighlights(); }
+    if(curU){ const idx=U.indexOf(curU); if(idx>=0) openReader(idx); } });
 })();
 document.getElementById('subx').addEventListener('click',closeSub);
 document.getElementById('subov').addEventListener('click',e=>{if(e.target.id==='subov')closeSub();});
