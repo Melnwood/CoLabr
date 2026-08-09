@@ -3,6 +3,7 @@
 // secret link in their email (?r=<recId>&k=<thread key>) — no account needed.
 // The missionary reads and replies from their dashboard; this endpoint also lets
 // them post from thread.html when signed in.
+const crypto = require('crypto');
 const { sessionFromEvent } = require('./_auth');
 const { missByEmail } = require('./_shares');
 const { sendMail, esc } = require('./_mail');
@@ -59,6 +60,9 @@ exports.handler = async function (event) {
     const from = isOwner ? 'm' : 's';
     thread.push({ f: from, t: msg, at: new Date().toISOString() });
     const fields = { Thread: JSON.stringify(thread) };
+    // Older records may predate threading — mint the supporter's reply key on first use.
+    let tkeySave = c['Thread Key'] || '';
+    if (!tkeySave && from === 'm') { tkeySave = crypto.randomBytes(16).toString('hex'); fields['Thread Key'] = tkeySave; }
     // A supporter reply re-opens the item on the missionary's dashboard.
     if (from === 's') fields.Read = false;
     else { fields.Read = true; fields.Replied = true; }
@@ -86,7 +90,7 @@ exports.handler = async function (event) {
         });
       } else if (c['Email']) {
         // Missionary replied from thread.html → the supporter's inbox with the thread link.
-        const tkey = c['Thread Key'] || key;
+        const tkey = tkeySave || key;
         await sendMail({
           to: c['Email'], subject: (c['Update Title'] ? `Re: ${c['Update Title']}` : 'A note back from us'),
           html: `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px;color:#241f1b">

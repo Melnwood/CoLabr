@@ -235,7 +235,12 @@ exports.handler = async function (event) {
     }
 
     if (b.action === 'responses') {
-      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}?pageSize=100`, { headers: auth });
+      // Only YOUR page's responses — private notes to one missionary must never
+      // appear on another member's dashboard.
+      const meRec = await findMissionary(auth);
+      const myName = (meRec && meRec.fields && meRec.fields[MIS_NAME]) || SITE_MISSIONARY;
+      const rf = encodeURIComponent(`{Missionary}='${String(myName).replace(/'/g, "\\'")}'`);
+      const r = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}?pageSize=100&filterByFormula=${rf}`, { headers: auth });
       const data = await r.json();
       if (!r.ok) return resp(r.status, { error: 'Could not load responses.' });
       const rows = (data.records || []).map(rec => {

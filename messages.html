@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D1B2A'/%3E%3Ccircle cx='32' cy='34' r='9' fill='%23FF6B5B'/%3E%3C/svg%3E">
+<title>Co·labr — Conversations</title>
+<style>
+  :root{--acc:#FF6600;--bg:#f4f1ec;--card:#fff;--line:#e7e4e0;--muted:#7a756f;--text:#241f1b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:22px 18px 40px}
+  .back{font-size:13px;color:var(--muted);text-decoration:none}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px}
+  .lede{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.5}
+  .split{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start}
+  .people{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;max-height:72vh;overflow-y:auto}
+  .person{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #f1ede7;cursor:pointer}
+  .person:hover{background:#faf7f2}
+  .person.on{background:#fdf4ec}
+  .pav{flex:none;width:36px;height:36px;border-radius:50%;background:#241f1b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .pmain{flex:1;min-width:0}
+  .pname{font-size:13.5px;font-weight:750;display:flex;align-items:center;gap:6px}
+  .pdot{width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none}
+  .pprev{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .pwhen{flex:none;font-size:10.5px;color:#a29b93;align-self:flex-start;padding-top:3px}
+  .convo{background:var(--card);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;min-height:60vh;max-height:78vh}
+  .chead{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .chead h3{margin:0;font-size:16px;font-weight:800}
+  .cfacts{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .cfacts b{color:#b8791b;font-weight:700}
+  .stream{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+  .bub{max-width:76%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.55;white-space:pre-wrap}
+  .bub.s{align-self:flex-start;background:#f4f1ec;border-bottom-left-radius:4px}
+  .bub.m{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:4px}
+  .bwhen{font-size:10px;color:#a29b93;margin:2px 4px 8px}
+  .bwhen.m{align-self:flex-end}
+  .bwhen.s{align-self:flex-start}
+  .trlink{font-size:10.5px;color:#b8791b;cursor:pointer;align-self:flex-start;margin:1px 4px 0;font-weight:700}
+  .trout{align-self:flex-start;max-width:76%;font-size:12.5px;font-style:italic;color:#5a544d;background:#faf6ef;border:1px dashed #e8dcc8;border-radius:12px;padding:8px 12px;margin-top:2px;white-space:pre-wrap}
+  .praypill{align-self:center;font-size:11.5px;color:#7a6a4f;background:#fbf6ec;border:1px solid #efe4cd;border-radius:20px;padding:6px 14px;margin:6px 0}
+  .ucard{align-self:flex-start;max-width:76%;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0 4px;background:#fff}
+  .ucov{width:100%;aspect-ratio:3/1;background-size:cover}
+  .ut{font-size:12px;font-weight:750;padding:8px 12px}
+  .compose{border-top:1px solid var(--line);padding:12px;display:flex;gap:9px;align-items:flex-end}
+  .compose textarea{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:13.5px;font-family:inherit;min-height:44px;max-height:130px;resize:vertical;outline:none}
+  .compose textarea:focus{border-color:var(--acc)}
+  .compose button{flex:none;background:var(--text);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:13.5px;font-weight:700;cursor:pointer}
+  .compose button:disabled{opacity:.5}
+  .cnote{font-size:11.5px;color:var(--muted);padding:0 14px 12px}
+  .state{color:var(--muted);font-size:14px;padding:50px 20px;text-align:center}
+  .backlist{display:none;font-size:12.5px;color:var(--acc);font-weight:700;cursor:pointer;margin-bottom:8px}
+  @media(max-width:840px){
+    .split{grid-template-columns:1fr}
+    .split.open .people{display:none}
+    .split:not(.open) .convo{display:none}
+    .backlist{display:block}
+    .people,.convo{max-height:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="manage.html">← My Dashboard</a>
+  <h1>Conversations</h1>
+  <p class="lede">One stream per person — every prayer, note, and reply you've ever traded, in one place.</p>
+  <div class="split" id="split">
+    <div class="people" id="people"><div class="state">Loading your people…</div></div>
+    <div class="convo" id="convo"><div class="state">Pick a person to open your conversation.</div></div>
+  </div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let DATA=null, PEOPLE=[], CUR=null;
+const plural=n=>/&|\band\b|\+|,/i.test(n||'');
+function fmtD(at){ if(!at)return''; try{ return new Date(at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }catch(_){ return''; } }
+function fmtDT(at){ if(!at)return''; try{ return new Date(at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(_){ return''; } }
+
+function build(){
+  // Group everything by person: email first, name as fallback.
+  const map={};
+  const keyOf=(email,name)=>email||('n:'+(name||'').toLowerCase());
+  (DATA.subs||[]).forEach(s=>{
+    const k=keyOf(s.email,s.name);
+    map[k]=map[k]||{key:k,name:s.name,email:s.email,items:[],rows:[],prayed:0};
+    map[k].since=s.since; map[k].lastVisit=s.lastVisit;
+    if(!map[k].name)map[k].name=s.name;
+  });
+  (DATA.rows||[]).forEach(row=>{
+    const k=keyOf(row.email,row.name);
+    const p=map[k]=map[k]||{key:k,name:row.name,email:row.email,items:[],rows:[],prayed:0};
+    if(!p.email&&row.email)p.email=row.email;
+    p.rows.push(row);
+    if(row.type==='Prayer'){ p.prayed++; if(!row.message){ p.items.push({kind:'pray',at:row.created}); } }
+    if(row.message){
+      p.items.push({kind:'msg',f:'s',t:row.message,at:row.created,updateId:row.updateId,updateTitle:row.updateTitle,rowId:row.id});
+    }
+    (row.thread||[]).forEach((x,i)=>{ if(x&&x.t)p.items.push({kind:'msg',f:x.f==='m'?'m':'s',t:x.t,at:x.at||row.created,ord:i}); });
+  });
+  PEOPLE=Object.values(map).filter(p=>p.name);
+  PEOPLE.forEach(p=>{
+    p.items.sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||((a.ord||0)-(b.ord||0)));
+    p.last=p.items.length?p.items[p.items.length-1]:null;
+    p.unread=p.rows.some(r=>!r.read);
+  });
+  PEOPLE.sort((a,b)=>String((b.last&&b.last.at)||b.since||'').localeCompare(String((a.last&&a.last.at)||a.since||'')));
+}
+function renderPeople(){
+  const el=document.getElementById('people');
+  if(!PEOPLE.length){ el.innerHTML='<div class="state">No supporters yet — when someone joins your wall or writes, they appear here.</div>'; return; }
+  el.innerHTML=PEOPLE.map((p,i)=>{
+    const prev=p.last?(p.last.kind==='pray'?((plural(p.name)?'Prayed':'Prayed')+' for you'):((p.last.f==='m'?'You: ':'')+p.last.t)):'No messages yet — say hello';
+    return `<div class="person${CUR===p.key?' on':''}" data-k="${esc(p.key)}">
+      <div class="pav">${esc((p.name||'?').trim().charAt(0).toUpperCase())}</div>
+      <div class="pmain"><div class="pname">${p.unread?'<span class="pdot"></span>':''}${esc(p.name)}</div>
+      <div class="pprev">${esc(prev)}</div></div>
+      <div class="pwhen">${p.last?fmtD(p.last.at):''}</div></div>`;
+  }).join('');
+  el.querySelectorAll('.person').forEach(d=>d.addEventListener('click',()=>openPerson(d.dataset.k)));
+}
+function openPerson(k){
+  CUR=k; const p=PEOPLE.find(x=>x.key===k); if(!p)return;
+  document.getElementById('split').classList.add('open');
+  renderPeople();
+  const facts=[];
+  if(p.since)facts.push('Following since <b>'+esc(fmtD(p.since))+'</b>');
+  if(p.prayed)facts.push('prayed with you <b>'+p.prayed+(p.prayed===1?' time':' times')+'</b>');
+  if(p.lastVisit)facts.push('last visited your wall '+esc(fmtD(p.lastVisit)));
+  let html=`<div class="chead"><div class="backlist" id="backlist">← All people</div><h3>${esc(p.name)}</h3><div class="cfacts">${facts.join(' · ')||'From your wall'}</div></div><div class="stream" id="stream">`;
+  if(!p.items.length) html+=`<div class="state">Nothing yet — start the conversation below. They’ll get it by email and can reply right back.</div>`;
+  let lastUpdate='';
+  p.items.forEach((it,idx)=>{
+    if(it.kind==='pray'){ html+=`<div class="praypill">🙏 ${esc(p.name)} ${plural(p.name)?'were':'was'} praying · ${esc(fmtD(it.at))}</div>`; return; }
+    if(it.f==='s'&&it.updateId&&DATA.updates[it.updateId]&&it.updateId!==lastUpdate){
+      const u=DATA.updates[it.updateId]; lastUpdate=it.updateId;
+      html+=`<div class="ucard">${u.cover?`<div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div>`:''}<div class="ut">${esc(u.title||it.updateTitle)}</div></div>`;
+    }
+    html+=`<div class="bub ${it.f}" data-bi="${idx}">${esc(it.t)}</div>`;
+    if(it.f==='s') html+=`<div class="trlink" data-tr="${idx}">Translate</div>`;
+    html+=`<div class="bwhen ${it.f}">${esc(fmtDT(it.at))}</div>`;
+  });
+  html+=`</div>
+    <div class="compose"><textarea id="dm" placeholder="Write to ${esc(p.name)}…"></textarea><button id="dmsend"${p.email?'':' disabled'}>Send</button></div>
+    <div class="cnote" id="dmnote">${p.email?'Delivered by email too — and kept here forever.':'This person didn’t leave an email, so there’s no way to reach them — they can still write you from your wall.'}</div>`;
+  const cv=document.getElementById('convo'); cv.innerHTML=html;
+  const st=document.getElementById('stream'); if(st)st.scrollTop=1e6;
+  document.getElementById('backlist').addEventListener('click',()=>{ document.getElementById('split').classList.remove('open'); CUR=null; renderPeople(); });
+  cv.querySelectorAll('[data-tr]').forEach(el=>el.addEventListener('click',()=>translateBubble(p,+el.dataset.tr,el)));
+  const send=document.getElementById('dmsend');
+  if(send&&p.email) send.addEventListener('click',()=>sendDM(p));
+  // Opening the conversation clears its "new" flags.
+  p.rows.filter(r=>!r.read).forEach(r=>{ r.read=true; fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'markRead',id:r.id,read:true})}).catch(()=>{}); });
+  p.unread=false; renderPeople();
+}
+async function translateBubble(p,idx,el){
+  const it=p.items[idx]; if(!it)return;
+  el.textContent='Translating…';
+  try{
+    const r=await fetch('/.netlify/functions/translate-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:it.t})});
+    const d=await r.json();
+    if(r.ok&&d.text){ el.insertAdjacentHTML('afterend','<div class="trout">'+esc(d.text)+'</div>'); el.remove(); }
+    else{ el.textContent='Could not translate'; }
+  }catch(_){ el.textContent='Could not translate'; }
+}
+async function sendDM(p){
+  const t=document.getElementById('dm'), note=document.getElementById('dmnote'), btn=document.getElementById('dmsend');
+  const msg=t.value.trim(); if(!msg)return;
+  btn.disabled=true; note.textContent='Sending…';
+  try{
+    // Continue their newest thread if one exists; otherwise start a fresh conversation.
+    const target=p.rows.slice().sort((a,b)=>String(b.created).localeCompare(String(a.created)))[0];
+    let d;
+    if(target){
+      const r=await fetch('/.netlify/functions/thread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({r:target.id,message:msg})});
+      d=await r.json(); if(!r.ok)throw new Error(d.error||'Could not send.');
+      target.thread=(target.thread||[]).concat([{f:'m',t:msg,at:new Date().toISOString()}]);
+    }else{
+      const r=await fetch('/.netlify/functions/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:p.email,name:p.name,message:msg})});
+      d=await r.json(); if(!r.ok)throw new Error(d.error||'Could not send.');
+      p.rows.push({id:d.id,type:'Message',message:'',email:p.email,read:true,thread:d.thread,created:new Date().toISOString()});
+    }
+    p.items.push({kind:'msg',f:'m',t:msg,at:new Date().toISOString()});
+    p.last=p.items[p.items.length-1];
+    openPerson(p.key);
+  }catch(e){ note.textContent=e.message||'Could not send.'; btn.disabled=false; }
+}
+async function load(){
+  try{
+    const r=await fetch('/.netlify/functions/conversations');
+    if(r.status===401){ location.href='login.html?next='+encodeURIComponent('messages.html'); return; }
+    const d=await r.json();
+    if(!r.ok){ document.getElementById('people').innerHTML='<div class="state">'+esc(d.error||'Could not load.')+'</div>'; return; }
+    DATA=d; build(); renderPeople();
+  }catch(_){ document.getElementById('people').innerHTML='<div class="state">Could not reach the server.</div>'; }
+}
+load();
+</script>
+<script src="help.js"></script>
+</body>
+</html>
