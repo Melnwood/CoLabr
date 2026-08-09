@@ -659,10 +659,21 @@ async function loadConvoStats(){
   try{
     const rows=(await api('responses')).rows||[];
     const fresh=rows.filter(r=>!r.read).length;
-    const waiting=rows.filter(r=>{
-      if(!(r.message||(r.thread&&r.thread.length))) return false;
-      const th=r.thread||[];
-      return th.length ? th[th.length-1].f!=='m' : !r.replied;
+    // Waiting = strings (person + update) where the supporter spoke last —
+    // matches the Conversations page exactly, so the numbers never disagree.
+    const gmap={};
+    rows.forEach(r=>{
+      if(!(r.message||(r.thread&&r.thread.length)))return;
+      const gk=(r.email||('n:'+r.name))+'|'+(r.updateId||r.id);
+      (gmap[gk]=gmap[gk]||[]).push(r);
+    });
+    const waiting=Object.values(gmap).filter(g=>{
+      let last=null;
+      g.forEach(r=>{
+        if(r.message){ const e={f:'s',at:String(r.created||'')}; if(!last||e.at>last.at)last=e; }
+        (r.thread||[]).forEach(x=>{ if(x&&x.t){ const e={f:x.f==='m'?'m':'s',at:String(x.at||r.created||'')}; if(!last||e.at>=last.at)last=e; } });
+      });
+      return !!(last&&last.f!=='m');
     }).length;
     const praying=new Set(rows.filter(r=>r.type==='Prayer').map(r=>r.email||('n:'+r.name))).size;
     box.innerHTML=
