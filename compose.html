@@ -172,6 +172,7 @@
         <button type="button" class="pbtn" data-t="prayer"><svg viewBox="0 0 24 24"><path d="M12 3c1.6 2 3 3.4 3 5.4A3 3 0 0 1 9 8.4C9 6.4 10.4 5 12 3z"/><path d="M8.5 21h7"/></svg> Prayer</button>
         <button type="button" class="pbtn" data-t="praise"><svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.2 5.6.8-4 4 1 5.6L12 16l-5.1 2.6 1-5.6-4-4 5.6-.8z"/></svg> Praise</button>
         <button type="button" class="pbtn" data-t="give"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C1.2 8.4 2.7 5.2 6 5.2c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.3 0 4.8 3.2 3.3 6.2C19 15.6 12 20 12 20z"/></svg> Give button</button>
+        <button type="button" class="pbtn" data-t="button"><svg viewBox="0 0 24 24"><rect x="3" y="8.5" width="18" height="7" rx="3.5"/><path d="M15 12h3"/></svg> Button</button>
         <button type="button" class="pbtn" data-t="signoff"><svg viewBox="0 0 24 24"><path d="M3 21l4-1L18 9l-3-3L4 17z"/><path d="M14 6l3 3"/></svg> Sign-off</button>
         <button type="button" class="pbtn" data-t="divider"><svg viewBox="0 0 24 24"><path d="M3 12h18"/></svg> Divider</button>
       </div>
@@ -453,8 +454,8 @@ if(new URLSearchParams(location.search).get('embed')==='1'){
   x.addEventListener('click',()=>{ try{parent.postMessage('colabr:closeCompose','*');}catch(_){ location.href='manage.html'; } });
   document.body.appendChild(x);
 }
-const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, photo:{url:'',caption:''}, video:{url:'',lang:''}, numbers:{a:'',al:'',b:'',bl:'',c:'',cl:''}, quote:{text:'',by:''}, prayer:{text:''}, praise:{text:''}, give:{label:'Give',url:'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969'}, signoff:{text:'With love,\nthe Ellenwoods'}, divider:{} };
-const NAME={hero:'Banner',heading:'Heading',text:'Text',photo:'Photo',video:'Video',numbers:'Numbers',quote:'Quote',prayer:'Prayer request',praise:'Praise',give:'Give button',signoff:'Sign-off',divider:'Divider'};
+const DEF={ hero:{url:'',heading:'',sub:''}, heading:{text:''}, text:{text:''}, photo:{url:'',caption:''}, video:{url:'',lang:''}, numbers:{a:'',al:'',b:'',bl:'',c:'',cl:''}, quote:{text:'',by:''}, prayer:{text:''}, praise:{text:''}, give:{label:'Give',url:'https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969'}, button:{label:'',url:''}, signoff:{text:'With love,\nthe Ellenwoods'}, divider:{} };
+const NAME={hero:'Banner',heading:'Heading',text:'Text',photo:'Photo',video:'Video',numbers:'Numbers',quote:'Quote',prayer:'Prayer request',praise:'Praise',give:'Give button',button:'Button',signoff:'Sign-off',divider:'Divider'};
 document.getElementById('palette').querySelectorAll('.pbtn').forEach(b=>
   b.addEventListener('pointerdown',e=>beginDrag(e,'new',{type:b.dataset.t,label:NAME[b.dataset.t]})));
 /* ---- Never lose typed work: the update autosaves locally as you type. Close the
@@ -572,6 +573,7 @@ function fieldHtml(b){
   if(b.type==='divider') return `<div style="color:var(--muted);font-size:12.5px;padding:2px 0">A divider bar will appear here between sections.</div>`;
   if(b.type==='signoff') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="With love, …">${esc(b.text)}</textarea>`;
   if(b.type==='give') return `<input data-id="${b.id}" data-f="label" placeholder="Button text (e.g. Give)" value="${esc(b.label)}"><input class="urlin" data-id="${b.id}" data-f="url" placeholder="Giving link (URL)" value="${esc(b.url)}">`+colorRow(b);
+  if(b.type==='button') return `<input data-id="${b.id}" data-f="label" placeholder="Button text (e.g. Watch the video, RSVP, Read more)" value="${esc(b.label)}"><input class="urlin" data-id="${b.id}" data-f="url" placeholder="Where it goes (https://…)" value="${esc(b.url)}"><div class="hint">Starts in your brand color — pick another below if you want.</div>`+colorRow(b);
   if(b.type==='numbers') return `<div class="two"><input data-id="${b.id}" data-f="a" placeholder="Number (e.g. 100)" value="${esc(b.a)}"><input data-id="${b.id}" data-f="al" placeholder="Label (e.g. camps)" value="${esc(b.al)}"></div><div class="two"><input data-id="${b.id}" data-f="b" placeholder="Number" value="${esc(b.b)}"><input data-id="${b.id}" data-f="bl" placeholder="Label" value="${esc(b.bl)}"></div><div class="two"><input data-id="${b.id}" data-f="c" placeholder="Number" value="${esc(b.c)}"><input data-id="${b.id}" data-f="cl" placeholder="Label" value="${esc(b.cl)}"></div>`;
   if(b.type==='text') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="Write this section…">${esc(b.text)}</textarea>`;
   if(b.type==='prayer') return fmtBar(b)+`<textarea data-id="${b.id}" data-f="text" placeholder="A prayer request…">${esc(b.text)}</textarea>`+colorRow(b);
@@ -1232,6 +1234,7 @@ function pvBlockHtml(bk){
   if(bk.type==='divider') return `<hr class="rhr">`;
   if(bk.type==='signoff') return `<p class="rsign">${pvFmt(bk.text)}</p>`;
   if(bk.type==='give') return `<a class="rgive" href="${esc(bk.url||DEF.give.url)}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer${C?`;background:${C}`:''}">${esc(bk.label||'Give')}</a>`;
+  if(bk.type==='button') return bk.url?`<a class="rgive" href="${esc(bk.url)}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer${C?`;background:${C}`:''}">${esc(bk.label||'Open')}</a>`:'';
   if(bk.type==='numbers'){const it=[[bk.a,bk.al],[bk.b,bk.bl],[bk.c,bk.cl]].filter(x=>x[0]);if(!it.length)return '';return `<div class="rnums">`+it.map(x=>`<div class="rnum"><b>${esc(x[0])}</b><span>${esc(x[1]||'')}</span></div>`).join('')+`</div>`;}
   if(bk.type==='text') return `<p class="rtext">${pvFmt(bk.text)}</p>`;
   if(bk.type==='photo'){if(!bk.url)return '';let h=`<img class="rimg" src="${esc(bk.url)}" alt="">`;if(bk.caption)h+=`<div class="rcap">${esc(bk.caption)}</div>`;return h;}
