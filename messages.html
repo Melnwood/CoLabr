@@ -67,6 +67,9 @@
   .trout{align-self:flex-start;max-width:76%;font-size:12.5px;font-style:italic;color:#5a544d;background:#faf6ef;border:1px dashed #e8dcc8;border-radius:12px;padding:8px 12px;margin-top:2px;white-space:pre-wrap}
   .praypill{align-self:center;font-size:11.5px;color:#7a6a4f;background:#fbf6ec;border:1px solid #efe4cd;border-radius:20px;padding:6px 14px;margin:6px 0}
   .ucard{align-self:flex-start;max-width:76%;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0 4px;background:#fff}
+  a.ucard{display:block;text-decoration:none;color:inherit;cursor:pointer;transition:transform .12s,box-shadow .12s}
+  a.ucard:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(60,40,20,.14);border-color:#d8cdb6}
+  .uopen{float:right;font-size:10.5px;font-weight:800;color:var(--acc)}
   .ucov{width:100%;aspect-ratio:3/1;background-size:cover}
   .ut{font-size:12px;font-weight:750;padding:8px 12px}
   .compose{border-top:1px solid var(--line);padding:12px;display:flex;gap:9px;align-items:flex-end}
@@ -355,7 +358,7 @@ function openPerson(k){
     html+=`<div class="tstr" data-si="${si}">
       <button type="button" class="tsh" data-ts="${si}"><span class="tslab">${label}</span><span class="tsmeta">${s.msgCount?s.msgCount+' message'+(s.msgCount===1?'':'s'):'prayer'}${s.hasPray&&s.msgCount?' + prayer':''} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
       <div class="tsb">
-        ${(u&&u.cover)?`<div class="ucard"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||g.updateTitle)}</div></div>`:''}
+        ${(u&&u.cover)?`<a class="ucard" href="index.html?m=${encodeURIComponent(p.flip?p.name:(DATA.me||''))}&u=${encodeURIComponent(g.updateId)}&notour=1" target="_blank" rel="noopener" title="Open this update on the wall"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||g.updateTitle)} <span class="uopen">Read →</span></div></a>`:''}
         ${s.entries.map(x=>{
           if(x.kind==='pray')return `<div class="praypill" style="align-self:flex-start;margin:6px 0 2px">${licon('pray')} ${p.flip?'You prayed for this':esc(p.name)+(plural(p.name)?' were':' was')+' praying'} · ${esc(fmtD(x.at))}</div>`;
           const mine=x.f===p.mineF;

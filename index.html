@@ -725,6 +725,14 @@ async function load(){
     });
     applyLangTitles();
     computeTop10(); renderHero(); buildYears(); render(); renderHighlights();
+    // Deep link: ?u=<updateId> opens that update's reader straight away —
+    // conversation thumbnails and shared links land people right on the story.
+    (function(){
+      const uid=new URLSearchParams(location.search).get('u');
+      if(!uid) return;
+      const idx=U.findIndex(x=>x.id===uid);
+      if(idx>=0) openReader(idx);
+    })();
     document.body.classList.add('ready');   // reveal only now, already in the correct style
     maybeTour();
   }catch(e){
