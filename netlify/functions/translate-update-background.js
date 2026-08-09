@@ -40,11 +40,26 @@ exports.handler = async function (event) {
 
     const gcsToken = await gToken(sa, 'https://www.googleapis.com/auth/devstorage.read_write');
     const src = await detectLang(key, strings.slice(0, 3).join(' \n '));
+
+    // RESUMABLE: the record carries {src, h(content hash), tr:{lang:{title,ex}}}.
+    // Same content + language already done = skip. Changed content = start fresh.
+    // Progress is saved after EVERY language, so a timed-out run loses nothing.
+    const hash = crypto.createHash('sha1').update(strings.join('␞')).digest('hex').slice(0, 12);
+    let inline = { src, h: hash, tr: {} };
+    try {
+      const prev = JSON.parse(c['Translations'] || '{}');
+      if (prev && prev.h === hash && prev.src === src && prev.tr) inline.tr = prev.tr;
+    } catch (e) {}
+    const saveInline = async () => {
+      try {
+        await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
+          body: JSON.stringify({ records: [{ id: b.recordId, fields: { 'fld9BeSNNbZpUAtd0': JSON.stringify(inline) } }], typecast: true }) });
+      } catch (e) {}
+    };
     const langsDone = [];
-    const inline = { src, tr: {} };   // compact per-language title+excerpt, carried ON the record
-                                      // so the wall's cards/hero translate instantly (no fetch-per-update)
 
     for (const lang of TARGETS) {
+      if (lang !== src && inline.tr[lang]) { langsDone.push(lang); continue; }   // already translated for this content
       let outStrings;
       if (lang === src) { outStrings = strings; }                 // source language = original text
       else {
@@ -62,16 +77,13 @@ exports.handler = async function (event) {
           .filter(x => ['text', 'quote', 'prayer', 'praise'].includes(blocks[x.t.i] && blocks[x.t.i].type))
           .map(x => x.s);
         inline.tr[lang] = { title: outStrings[0], ex: bodyBits.join(' ').replace(/\s+/g, ' ').trim().slice(0, 220) };
+        await saveInline();   // progress survives any timeout
       }
     }
 
     // Manifest so the page knows what's available + the source language.
     await putJson(gcsToken, bucket, `translations/${b.recordId}/index.json`, { src, langs: langsDone, names: LNAME });
-    // Inline titles/excerpts onto the record itself — the wall payload already ships this field.
-    try {
-      await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
-        body: JSON.stringify({ records: [{ id: b.recordId, fields: { 'fld9BeSNNbZpUAtd0': JSON.stringify(inline) } }], typecast: true }) });
-    } catch (e) {}
+    await saveInline();
     await log(auth, JSON.stringify({ ok: true, src, langs: langsDone }));
     return j(200);
   } catch (e) { try { await log({ Authorization: 'Bearer ' + process.env.AIRTABLE_TOKEN, 'Content-Type': 'application/json' }, 'EXCEPTION ' + String(e && e.message || e)); } catch {} return j(200); }
