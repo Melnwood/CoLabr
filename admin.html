@@ -315,12 +315,12 @@ async function chatLoad(){
     const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     list.innerHTML=rows.map(x=>{
       const when=x.created?new Date(x.created).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
-      const done=x.status==='Dealt with';
+      const done=x.status==='Closed'||x.status==='Replied';
       return `<div class="fbrow${done?' done':''}">
         <div class="fbnote"><b>${esc(x.name||x.email)}</b>: ${esc(x.message)}
           ${x.reply?`<div class="fbmeta" style="white-space:pre-wrap">Bot answered: ${esc(x.reply.slice(0,180))}${x.reply.length>180?'…':''}</div>`:''}
           <div class="fbmeta">${when}${x.email?' · '+esc(x.email):''}</div></div>
-        <select data-ch="${x.id}">${['New','Dealt with'].map(s=>`<option${s===x.status?' selected':''}>${s}</option>`).join('')}</select>
+        <select data-ch="${x.id}">${['New','Replied','Closed'].map(s=>`<option${s===x.status?' selected':''}>${s}</option>`).join('')}</select>
       </div>`;
     }).join('');
     list.querySelectorAll('[data-ch]').forEach(sel=>sel.addEventListener('change',async()=>{
