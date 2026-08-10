@@ -41,20 +41,22 @@ exports.handler = async function (event) {
     if (!orgs[label]) orgs[label] = { label, missionaries: 0, live: 0, supporters: 0, pending: 0, updates: 0 };
     return orgs[label];
   }
+  const orgByName = {};
   for (const rec of miss) {
     const f = rec.fields || {};
     let label = (f['Organization'] || '').trim();
     if (!label || /^(jv|josiah\s*venture)$/i.test(label)) {
-      label = /josiahventure\.com/i.test(f['Email'] || '') || /^(jv|josiah\s*venture)$/i.test(label) ? 'Josiah Venture' : (label || 'Independent');
+      label = /josiahventure\.com/i.test(f['Email'] || '') || /^(jv|josiah\s*venture)$/i.test(label) || /^josiah\s*venture$/i.test(String(f['Name'] || '').trim()) ? 'Josiah Venture' : (label || 'Independent');
     }
     orgOf[rec.id] = label;
+    if (f['Name']) orgByName[String(f['Name']).trim()] = label;
     const b = bucket(label);
     b.missionaries++;
     if (f['Live']) b.live++;
   }
   for (const rec of subs) {
     const f = rec.fields || {};
-    const label = orgOf[(f['Missionary'] || [])[0]] || 'Independent';
+    const label = orgByName[String(f['Missionary'] || '').trim()] || 'Independent';
     const b = bucket(label);
     if (f['Active']) b.supporters++;
     else if (f['Source'] === 'Requested') b.pending++;
