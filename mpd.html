@@ -35,7 +35,14 @@
   .tag.neg{background:#fdecea;color:#b0342b;border-color:#f5c6c0}
   .note{font-size:13.5px;line-height:1.6}
   .quote{font-size:12.5px;color:#5a4f3f;border-left:3px solid var(--acc);padding:3px 0 3px 11px;margin-top:8px;line-height:1.55}
-  .open{font-size:12px;font-weight:700;color:var(--acc);text-decoration:none;white-space:nowrap}
+  .open{font-size:12px;font-weight:700;color:var(--acc);background:none;border:none;cursor:pointer;white-space:nowrap;font-family:inherit;padding:0}
+  #rd{display:none;position:fixed;inset:0;z-index:200;background:rgba(30,24,18,.5);align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto}
+  #rd.on{display:flex}
+  .rdbox{background:#fff;border-radius:18px;max-width:640px;width:100%;padding:26px 28px;box-shadow:0 40px 100px rgba(0,0,0,.45)}
+  .rdbox h2{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:-.02em}
+  .rdmeta{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .rdtext{font-size:14.5px;line-height:1.7;white-space:pre-wrap;color:#33291c;max-height:60vh;overflow-y:auto}
+  .rdclose{margin-top:18px;background:var(--ink);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:13.5px;font-weight:700;cursor:pointer}
   .state{color:var(--muted);font-size:14px;padding:26px 0;text-align:center}
   .silent{display:flex;flex-wrap:wrap;gap:8px}
   .schip{font-size:12px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:7px 13px}
@@ -46,8 +53,8 @@
 <div class="wrap">
   <div class="nav"><a href="admin.html">← Super admin</a><a href="care.html">Care radar</a><a href="manage.html">My Dashboard</a></div>
   <h1>MPD radar</h1>
-  <p class="lede">Who is actually inviting people into partnership — and how well. Reads the words staff wrote in recent updates (not the Give button) so MPD directors can celebrate a strong ask, coach a faint one, and notice who never asked at all.</p>
-  <div class="costnote">Each scan reads up to 25 recent updates and costs roughly <b>2–5¢</b> of AI usage. Nothing runs until you press the button.</div>
+  <p class="lede"><b>Financial partnership only.</b> Who actually invited people to <i>give</i> — and how well they did it. Prayer requests, sharing, and volunteer asks are deliberately ignored. Only updates that mention money are read by the AI, so a prayer-only letter costs nothing.</p>
+  <div class="costnote">Updates are pre-filtered for money words first; only those go to the AI. A typical scan costs <b>1–4¢</b>. Nothing runs until you press the button.</div>
   <div class="bar">
     <select id="days">
       <option value="30">Last 30 days</option>
@@ -59,6 +66,11 @@
     <span class="msg" id="msg"></span>
   </div>
   <div id="out"></div>
+<div id="rd"><div class="rdbox">
+  <h2 id="rdTitle"></h2><div class="rdmeta" id="rdMeta"></div>
+  <div class="rdtext" id="rdText"></div>
+  <button class="rdclose" id="rdClose">Close</button>
+</div></div>
 </div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -70,19 +82,19 @@ document.getElementById('go').addEventListener('click',async()=>{
   try{
     const r=await fetch('/.netlify/functions/mpd-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({days:+document.getElementById('days').value})});
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not finish the scan.');
-    msg.textContent=`Read ${d.scanned} update${d.scanned===1?'':'s'}.`;
+    msg.textContent=`${d.scanned} update${d.scanned===1?'':'s'} in the window · ${d.read} mentioned money and were read by the AI.`;
     const asks=(d.items||[]).filter(x=>x.kinds.length);
     const negs=(d.items||[]).filter(x=>x.negative);
     let html='';
-    html+=`<div class="sect">Partnership invitations (${asks.length})</div>`;
+    html+=`<div class="sect">Financial invitations (${asks.length})</div>`;
     html+= asks.length ? asks.map(x=>`<div class="card">${av(x)}<div class="cb">
         <div class="who">${esc(x.author)}${x.org?` <span class="meta">· ${esc(x.org)}</span>`:''}</div>
         <div class="meta">${esc(x.title)} · ${esc(fd(x.date))}</div>
         <div class="tags">${x.kinds.map(k=>`<span class="tag">${esc(k)}</span>`).join('')}${x.strength?`<span class="tag s-${esc(x.strength)}">${esc(x.strength)} ask</span>`:''}</div>
         <div class="note">${esc(x.note)}</div>
         ${x.quote?`<div class="quote">“${esc(x.quote)}”</div>`:''}
-      </div><a class="open" href="index.html?u=${encodeURIComponent(x.updateId)}&notour=1" target="_blank" rel="noopener">Open →</a></div>`).join('')
-      : '<div class="state">No partnership invitations found in this window.</div>';
+      </div><button class="open" data-read="${esc(x.updateId)}" type="button">Read →</button></div>`).join('')
+      : '<div class="state">No financial asks found in this window.</div>';
     if(negs.length){
       html+=`<div class="sect">Tone worth a conversation (${negs.length})</div>`;
       html+=negs.map(x=>`<div class="card neg">${av(x)}<div class="cb">
@@ -91,16 +103,26 @@ document.getElementById('go').addEventListener('click',async()=>{
         <div class="tags"><span class="tag neg">Sustained negativity</span></div>
         <div class="note">${esc(x.toneNote||x.note)}</div>
         ${x.quote?`<div class="quote">“${esc(x.quote)}”</div>`:''}
-      </div><a class="open" href="index.html?u=${encodeURIComponent(x.updateId)}&notour=1" target="_blank" rel="noopener">Open →</a></div>`).join('');
+      </div><button class="open" data-read="${esc(x.updateId)}" type="button">Read →</button></div>`).join('');
     }
     if((d.silent||[]).length){
-      html+=`<div class="sect">Published, but never invited anyone (${d.silent.length})</div><div class="silent">`+
+      html+=`<div class="sect">Published, but never asked for support (${d.silent.length})</div><div class="silent">`+
         d.silent.map(s=>`<span class="schip">${esc(s.author)}${s.org?' · '+esc(s.org):''}</span>`).join('')+`</div>`;
     }
     out.innerHTML=html;
+    const byId={}; (d.items||[]).forEach(x=>byId[x.updateId]=x);
+    out.querySelectorAll('[data-read]').forEach(b=>b.addEventListener('click',()=>{
+      const x=byId[b.dataset.read]; if(!x)return;
+      document.getElementById('rdTitle').textContent=x.title;
+      document.getElementById('rdMeta').textContent=x.author+' · '+fd(x.date);
+      document.getElementById('rdText').textContent=x.text||'(no text captured)';
+      document.getElementById('rd').classList.add('on');
+    }));
   }catch(e){ msg.className='msg err'; msg.textContent=e.message||'Could not finish the scan.'; }
   btn.disabled=false;
 });
+document.getElementById('rdClose').addEventListener('click',()=>document.getElementById('rd').classList.remove('on'));
+document.getElementById('rd').addEventListener('click',e=>{ if(e.target.id==='rd')e.currentTarget.classList.remove('on'); });
 (async()=>{ try{ const r=await fetch('/.netlify/functions/me'); if(!r.ok) location.href='login.html?next=mpd.html'; }catch(_){} })();
 </script>
 <script src="help.js"></script>

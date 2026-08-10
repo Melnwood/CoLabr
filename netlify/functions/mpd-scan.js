@@ -14,8 +14,8 @@ exports.handler = async function (event) {
   let b; try { b = JSON.parse(event.body || '{}'); } catch { b = {}; }
   const days = Math.min(365, Math.max(7, +b.days || 90));
   try {
-    const { items, scanned, silent } = await mpdScan({ token, key, days });
-    return r(200, { items, scanned, silent: silent || [], days });
+    const { items, scanned, read, silent } = await mpdScan({ token, key, days });
+    return r(200, { items, scanned, read: read || 0, silent: silent || [], days });
   } catch (e) {
     return r(502, { error: e.message || 'Could not finish the scan.' });
   }

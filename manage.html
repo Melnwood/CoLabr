@@ -207,6 +207,22 @@
   .qchip span{font-size:11px;color:#c96a1e;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
   .qchip .qx{position:absolute;top:8px;right:8px;width:21px;height:21px;border-radius:50%;border:1px solid #ffd9bd;background:#fff;color:#c96a1e;font-size:11px;cursor:pointer;line-height:1;padding:0}
   .qchip .qx:hover{background:#c0392b;border-color:#c0392b;color:#fff}
+  /* The little "i": show people where a setting actually lands. */
+  .iBtn{width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:11px;font-weight:800;font-family:Georgia,serif;cursor:pointer;line-height:1;padding:0}
+  .iBtn:hover{border-color:var(--acc);color:var(--acc)}
+  #ipop{display:none;position:fixed;inset:0;z-index:220;background:rgba(30,24,18,.45);align-items:center;justify-content:center;padding:18px}
+  #ipop.on{display:flex}
+  .ipbox{background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px 24px;box-shadow:0 40px 100px rgba(0,0,0,.4)}
+  .ipbox h3{margin:0 0 4px;font-size:17px;font-weight:800}
+  .ipbox p{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0 0 14px}
+  .ipshot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#f4f1ec}
+  .ipwall{padding:14px 16px;background:#f4f1ec}
+  .ipwtop{font-size:10px;font-weight:800;letter-spacing:.06em;color:#b06a20}
+  .ipname{font-size:21px;font-weight:800;letter-spacing:-.02em;margin:8px 0 2px}
+  .ipsub{font-size:11px;color:var(--muted)}
+  .iprow{display:flex;gap:9px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);font-size:12px;background:#fff}
+  .ipmark{flex:none;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:#fff6ee;border:1px solid #f3d3b6;border-radius:10px;padding:3px 7px}
+  .ipclose{margin-top:14px;background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer}
   /* Conversations at a glance — three tiles, each a door into the full page. */
   .cstats{display:flex;gap:10px}
   .cstat{flex:1;background:#faf7f2;border:1px solid #efe9df;border-radius:12px;padding:12px 10px;text-align:center;text-decoration:none;color:inherit;transition:transform .12s,box-shadow .12s}
@@ -297,14 +313,14 @@
             <div class="savenote" id="pgnameMsg"></div>
           </div>
         </div>
-        <div class="pgsub"><button class="pglink" id="photoBtn" type="button">Change photo…</button><input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" style="display:none"><span class="savenote" id="photoMsg" style="margin:0"></span><span class="hint">Renaming is safe — old links keep working.</span></div>
+        <div class="pgsub"><button class="pglink" id="photoBtn" type="button">Change photo…</button><input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" style="display:none"><span class="savenote" id="photoMsg" style="margin:0"></span><button class="iBtn" id="nameInfo" type="button" aria-label="Where does this name show up?">i</button></div>
         <div class="hint pglab">Sign-off <span class="pgnote">closes every update, exactly as written</span></div>
         <div class="pgline">
           <textarea id="pgsign" rows="2" placeholder="Your words, your lines — e.g.&#10;All for Him,&#10;Mel"></textarea>
           <button class="photobtn" id="pgsignSave" type="button">Save</button>
         </div>
         <div class="savenote" id="pgsignMsg"></div><span id="pgsignPeek" style="display:none"></span>
-        <div class="hint pglab">Giving link <span class="pgnote">where every Give button sends supporters · blank = JV general fund</span></div>
+        <div class="hint pglab">Giving link <span class="pgnote">where every Give button sends supporters · blank = your organization&rsquo;s general fund</span></div>
         <div class="pgline">
           <input id="pggive" placeholder="https://… your organization's giving page for you">
           <button class="photobtn" id="pggiveSave" type="button">Save</button>
@@ -652,6 +668,13 @@ async function pickStyle(name){
   try{ await api('setStyle',{style:name}); note.className='savenote ok'; note.textContent='Saved — your supporter page now uses “'+name+'.” Refresh it to see the change.'; }
   catch(e){ curStyle=prev; renderStyles(); note.className='savenote err'; note.textContent='Could not save: '+e.message; }
 }
+document.getElementById('nameInfo').addEventListener('click',()=>{
+  const v=(document.getElementById('pgname')||{}).value||'Your page name';
+  document.getElementById('ipName').textContent=v; document.getElementById('ipName2').textContent=v;
+  document.getElementById('ipop').classList.add('on');
+});
+document.getElementById('ipClose').addEventListener('click',()=>document.getElementById('ipop').classList.remove('on'));
+document.getElementById('ipop').addEventListener('click',e=>{ if(e.target.id==='ipop')e.currentTarget.classList.remove('on'); });
 /* Conversations at a glance: new · waiting on you · people praying. Each tile
    opens the Conversations page, where the newest responses sit on top. */
 async function loadConvoStats(){
@@ -766,5 +789,20 @@ document.getElementById('photoFile').addEventListener('change',async e=>{
 });
 (async()=>{ if(await guard()){ load(); loadStyle(); loadProfile(); loadConvoStats(); loadMetrics(); loadShares(); } })();
 </script>
+<div id="ipop"><div class="ipbox">
+  <h3>Where your page name shows up</h3>
+  <p>It's the name your supporters see — on your wall, in the emails they get, and in the Josiah Venture directory.</p>
+  <div class="ipshot">
+    <div class="ipwall">
+      <div class="ipwtop">JOSIAHVENTURE</div>
+      <div class="ipname" id="ipName">Your page name</div>
+      <div class="ipsub">Frýdek-Místek, Czechia</div>
+    </div>
+    <div class="iprow"><span class="ipmark">Email</span><span>From: <b id="ipName2">Your page name</b> via Co·labr</span></div>
+    <div class="iprow"><span class="ipmark">Directory</span><span>Your card on the Josiah Venture team page</span></div>
+    <div class="iprow"><span class="ipmark">Link</span><span>The wall link you share with supporters</span></div>
+  </div>
+  <button class="ipclose" id="ipClose">Got it</button>
+</div></div>
 </body>
 </html>

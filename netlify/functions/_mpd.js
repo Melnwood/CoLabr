@@ -16,26 +16,37 @@ const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
 const KINDS = ['Direct ask', 'Soft invitation', 'Need shared', 'Thanks to partners'];
 
 const SYSTEM = `You read missionary support updates for the MPD (support-raising) directors of Josiah Venture.
+MPD means FINANCIAL partnership only — money. Nothing else counts.
+
 You are given a JSON list of updates: idx, author, date, title, text.
 
-For each update judge TWO things.
+A) FINANCIAL PARTNERSHIP CONTENT — only these count:
+   "Direct ask" — asks the reader to give money, become a monthly/financial partner, or increase their giving
+   "Soft invitation" — points the reader toward giving money without a clear ask ("if you'd like to help us get there…")
+   "Need shared" — names a MONEY/funding need (support percentage, a vehicle to buy, a budget gap) without inviting anyone to give
+   "Thanks to partners" — thanks people for their financial giving
 
-A) PARTNERSHIP CONTENT — did the writer actually invite people toward giving/partnering?
-   "Direct ask" — explicitly asks people to give, join the team, or increase support
-   "Soft invitation" — points toward partnering without a clear ask ("if you'd like to be part of this…")
-   "Need shared" — names a funding/resource need but never invites anyone into it
-   "Thanks to partners" — thanks givers, no new ask
-   Ignore a bare Give button or boilerplate: this is about WORDS THEY WROTE. Say nothing if there is nothing.
+   NOT MPD — never flag these:
+   - asking for prayer, however heartfelt ("would you pray for these young laborers")
+   - asking people to share the update, volunteer, come on a trip, join a camp team, send a note
+   - a Give button or link with no words asking (buttons are not an ask)
+   - general statements about God providing, with no invitation to the reader
+   If an update has no MONEY content, return nothing for it. Most updates will have nothing. That is the correct answer.
 
 B) TONE — only flag "negative" when discouragement or criticism runs THROUGH the update
    (the culture, the people, the ministry, the work) — not one honest hard sentence in an
    otherwise hopeful letter. Grief and lament are NOT negativity. Be conservative.
 
-Return ONLY a JSON array. One object per update that has partnership content OR a negative tone:
-[{"idx":0,"kinds":["Direct ask"],"strength":"strong|clear|faint","note":"one factual sentence, max 25 words","quote":"verbatim phrase, max 15 words","negative":false,"toneNote":""}]
-- "strength" describes how compelling the partnership invitation is, for coaching.
+Return ONLY a JSON array. One object per update that has FINANCIAL content OR a negative tone:
+[{"idx":0,"kinds":["Direct ask"],"strength":"strong|clear|faint","note":"one factual sentence, max 25 words","quote":"verbatim phrase about money, max 15 words","negative":false,"toneNote":""}]
+- "strength" describes how compelling the financial invitation is, for coaching.
+- "quote" MUST be the phrase that asks about money. If you cannot quote money words, it is not MPD — leave it out.
 - Set "negative":true only for sustained negativity, with "toneNote" one plain sentence.
-- Include nothing else. No preamble.`;
+No preamble.`;
+
+// Cheap pre-filter: only pay the AI to read updates that actually mention money.
+// A prayer-only letter never reaches the model.
+const MONEYISH = /\b(giv(e|ing|en)|gift|gifts|donat|support(ers?|ing)?|partner(s|ship|ing)?|fund(s|ing|ed)?|financ|monthly|pledge|raise[sd]? support|budget|provision|underwrit|sponsor)\b/i;
 
 async function mpdScan({ token, key, days }) {
   const auth = { Authorization: 'Bearer ' + token };
@@ -73,11 +84,15 @@ async function mpdScan({ token, key, days }) {
       id: rec.id, author: who.name || 'Unknown', photo: who.photo || '', org: who.org || '',
       date: f[F.date] || '', title, cover: f[F.cover] || '', text: text.slice(0, 2400)
     });
-    if (picked.length >= 25) break;
+    if (picked.length >= 40) break;
   }
-  if (!picked.length) return { items: [], scanned: 0 };
+  const published = picked.length;
+  const authorsAll = [...new Set(picked.map(p => p.author))];
+  // Only money-mentioning updates go to the model — this is most of the savings.
+  const cand = picked.filter(p => MONEYISH.test(p.text) || MONEYISH.test(p.title)).slice(0, 25);
+  if (!cand.length) return { items: [], scanned: published, read: 0, silent: authorsAll.map(a => { const p = picked.find(x => x.author === a); return { author: a, photo: p.photo, org: p.org, date: p.date, title: p.title }; }) };
 
-  const payload = picked.map((p, i) => ({ idx: i, author: p.author, date: p.date, title: p.title, text: p.text }));
+  const payload = cand.map((p, i) => ({ idx: i, author: p.author, date: p.date, title: p.title, text: p.text }));
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
@@ -91,11 +106,12 @@ async function mpdScan({ token, key, days }) {
   try { flags = JSON.parse(out); } catch { const m = out.match(/\[[\s\S]*\]/); if (m) { try { flags = JSON.parse(m[0]); } catch {} } }
 
   const items = (Array.isArray(flags) ? flags : [])
-    .filter(x => x && Number.isInteger(x.idx) && picked[x.idx])
+    .filter(x => x && Number.isInteger(x.idx) && cand[x.idx])
     .map(x => {
-      const p = picked[x.idx];
+      const p = cand[x.idx];
       return {
         updateId: p.id, author: p.author, photo: p.photo, org: p.org, date: p.date, title: p.title, cover: p.cover,
+        text: p.text,
         kinds: (Array.isArray(x.kinds) ? x.kinds : []).filter(k => KINDS.includes(k)),
         strength: ['strong', 'clear', 'faint'].includes(x.strength) ? x.strength : '',
         note: String(x.note || '').slice(0, 300),
@@ -109,10 +125,10 @@ async function mpdScan({ token, key, days }) {
   // Who published in the window but never invited anyone into partnership —
   // the quiet gap an MPD director most wants to see.
   const asked = new Set(items.filter(i => i.kinds.length).map(i => i.author));
-  const silent = [...new Set(picked.map(p => p.author))].filter(a => !asked.has(a))
+  const silent = authorsAll.filter(a => !asked.has(a))
     .map(a => { const p = picked.find(x => x.author === a); return { author: a, photo: p.photo, org: p.org, date: p.date, title: p.title }; });
 
-  return { items, scanned: picked.length, silent };
+  return { items, scanned: published, read: cand.length, silent };
 }
 
 module.exports = { mpdScan, KINDS };
