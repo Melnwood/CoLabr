@@ -216,10 +216,10 @@
   .ipbox h3{margin:0 0 4px;font-size:17px;font-weight:800}
   .ipbox p{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0 0 14px}
   .ipshot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#f4f1ec}
-  .ipwall{padding:14px 16px;background:#f4f1ec}
-  .ipwtop{font-size:10px;font-weight:800;letter-spacing:.06em;color:#b06a20}
-  .ipname{font-size:21px;font-weight:800;letter-spacing:-.02em;margin:8px 0 2px}
-  .ipsub{font-size:11px;color:var(--muted)}
+  .ipframe{position:relative;height:250px;overflow:hidden;background:#f4f1ec}
+  .ipframe iframe{width:1100px;height:800px;border:0;transform:scale(.48);transform-origin:0 0;pointer-events:none}
+  .ipflag{position:absolute;left:12px;top:96px;z-index:2;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--acc);border-radius:12px;padding:5px 10px;box-shadow:0 6px 16px rgba(255,102,0,.35)}
+  .ipflag::after{content:'';position:absolute;left:16px;bottom:-13px;border:7px solid transparent;border-top-color:var(--acc)}
   .iprow{display:flex;gap:9px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);font-size:12px;background:#fff}
   .ipmark{flex:none;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:#fff6ee;border:1px solid #f3d3b6;border-radius:10px;padding:3px 7px}
   .ipclose{margin-top:14px;background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer}
@@ -358,7 +358,7 @@
   <script src="help.js"></script>
 
 <script>
-let ROWS=[], statusF='all';
+let ROWS=[], statusF='all', MYPAGE='';
 /* The creator opens as an overlay above the dashboard; closing it refreshes what you see. */
 function openCompose(url){
   let ov=document.getElementById('composeov');
@@ -567,6 +567,7 @@ async function liveStrip(){
     // Point "View site" at THIS person's own wall, not the site default.
     const vs=document.querySelector('.nav a[href="index.html"]');
     if(vs&&me.miss.name) vs.href='index.html?m='+encodeURIComponent(me.miss.name);
+    if(me.miss.name) MYPAGE=me.miss.name;
     // "See your page as…" lenses — the wall with one supporter circle's eyes.
     if(me.miss.name){
       const wall='index.html?m='+encodeURIComponent(me.miss.name)+'&notour=1&as=';
@@ -669,8 +670,11 @@ async function pickStyle(name){
   catch(e){ curStyle=prev; renderStyles(); note.className='savenote err'; note.textContent='Could not save: '+e.message; }
 }
 document.getElementById('nameInfo').addEventListener('click',()=>{
-  const v=(document.getElementById('pgname')||{}).value||'Your page name';
-  document.getElementById('ipName').textContent=v; document.getElementById('ipName2').textContent=v;
+  const v=((document.getElementById('pgname')||{}).value||'').trim()||'Your page name';
+  document.getElementById('ipName2').textContent=v;
+  // The live wall itself — whatever name is saved is the name they'll see.
+  const f=document.getElementById('ipFrame');
+  if(f&&!f.dataset.set){ f.src='index.html?m='+encodeURIComponent(MYPAGE||v)+'&notour=1'; f.dataset.set='1'; }
   document.getElementById('ipop').classList.add('on');
 });
 document.getElementById('ipClose').addEventListener('click',()=>document.getElementById('ipop').classList.remove('on'));
@@ -791,13 +795,9 @@ document.getElementById('photoFile').addEventListener('change',async e=>{
 </script>
 <div id="ipop"><div class="ipbox">
   <h3>Where your page name shows up</h3>
-  <p>It's the name your supporters see — on your wall, in the emails they get, and in the Josiah Venture directory.</p>
+  <p>This is your real wall, live. The big name at the top is the one you're editing — supporters see it here, on every email, and in the Josiah Venture directory.</p>
   <div class="ipshot">
-    <div class="ipwall">
-      <div class="ipwtop">JOSIAHVENTURE</div>
-      <div class="ipname" id="ipName">Your page name</div>
-      <div class="ipsub">Frýdek-Místek, Czechia</div>
-    </div>
+    <div class="ipframe"><div class="ipflag">Your page name</div><iframe id="ipFrame" title="Your wall" loading="lazy"></iframe></div>
     <div class="iprow"><span class="ipmark">Email</span><span>From: <b id="ipName2">Your page name</b> via Co·labr</span></div>
     <div class="iprow"><span class="ipmark">Directory</span><span>Your card on the Josiah Venture team page</span></div>
     <div class="iprow"><span class="ipmark">Link</span><span>The wall link you share with supporters</span></div>
