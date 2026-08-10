@@ -39,17 +39,22 @@ exports.handler = async function (event) {
     if (!strings.join('').trim()) return j(200);
 
     const gcsToken = await gToken(sa, 'https://www.googleapis.com/auth/devstorage.read_write');
-    const src = await detectLang(key, strings.slice(0, 3).join(' \n '));
 
     // RESUMABLE: the record carries {src, h(content hash), tr:{lang:{title,ex}}}.
     // Same content + language already done = skip. Changed content = start fresh.
     // Progress is saved after EVERY language, so a timed-out run loses nothing.
+    // NOTE the field is named "TR" — reading the wrong name here silently broke
+    // resume for weeks and let a dead-API run overwrite good work with nothing.
     const hash = crypto.createHash('sha1').update(strings.join('␞')).digest('hex').slice(0, 12);
-    let inline = { src, h: hash, tr: {} };
+    let src = '', prevTr = null;
     try {
-      const prev = JSON.parse(c['Translations'] || '{}');
-      if (prev && prev.h === hash && prev.src === src && prev.tr) inline.tr = prev.tr;
+      const prev = JSON.parse(c['TR'] || '{}');
+      if (prev && prev.h === hash && prev.tr) { prevTr = prev.tr; if (prev.src) src = prev.src; }
     } catch (e) {}
+    // Content unchanged → the source language is unchanged too; only detect when
+    // we truly don't know (saves a call, and a failing API can't wobble it).
+    if (!src) src = await detectLang(key, strings.slice(0, 3).join(' \n '));
+    let inline = { src, h: hash, tr: prevTr || {} };
     const saveInline = async () => {
       try {
         await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
@@ -57,14 +62,17 @@ exports.handler = async function (event) {
       } catch (e) {}
     };
     const langsDone = [];
+    let newDone = 0, failed = 0;
 
     for (const lang of TARGETS) {
       if (lang !== src && inline.tr[lang]) { langsDone.push(lang); continue; }   // already translated for this content
+      if (failed >= 3 && newDone === 0) break;   // the API is down — stop burning the clock
       let outStrings;
       if (lang === src) { outStrings = strings; }                 // source language = original text
       else {
         try { outStrings = await translateAll(key, strings, lang); } catch (e) { outStrings = null; }
-        if (!outStrings || outStrings.length !== strings.length) continue;  // skip a language that failed
+        if (!outStrings || outStrings.length !== strings.length) { failed++; continue; }  // skip a language that failed
+        newDone++;
       }
       // Rebuild blocks with translated text.
       const tb = JSON.parse(JSON.stringify(blocks));
@@ -82,8 +90,12 @@ exports.handler = async function (event) {
     }
 
     // Manifest so the page knows what's available + the source language.
-    await putJson(gcsToken, bucket, `translations/${b.recordId}/index.json`, { src, langs: langsDone, names: LNAME });
-    await saveInline();
+    // NEVER SHRINK: a run that produced nothing new while the API was failing
+    // must not overwrite the manifest or the inline index with less than exists.
+    if (newDone > 0 || failed === 0) {
+      await putJson(gcsToken, bucket, `translations/${b.recordId}/index.json`, { src, langs: langsDone, names: LNAME });
+      await saveInline();
+    }
     await log(auth, JSON.stringify({ ok: true, src, langs: langsDone }));
     return j(200);
   } catch (e) { try { await log({ Authorization: 'Bearer ' + process.env.AIRTABLE_TOKEN, 'Content-Type': 'application/json' }, 'EXCEPTION ' + String(e && e.message || e)); } catch {} return j(200); }
