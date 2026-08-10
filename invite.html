@@ -74,7 +74,7 @@
           <p><b>Excel / Sheets:</b> one row per person, with a column for email (a name column helps) → File → Save as CSV.</p>
         </details>
       </div></div>
-      <div class="mh-row"><span class="mh-lab">From</span><input id="fromName" value="Amy &amp; Mel Ellenwood"></div>
+      <div class="mh-row"><span class="mh-lab">From</span><input id="fromName" placeholder="Your name(s) — filled from your page"></div>
       <div class="mh-row"><span class="mh-lab">Subject</span><input id="subject" value="Come follow our family's journey"></div>
     </div>
     <div class="recount" id="recount">0 recipients</div>
@@ -283,7 +283,7 @@ async function personalize(){
     const names=(lines.find(l=>!/[,\u3001\uFF0C:]$/.test(l))||m.name||me.name||'').trim();
     if(!names)return;
     const f=document.getElementById('fromName');
-    if(f&&f.value.trim()==='Amy & Mel Ellenwood') f.value=names;
+    if(f&&(!f.value.trim()||f.value.trim()==='Amy & Mel Ellenwood')) f.value=names;
     const b=document.getElementById('body');
     if(b&&/Amy & Mel\s*$/.test(b.value)){
       const closing=(m.signoff&&m.signoff.trim())?m.signoff.trim():('With love,\n'+names);

@@ -498,12 +498,7 @@ let VIEWTOK=_urlT; if(!VIEWTOK){ try{ VIEWTOK=localStorage.getItem('wallkey:'+(P
 let VIEWER=null;
 // Signed-in staff get a "Dashboard" button in the top bar — the way back home when
 // viewing any wall. Supporters (no session) never see it.
-fetch('/.netlify/functions/me').then(r=>r.ok?r.json():null).then(me=>{
-  if(!me)return;
-  const tc=document.querySelector('.top .topcta'); if(!tc)return;
-  const a=document.createElement('a'); a.href='manage.html'; a.className='dashlink'; a.textContent='← My Dashboard';
-  tc.insertBefore(a, tc.firstChild);
-}).catch(()=>{});
+// (The round "My Dashboard" chip from setHomeChip is the one dashboard door — no duplicates.)
 // Bare root: signed-in people go to their OWN wall (kills the mobile race where
 // "View site" is tapped before the link rewrite runs); everyone else gets the front page.
 if(!PAGEM && !(new URLSearchParams(location.search)).get('style')){
@@ -700,6 +695,9 @@ async function load(){
     if(!RAILS.picks){ const jr=document.getElementById('jvrail'); if(jr) jr.style.display='none'; }
     if(raw.locked){ renderLocked(raw); return; }
     VIEWER=raw.viewer||null;
+    // Anyone already IN (member or keyed supporter) doesn't need "Get updates" /
+    // "choose how you'd like to hear" — those are for newcomers only.
+    if(VIEWER||ME) hideFollowCTAs();
     // Home chip: a supporter hops to their own Co·labr hub from any wall.
     if(VIEWTOK&&!(VIEWER&&VIEWER.staff)) setHomeChip('my.html?t='+encodeURIComponent(VIEWTOK),'My Co·labr Dashboard');
     // Owner lens: the missionary is looking at their own wall as one supporter circle.
@@ -962,10 +960,10 @@ function prayerText(u){ if(!u||!u.blocks)return ''; for(const b of u.blocks){ if
       const left=Math.round(W/2-((xt-tx)*256)), top=Math.round(H/2-((yt-ty)*256));
       const px=(((tx%N)+N)%N), sub='abc'[(px+ty)%3], path=Z+'/'+px+'/'+ty+'.png';
       // Spread across OSM mirrors; if a tile drops, retry once on the main host.
-      html+='<img class="tl" alt="" style="left:'+left+'px;top:'+top+'px" src="https://'+sub+'.tile.openstreetmap.org/'+path+'" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=\'https://tile.openstreetmap.org/'+path+'\';}">';
+      html+='<img class="tl" alt="" style="left:'+left+'px;top:'+top+'px" src="https://'+sub+'basemaps.cartocdn.com/light_all/'+path+'" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=\'https://a.basemaps.cartocdn.com/light_all/'+path+'\';}">';
     }
     pop=document.createElement('div'); pop.className='locmap on';
-    pop.innerHTML=html+'<div class="locdot"></div><div class="osmcredit">© OpenStreetMap</div>';
+    pop.innerHTML=html+'<div class="locdot"></div><div class="osmcredit">© OSM · CARTO</div>';
     el.appendChild(pop);
   }
   function hide(){ over=false; hideT=setTimeout(()=>{ if(pop) pop.classList.remove('on'); },200); }
@@ -1384,9 +1382,13 @@ function setHomeChip(href,label){
   }
   a.href=href; a.textContent=label;
 }
+function hideFollowCTAs(){
+  const fb=document.getElementById('followBtn'); if(fb)fb.style.display='none';
+  const sc=document.querySelector('.subcta'); if(sc)sc.style.display='none';
+}
 async function initShare(){
   try{ const r=await fetch('/.netlify/functions/me?full=1'); if(r.ok){ ME=await r.json(); MYPAGE=(ME.miss&&ME.miss.name)||''; } }catch(_){}
-  if(ME) setHomeChip('manage.html','My Dashboard');
+  if(ME){ setHomeChip('manage.html','My Dashboard'); hideFollowCTAs(); }
   loadFeatured();
 }
 async function loadFeatured(){

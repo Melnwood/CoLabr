@@ -11,6 +11,10 @@
   body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1060px;margin:0 auto;padding:22px 18px 40px}
   .back{font-size:13px;color:var(--muted);text-decoration:none}
+  .topnav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .topnav a{font-size:12.5px;font-weight:600;color:var(--text);background:var(--card);border:1px solid #e7e0d6;padding:8px 14px;border-radius:22px;text-decoration:none;box-shadow:0 1px 2px rgba(60,40,20,.05);transition:transform .12s,box-shadow .12s}
+  .topnav a:hover{box-shadow:0 6px 15px rgba(60,40,20,.14);transform:translateY(-1px)}
+  .topnav a.acc{background:var(--text);color:#fff;border-color:var(--text)}
   h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px}
   .lede{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.5}
   .split{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start}
@@ -134,7 +138,7 @@
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="manage.html">← My Dashboard</a>
+  <div class="topnav"><a href="manage.html">My Dashboard</a><a class="acc" href="compose.html">New update</a><a href="index.html" id="navMyPage">My Page</a><a href="browse.html">Josiah Venture</a><a href="/.netlify/functions/logout">Sign out</a></div>
   <h1>Conversations</h1>
   <p class="lede">One stream per person — every prayer, note, and reply you've ever traded, in one place.</p>
   <div class="vtoggle"><button id="vList" class="von on" type="button">Conversations</button><button id="vTable" class="von" type="button">Supporter table</button></div>
@@ -568,6 +572,7 @@ async function load(){
     const d=await r.json();
     if(!r.ok){ document.getElementById('people').innerHTML='<div class="state">'+esc(d.error||'Could not load.')+'</div>'; return; }
     DATA=d; build(); renderPeople();
+    if(d.me){ const np=document.getElementById('navMyPage'); if(np)np.href='index.html?m='+encodeURIComponent(d.me); }
     if(CUR&&PEOPLE.some(p=>p.key===CUR)) openPerson(CUR);
     // Arrived from an email's Reply button (?c=<conversation id>): open that person.
     else{
