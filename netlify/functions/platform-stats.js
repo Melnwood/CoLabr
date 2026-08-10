@@ -28,7 +28,7 @@ exports.handler = async function (event) {
   const auth = { Authorization: 'Bearer ' + token };
 
   const [miss, subs, ups] = await Promise.all([
-    fetchAll(MISS, auth, ['Name', 'Email', 'Organization', 'Live']),
+    fetchAll(MISS, auth, ['Name', 'Email', 'Organization', 'National Org', 'Live']),
     fetchAll(SUBS, auth, ['Missionary', 'Active', 'Source']),
     fetchAll(UPDATES, auth, ['Missionary', 'Status']),
   ]);
@@ -44,7 +44,7 @@ exports.handler = async function (event) {
   const orgByName = {};
   for (const rec of miss) {
     const f = rec.fields || {};
-    let label = (f['Organization'] || '').trim();
+    let label = (f['National Org'] || f['Organization'] || '').trim();
     if (!label || /^(jv|josiah\s*venture)$/i.test(label)) {
       label = /josiahventure\.com/i.test(f['Email'] || '') || /^(jv|josiah\s*venture)$/i.test(label) || /^josiah\s*venture$/i.test(String(f['Name'] || '').trim()) ? 'Josiah Venture' : (label || 'Independent');
     }
