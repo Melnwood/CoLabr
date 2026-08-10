@@ -103,6 +103,8 @@
   .newtxt{display:block;width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 13px;font-size:13.5px;font-family:inherit;min-height:70px;resize:vertical;outline:none}
   .newtxt:focus{border-color:var(--acc)}
   .newgo{background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer}
+  .ackbtn{align-self:flex-end;background:#fff;border:1px solid var(--line);border-radius:16px;padding:7px 13px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;margin-top:8px}
+  .ackbtn:hover{border-color:#2f9e63;color:#2f9e63}
   .state{color:var(--muted);font-size:14px;padding:50px 20px;text-align:center}
   .backlist{display:none;font-size:12.5px;color:var(--acc);font-weight:700;cursor:pointer;margin-bottom:8px}
   @media(max-width:840px){
@@ -215,12 +217,13 @@ function build(){
         (gmap[gk]=gmap[gk]||[]).push(r);
       });
       p.needs=Object.values(gmap).some(rows=>{
-        let last=null;
+        let last=null, ack='';
         rows.forEach(r=>{
+          if(String(r.acked||'')>ack)ack=String(r.acked||'');
           if(r.message){ const e={f:'s',at:String(r.created||'')}; if(!last||e.at>last.at)last=e; }
           (r.thread||[]).forEach(x=>{ if(x&&x.t){ const e={f:x.f==='m'?'m':'s',at:String(x.at||r.created||'')}; if(!last||e.at>=last.at)last=e; } });
         });
-        return !!(last&&last.f!=='m');
+        return !!(last&&last.f!=='m'&&last.at>ack);
       });
     }
     // The last time THEY wrote or prayed — what "recent conversation" means.
@@ -348,10 +351,13 @@ function openPerson(k){
     });
     entries.sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||((a.ord||0)-(b.ord||0)));
     const lastAt=entries.length?(entries[entries.length-1].at||g.rows[0].created):g.rows[0].created;
+    const lastMsg=entries.filter(x=>x.kind==='msg').slice(-1)[0]||null;
+    const ackMax=g.rows.reduce((m,r)=>String(r.acked||'')>m?String(r.acked||''):m,'');
+    const waiting=!p.flip&&!!(lastMsg&&lastMsg.f!==p.mineF&&String(lastMsg.at||'')>ackMax);
     // Where a reply lands: the newest row this side is allowed to continue.
     const cand=g.rows.filter(r=>p.flip?!!r.k:true).sort((a,b)=>String(b.created).localeCompare(String(a.created)));
     const target=cand.find(r=>r.message||(r.thread&&r.thread.length))||cand[0]||null;
-    return {g,entries,lastAt,target,hasPray,msgCount};
+    return {g,entries,lastAt,target,hasPray,msgCount,waiting};
   }).sort((a,b)=>String(b.lastAt).localeCompare(String(a.lastAt)));
   TRTXT=[];
   let html=`<div class="chead"><div class="backlist" id="backlist">← All people</div><h3>${esc(p.name)}</h3><div class="cfacts">${facts.join(' · ')||'From your wall'}</div></div><div class="stream" id="stream">`;
@@ -380,6 +386,7 @@ function openPerson(k){
           if(!mine&&likelyForeign(x.t)){ TRTXT.push(x.t); b+=`<div class="trlink" data-tr="${TRTXT.length-1}">Translate</div>`; }
           return b+`<div class="bwhen ${mine?'m':'s'}">${esc(fmtDT(x.at))}</div>`;
         }).join('')}
+        ${s.waiting?`<button type="button" class="ackbtn" data-ack="${si}">✓ Read — no reply needed</button>`:''}
         ${(!s.target)?`<div class="cnote" style="padding:6px 0 0">This older string can\u2019t be continued from here yet — reply from their wall.</div>`
           :`<div class="reply"><textarea id="rt${si}" placeholder="Write back in this string…"></textarea><button data-rs="${si}">Send</button></div><div class="cmsg" id="rm${si}"></div>`}
       </div></div>`;
@@ -420,6 +427,17 @@ function openPerson(k){
   }
   cv.querySelectorAll('[data-tr]').forEach(el=>el.addEventListener('click',()=>translateBubble(+el.dataset.tr,el)));
   cv.querySelectorAll('[data-rs]').forEach(b=>b.addEventListener('click',()=>sendToString(p,strings[+b.dataset.rs].target,+b.dataset.rs)));
+  cv.querySelectorAll('[data-ack]').forEach(b=>b.addEventListener('click',async()=>{
+    const s=strings[+b.dataset.ack]; if(!s)return;
+    b.disabled=true; b.textContent='Marking…';
+    try{
+      const ids=s.g.rows.map(r=>r.id);
+      const r=await fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'ack',ids})});
+      const d=await r.json(); if(!r.ok)throw new Error(d.error||'Could not mark.');
+      s.g.rows.forEach(x=>{x.acked=d.at;x.read=true;});
+      build(); renderPeople(); openPerson(p.key);
+    }catch(e){ b.disabled=false; b.textContent='✓ Read — no reply needed'; }
+  }));
   const ns=document.getElementById('newstr');
   if(ns)ns.addEventListener('click',()=>{
     if(!p.flip&&!p.email){ document.getElementById('newmsg')||0; return; }

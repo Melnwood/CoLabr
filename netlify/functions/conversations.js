@@ -41,7 +41,7 @@ exports.handler = async function (event) {
           rows.push({
             id: rec.id, name: c['Name'] || 'A supporter', type: c['Type'] || 'Note',
             message: c['Message'] || '', email: (c['Email'] || '').toLowerCase(),
-            isPublic: !!c['Public'], read: !!c['Read'], thread,
+            isPublic: !!c['Public'], read: !!c['Read'], acked: c['Acked'] || '', thread,
             updateId: c['Update ID'] || '', updateTitle: c['Update Title'] || '',
             created: rec.createdTime || ''
           });

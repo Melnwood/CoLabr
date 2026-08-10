@@ -668,12 +668,13 @@ async function loadConvoStats(){
       (gmap[gk]=gmap[gk]||[]).push(r);
     });
     const waiting=Object.values(gmap).filter(g=>{
-      let last=null;
+      let last=null, ack='';
       g.forEach(r=>{
+        if(String(r.acked||'')>ack)ack=String(r.acked||'');
         if(r.message){ const e={f:'s',at:String(r.created||'')}; if(!last||e.at>last.at)last=e; }
         (r.thread||[]).forEach(x=>{ if(x&&x.t){ const e={f:x.f==='m'?'m':'s',at:String(x.at||r.created||'')}; if(!last||e.at>=last.at)last=e; } });
       });
-      return !!(last&&last.f!=='m');
+      return !!(last&&last.f!=='m'&&last.at>ack);
     }).length;
     const praying=new Set(rows.filter(r=>r.type==='Prayer').map(r=>r.email||('n:'+r.name))).size;
     box.innerHTML=

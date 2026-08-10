@@ -255,6 +255,7 @@ exports.handler = async function (event) {
           read: !!c['Read'],
           replied: !!c['Replied'],
           reply: c['Reply'] || '',
+          acked: c['Acked'] || '',
           thread: (() => { try { const t = JSON.parse(c['Thread'] || '[]'); return Array.isArray(t) ? t : []; } catch (e) { return []; } })(),
           updateTitle: c['Update Title'] || '',
           updateId: c['Update ID'] || '',
@@ -270,6 +271,17 @@ exports.handler = async function (event) {
         body: JSON.stringify({ records: [{ id: b.id, fields: { Read: b.read !== false } }], typecast: true }) });
       if (!r.ok) return resp(r.status, { error: 'Update failed.' });
       return resp(200, { ok: true });
+    }
+
+    // "Read — no reply needed": stamp the strings as seen; the waiting dot clears
+    // until the supporter writes something newer.
+    if (b.action === 'ack') {
+      const ids = (Array.isArray(b.ids) ? b.ids : []).filter(x => /^rec[a-zA-Z0-9]{14}$/.test(x)).slice(0, 20);
+      if (!ids.length) return resp(400, { error: 'Nothing to mark.' });
+      const now = new Date().toISOString();
+      const pr = await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ records: ids.map(id => ({ id, fields: { Acked: now, Read: true } })), typecast: true }) });
+      return pr.ok ? resp(200, { ok: true, at: now }) : resp(502, { error: 'Could not mark as read.' });
     }
 
     if (b.action === 'reply') {
