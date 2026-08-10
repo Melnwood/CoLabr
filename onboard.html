@@ -127,6 +127,14 @@
       <div id="qabody"><span class="pill blue">Loading your answers…</span></div>
     </div>
 
+    <div class="step" id="trhist" style="display:none">
+      <h2>Translate your whole history</h2>
+      <div class="d">New updates translate into all 13 languages automatically. Your <b>past</b> updates can too — supporters who read in Czech, Polish, or German get your whole story, not just what's new.</div>
+      <div id="trbody"><span class="pill blue">Checking your updates…</span></div>
+      <div class="msg" id="trmsg"></div>
+      <div class="note">Ordering bills your ministry account — no card needed. Translation runs within a day and your wall updates language by language.</div>
+    </div>
+
     <div class="step" id="kit" style="margin-top:26px">
       <h2>The whole kit — check it's all there</h2>
       <div class="d">Every piece your page uses, in one list. Green means done; anything open takes you straight to where it's set.</div>
@@ -214,6 +222,30 @@ document.getElementById('copyBtn').addEventListener('click',async()=>{
   try{ await navigator.clipboard.writeText(url); m.className='msg ok'; m.textContent='Copied to your clipboard.'; }
   catch(e){ document.getElementById('shareUrl').select(); m.className='msg'; m.textContent='Press ⌘/Ctrl+C to copy.'; }
 });
+// ---- Translate-your-history offer: live count + quote, one-click order ----
+async function loadTrOffer(){
+  try{
+    const r=await fetch('/.netlify/functions/translate-quote'); if(!r.ok) return;
+    const d=await r.json(); if(!d.ok) return;
+    const step=document.getElementById('trhist'), body=document.getElementById('trbody');
+    if(!d.count){ if(d.total){ step.style.display=''; body.innerHTML='<span class="pill">✓ All '+d.total+' of your updates are fully translated</span>'; } return; }
+    step.style.display='';
+    const priceLine=(d.price!=null)?('<b>$'+d.price.toFixed(2)+'</b> for all of them ('+(d.per!=null?('$'+d.per.toFixed(2)+' per update'):'')+')') : 'we\u2019ll confirm the price with you before anything runs';
+    body.innerHTML='<p style="font-size:13.5px;line-height:1.6;margin:0 0 12px"><b>'+d.count+'</b> of your '+d.total+' updates aren\u2019t translated yet — '+priceLine+'.</p>'+
+      '<button class="btn" id="trGo">Translate my history'+(d.price!=null?' — $'+d.price.toFixed(2):'')+'</button>';
+    document.getElementById('trGo').addEventListener('click',async()=>{
+      const btn=document.getElementById('trGo'), m=document.getElementById('trmsg');
+      if(!confirm('Order translation of '+d.count+' past updates into all 13 languages'+(d.price!=null?(' for $'+d.price.toFixed(2)):'')+'?\n\nThis is billed to your ministry account.'))return;
+      btn.disabled=true; m.className='msg'; m.textContent='Placing your order…';
+      try{
+        const rr=await fetch('/.netlify/functions/translate-quote',{method:'POST'});
+        const dd=await rr.json(); if(!rr.ok)throw new Error(dd.error||'Could not order.');
+        m.className='msg ok'; m.textContent='Ordered ✓ — translation starts within a day, and your wall fills in language by language.';
+        btn.style.display='none';
+      }catch(e){ m.className='msg err'; m.textContent=e.message||'Could not order.'; btn.disabled=false; }
+    });
+  }catch(e){}
+}
 // ---- Sign-up answers, editable in place ----
 async function loadQA(){
   const box=document.getElementById('qabody');
@@ -261,7 +293,7 @@ async function loadKit(){
       item(m.live?'ok':'opt','Go live',m.live?'LIVE — your supporters get emails':'Test mode — nothing emails anyone until the team flips this with you','manage.html','Status');
   }catch(e){ box.innerHTML='<span class="note">Could not load the checklist.</span>'; }
 }
-init().then(()=>{loadKit();loadQA();},()=>{loadKit();loadQA();});
+init().then(()=>{loadKit();loadQA();loadTrOffer();},()=>{loadKit();loadQA();loadTrOffer();});
 </script>
 </body>
 </html>
