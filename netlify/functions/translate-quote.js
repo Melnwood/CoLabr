@@ -54,8 +54,15 @@ exports.handler = async function (event) {
 
     if (event.httpMethod !== 'POST') return r(405, { error: 'Method not allowed' });
     if (!count) return r(400, { error: 'Everything is already translated — nothing to order.' });
+    let bd = {}; try { bd = JSON.parse(event.body || '{}'); } catch (e) {}
+    // JV billing needs the account number and a signed permission — the typed
+    // full name IS the signature, stored with the order.
+    const account = (bd.account || '').toString().trim().slice(0, 40);
+    const signature = (bd.signature || '').toString().trim().slice(0, 80);
+    if (!account) return r(400, { error: 'Add your JV account number.' });
+    if (signature.length < 3) return r(400, { error: 'Type your full name as your signature.' });
     const price = per != null ? `$${(per * count).toFixed(2)}` : 'pricing to be confirmed';
-    const msgText = `HISTORY TRANSLATION ORDER: ${count} past updates → all 13 languages. Quoted: ${price}. Member accepted billing to their ministry account.`;
+    const msgText = `HISTORY TRANSLATION ORDER: ${count} past updates → all 13 languages. Quoted: ${price}. JV account #${account}. Signed permission: "${signature}" at ${new Date().toISOString()} — authorizes pulling the cost from their ministry account.`;
     await fetch(`https://api.airtable.com/v0/${BASE}/${CHAT}`, { method: 'POST', headers: auth,
       body: JSON.stringify({ fields: { 'Name': me.name, 'Email': sess.email || '', 'Message': msgText, 'Page': me.name, 'Status': 'New' }, typecast: true }) });
     try {
@@ -63,7 +70,8 @@ exports.handler = async function (event) {
       await sendMail({
         to: admins[0], subject: `Translation order: ${me.name} — ${count} updates (${price})`,
         html: `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px;color:#241f1b">
-          <p style="font-size:15px"><b>${esc(me.name)}</b> ordered their history translated: <b>${count}</b> past updates into all 13 languages — <b>${esc(price)}</b>, billed to their ministry account (they accepted in-app).</p>
+          <p style="font-size:15px"><b>${esc(me.name)}</b> ordered their history translated: <b>${count}</b> past updates into all 13 languages — <b>${esc(price)}</b>.</p>
+          <p style="font-size:14px">JV account: <b>#${esc(account)}</b><br>Signed: <b>${esc(signature)}</b> (in-app, timestamped) — permission to pull the cost from their ministry account.</p>
           <p style="font-size:13px;color:#7a756f">Run it, then mark the order handled in Super Admin → Help-chat questions.</p>
         </div>`,
         replyTo: sess.email || '', fromName: 'Co-Labr Orders'

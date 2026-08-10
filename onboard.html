@@ -232,16 +232,29 @@ async function loadTrOffer(){
     step.style.display='';
     const priceLine=(d.price!=null)?('<b>$'+d.price.toFixed(2)+'</b> for all of them ('+(d.per!=null?('$'+d.per.toFixed(2)+' per update'):'')+')') : 'we\u2019ll confirm the price with you before anything runs';
     body.innerHTML='<p style="font-size:13.5px;line-height:1.6;margin:0 0 12px"><b>'+d.count+'</b> of your '+d.total+' updates aren\u2019t translated yet — '+priceLine+'.</p>'+
-      '<button class="btn" id="trGo">Translate my history'+(d.price!=null?' — $'+d.price.toFixed(2):'')+'</button>';
-    document.getElementById('trGo').addEventListener('click',async()=>{
-      const btn=document.getElementById('trGo'), m=document.getElementById('trmsg');
-      if(!confirm('Order translation of '+d.count+' past updates into all 13 languages'+(d.price!=null?(' for $'+d.price.toFixed(2)):'')+'?\n\nThis is billed to your ministry account.'))return;
+      '<button class="btn" id="trGo">Translate my history'+(d.price!=null?' — $'+d.price.toFixed(2):'')+'</button>'+
+      '<div id="trForm" style="display:none;margin-top:14px;background:#faf7f2;border:1px solid #efe9df;border-radius:12px;padding:14px">'+
+        '<p style="font-size:13px;line-height:1.6;margin:0 0 10px">The cost comes from your <b>ministry funds</b>. Add your JV account number and sign with your full name — that\u2019s your written permission to pull '+(d.price!=null?('$'+d.price.toFixed(2)):'the confirmed amount')+' from your account.</p>'+
+        '<div class="qline" style="margin-bottom:8px"><input id="trAcct" placeholder="JV account number (e.g. LEN-0777)"></div>'+
+        '<div class="qline" style="margin-bottom:10px"><input id="trSign" placeholder="Type your full name — this is your signature"></div>'+
+        '<button class="btn" id="trConfirm">Sign &amp; order</button>'+
+      '</div>';
+    document.getElementById('trGo').addEventListener('click',()=>{
+      document.getElementById('trForm').style.display='';
+      document.getElementById('trGo').style.display='none';
+      document.getElementById('trAcct').focus();
+    });
+    document.getElementById('trConfirm').addEventListener('click',async()=>{
+      const btn=document.getElementById('trConfirm'), m=document.getElementById('trmsg');
+      const account=document.getElementById('trAcct').value.trim(), signature=document.getElementById('trSign').value.trim();
+      if(!account){ m.className='msg err'; m.textContent='Add your JV account number.'; return; }
+      if(signature.length<3){ m.className='msg err'; m.textContent='Type your full name as your signature.'; return; }
       btn.disabled=true; m.className='msg'; m.textContent='Placing your order…';
       try{
-        const rr=await fetch('/.netlify/functions/translate-quote',{method:'POST'});
+        const rr=await fetch('/.netlify/functions/translate-quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({account,signature})});
         const dd=await rr.json(); if(!rr.ok)throw new Error(dd.error||'Could not order.');
-        m.className='msg ok'; m.textContent='Ordered ✓ — translation starts within a day, and your wall fills in language by language.';
-        btn.style.display='none';
+        m.className='msg ok'; m.textContent='Ordered \u2713 — signed permission recorded. Translation starts within a day, and your wall fills in language by language.';
+        document.getElementById('trForm').style.display='none';
       }catch(e){ m.className='msg err'; m.textContent=e.message||'Could not order.'; btn.disabled=false; }
     });
   }catch(e){}
