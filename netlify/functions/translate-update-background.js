@@ -64,7 +64,11 @@ exports.handler = async function (event) {
     const langsDone = [];
     let newDone = 0, failed = 0;
 
-    for (const lang of TARGETS) {
+    // Policy targets: the original + English (when the original isn't) +
+    // the national language (when an English update belongs to a national org).
+    const natLang = await nationalLang(auth, c);
+    const targets = [...new Set([src, src !== 'en' ? 'en' : '', (src === 'en' && natLang && natLang !== 'en') ? natLang : ''].filter(Boolean))].filter(l => TARGETS.includes(l));
+    for (const lang of targets) {
       if (lang !== src && inline.tr[lang]) { langsDone.push(lang); continue; }   // already translated for this content
       if (failed >= 3 && newDone === 0) break;   // the API is down — stop burning the clock
       let outStrings;
@@ -101,6 +105,25 @@ exports.handler = async function (event) {
   } catch (e) { try { await log({ Authorization: 'Bearer ' + process.env.AIRTABLE_TOKEN, 'Content-Type': 'application/json' }, 'EXCEPTION ' + String(e && e.message || e)); } catch {} return j(200); }
 };
 
+// Mel's translation policy (2026-08-10): every update gets English if it isn't
+// English, and a national-org member's English gets their country's language.
+// Nothing else is automatic — full 13-language coverage is the PAID history order.
+const CLANG = { 'czechia':'cs', 'czech republic':'cs', 'poland':'pl', 'ukraine':'uk', 'slovakia':'sk', 'romania':'ro', 'bulgaria':'bg', 'slovenia':'sl', 'latvia':'lv', 'estonia':'et', 'hungary':'hu', 'montenegro':'sr', 'serbia':'sr', 'germany':'de', 'spain':'es' };
+async function nationalLang(auth, c) {
+  try {
+    const mid = (c['Missionary'] || [])[0]; if (!mid) return '';
+    const mr = await fetch(`https://api.airtable.com/v0/${BASE}/tbli1L8AO0JUDL7Wl/${mid}`, { headers: auth });
+    if (!mr.ok) return '';
+    const mf = ((await mr.json()).fields) || {};
+    const orgName = String(mf['National Org'] || '').trim();
+    if (!orgName || /^(jv|josiah\s*venture)$/i.test(orgName)) return '';
+    const oe = orgName.replace(/'/g, "\\'");
+    const or = await fetch(`https://api.airtable.com/v0/${BASE}/tbl152sVfqGyrqpJQ?maxRecords=1&filterByFormula=${encodeURIComponent(`OR({Name}='${oe}',{Code}='${oe}')`)}`, { headers: auth });
+    if (!or.ok) return '';
+    const rec = (((await or.json()).records) || [])[0]; if (!rec) return '';
+    return CLANG[String(rec.fields['Country'] || '').trim().toLowerCase()] || '';
+  } catch (e) { return ''; }
+}
 async function detectLang(key, sample) {
   try {
     const r = await claude(key, `What ISO 639-1 two-letter language code is this text written in? Reply with ONLY the two-letter code.\n\n${sample.slice(0, 500)}`, 8);
