@@ -274,7 +274,25 @@ async function loadPeople(){
     }));
   }catch(e){ box.innerHTML='<div class="ppl-state">'+esc(e.message)+'</div>'; }
 }
-(async()=>{ if(await guard()){ updateCount(); growTo(); renderPreview(); loadPeople(); } })();
+// The letter is FROM whoever is signed in — never someone else's names.
+async function personalize(){
+  try{
+    const r=await fetch('/.netlify/functions/me?full=1'); if(!r.ok)return;
+    const me=await r.json(); const m=me.miss||{};
+    const lines=String(m.signoff||'').split('\n').map(s=>s.trim()).filter(Boolean);
+    const names=(lines.find(l=>!/[,\u3001\uFF0C:]$/.test(l))||m.name||me.name||'').trim();
+    if(!names)return;
+    const f=document.getElementById('fromName');
+    if(f&&f.value.trim()==='Amy & Mel Ellenwood') f.value=names;
+    const b=document.getElementById('body');
+    if(b&&/Amy & Mel\s*$/.test(b.value)){
+      const closing=(m.signoff&&m.signoff.trim())?m.signoff.trim():('With love,\n'+names);
+      b.value=b.value.replace(/With love,\s*\nAmy & Mel\s*$/,'').trimEnd()+'\n\n'+closing;
+    }
+    renderPreview();
+  }catch(_){}
+}
+(async()=>{ if(await guard()){ await personalize(); updateCount(); growTo(); renderPreview(); loadPeople(); } })();
 </script>
 <script>
 // "View site" should mean YOUR site — the bare root is Co-Labr's front page now.
