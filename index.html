@@ -32,9 +32,9 @@
   .mavatar{width:78px;height:78px;border-radius:50%;background-size:cover;background-position:center;background-color:#e9e2d5;border:3px solid #fff;box-shadow:0 5px 16px rgba(60,40,20,.2);margin:0;flex:none}
   .mh-l h1{font-size:clamp(38px,6.4vw,56px);font-weight:800;letter-spacing:-.02em;line-height:.98;margin:0;color:var(--text)}
   .mloc{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--muted);margin-top:12px;position:relative;cursor:pointer}
-  .locmap{position:absolute;top:calc(100% + 10px);left:0;width:300px;height:190px;border-radius:14px;overflow:hidden;border:1px solid var(--line,#e7e4e0);box-shadow:0 18px 44px rgba(24,21,18,.22);display:none;z-index:60;background:#e8ecef}
+  .locmap{position:absolute;top:calc(100% + 10px);left:0;width:300px;height:190px;border-radius:14px;overflow:hidden;border:1px solid var(--line,#e7e4e0);box-shadow:0 18px 44px rgba(24,21,18,.22);display:none;z-index:60;background:#f4f1ec}
   .locmap.on{display:block}
-  .locmap .tl{position:absolute;width:256px;height:256px;pointer-events:none}
+  .locmap .tl{position:absolute;width:257px;height:257px;pointer-events:none;image-rendering:auto}
   .locmap .osmcredit{position:absolute;right:5px;bottom:3px;font-size:9px;color:rgba(40,45,50,.55);background:rgba(255,255,255,.65);border-radius:4px;padding:1px 5px;pointer-events:none}
   .locdot{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--acc,#FF6600);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none}
   .locdot:after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--acc,#FF6600);animation:locping 1.6s ease-out infinite}
@@ -957,10 +957,12 @@ function prayerText(u){ if(!u||!u.blocks)return ''; for(const b of u.blocks){ if
     for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
       const tx=Math.floor(xt)+dx, ty=Math.floor(yt)+dy;
       if(ty<0||ty>=N) continue;
-      const left=Math.round(W/2-((xt-tx)*256)), top=Math.round(H/2-((yt-ty)*256));
-      const px=(((tx%N)+N)%N), sub='abc'[(px+ty)%3], path=Z+'/'+px+'/'+ty+'.png';
-      // Spread across OSM mirrors; if a tile drops, retry once on the main host.
-      html+='<img class="tl" alt="" style="left:'+left+'px;top:'+top+'px" src="https://'+sub+'basemaps.cartocdn.com/light_all/'+path+'" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=\'https://a.basemaps.cartocdn.com/light_all/'+path+'\';}">';
+      const left=(W/2-((xt-tx)*256)).toFixed(2), top=(H/2-((yt-ty)*256)).toFixed(2);
+      const px=(((tx%N)+N)%N), sub='abc'[(px+ty)%3], path=Z+'/'+px+'/'+ty;
+      // Carto's pale basemap across its three mirrors (note the dot after the
+      // subdomain — without it every tile 404s and you get gray bars).
+      // @2x keeps it crisp; one retry on mirror A covers a dropped tile.
+      html+='<img class="tl" alt="" style="left:'+left+'px;top:'+top+'px" src="https://'+sub+'.basemaps.cartocdn.com/light_all/'+path+'@2x.png" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=\'https://a.basemaps.cartocdn.com/light_all/'+path+'.png\';}">';
     }
     pop=document.createElement('div'); pop.className='locmap on';
     pop.innerHTML=html+'<div class="locdot"></div><div class="osmcredit">© OSM · CARTO</div>';
