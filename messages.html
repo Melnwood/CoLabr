@@ -14,6 +14,22 @@
   h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px}
   .lede{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.5}
   .split{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start}
+  .vtoggle{display:inline-flex;border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-bottom:14px;background:var(--card)}
+  .von{border:none;background:none;font-size:12.5px;font-weight:700;color:var(--muted);padding:9px 18px;cursor:pointer;font-family:inherit}
+  .von.on{background:var(--text);color:#fff}
+  .stnote{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+  .stscroll{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:16px}
+  .stable{width:100%;border-collapse:collapse;font-size:13px;min-width:860px}
+  .stable th{text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+  .stable th.on{color:var(--acc)}
+  .stable td{padding:10px 12px;border-bottom:1px solid #f1ede7;white-space:nowrap}
+  .stable tr:last-child td{border-bottom:none}
+  .stable tbody tr{cursor:pointer}
+  .stable tbody tr:hover{background:#faf7f2}
+  .stable td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+  .stable td.num.zero{color:#c9c2b8;font-weight:400}
+  .stmail{color:var(--muted);font-size:12px}
+  .stwarn{color:#c0392b;font-weight:800;font-size:11px}
   .pcount{font-size:12.5px;font-weight:700;color:var(--muted);margin:0 2px 8px}
   .pcount b{color:var(--text)}
   .pfind{display:block;width:100%;border:1px solid var(--line);border-radius:22px;padding:10px 15px;font-size:13px;font-family:inherit;margin-bottom:10px;outline:none;background:var(--card)}
@@ -121,6 +137,11 @@
   <a class="back" href="manage.html">← My Dashboard</a>
   <h1>Conversations</h1>
   <p class="lede">One stream per person — every prayer, note, and reply you've ever traded, in one place.</p>
+  <div class="vtoggle"><button id="vList" class="von on" type="button">Conversations</button><button id="vTable" class="von" type="button">Supporter table</button></div>
+  <div id="stwrap" style="display:none">
+    <div class="stnote" id="stcount"></div>
+    <div class="stscroll"><table class="stable" id="stable"></table></div>
+  </div>
   <div class="split" id="split">
     <div class="pcol">
       <div class="pcount" id="pcount"></div>
@@ -167,6 +188,7 @@ function build(){
     const k=keyOf(s.email,s.name);
     map[k]=map[k]||{key:k,name:s.name,email:s.email,items:[],rows:[],prayed:0};
     map[k].since=s.since; map[k].lastVisit=s.lastVisit;
+    map[k].pref=s.pref||''; map[k].aud=s.aud||''; map[k].issue=s.issue||''; map[k].sub=true;
     if(!map[k].name)map[k].name=s.name;
   });
   (DATA.rows||[]).forEach(row=>{
@@ -228,6 +250,7 @@ function build(){
     }
     // The last time THEY wrote or prayed — what "recent conversation" means.
     p.lastIn=p.items.reduce((m,x)=>((x.kind==='pray'&&!x.byMe)||x.f===p.inF)&&String(x.at||'')>m?x.at:m,'');
+    p.wrote=p.rows.filter(r=>r.message).length;
   });
   // Waiting-on-you first, then other recent activity, then everyone A→Z by last name.
   const lname=p=>{const w=(p.name||'').trim().replace(/&.*$/,'').trim().split(/\s+/);return (w[w.length-1]||'').toLowerCase();};
@@ -241,7 +264,50 @@ function build(){
   });
 }
 let FLT='', OPENROW='';
-document.getElementById('pfind').addEventListener('input',e=>{ FLT=e.target.value.trim().toLowerCase(); renderPeople(); });
+/* ---- Supporter table: the whole roster with the engagement numbers ---- */
+let STSORT={k:'name',d:1};
+function stVal(p,k){
+  if(k==='name'){const w=(p.name||'').trim().replace(/&.*$/,'').trim().split(/\s+/);return (w[w.length-1]||'').toLowerCase();}
+  if(k==='prayed')return p.prayed||0;
+  if(k==='wrote')return p.wrote||0;
+  if(k==='gives')return p.gives||0;
+  if(k==='since')return String(p.since||'');
+  if(k==='visit')return String(p.lastVisit||'');
+  if(k==='act')return String(p.lastIn||'');
+  return '';
+}
+function renderTable(){
+  const tbl=document.getElementById('stable');
+  const ppl=PEOPLE.filter(p=>!p.flip&&(!FLT||(p.name+' '+(p.email||'')).toLowerCase().includes(FLT)));
+  document.getElementById('stcount').innerHTML='<b>'+ppl.length+'</b> supporters · click any column to sort, any row to open their conversation';
+  const dir=STSORT.d;
+  ppl.sort((a,b)=>{const av=stVal(a,STSORT.k),bv=stVal(b,STSORT.k);return (typeof av==='number'?(av-bv):String(av).localeCompare(String(bv)))*dir;});
+  const cols=[['name','Supporter'],['aud','Circle'],['pref','Gets'],['since','Since'],['visit','Last visit'],['prayed','Prayed'],['wrote','Notes'],['gives','Give clicks'],['act','Last wrote']];
+  tbl.innerHTML='<thead><tr>'+cols.map(c=>'<th data-sk="'+c[0]+'"'+(STSORT.k===c[0]?' class="on"':'')+'>'+c[1]+(STSORT.k===c[0]?(STSORT.d===1?' ↑':' ↓'):'')+'</th>').join('')+'</tr></thead>'+
+    '<tbody>'+ppl.map(p=>'<tr data-k="'+esc(p.key)+'">'+
+      '<td><b>'+esc(p.name)+'</b>'+(p.issue?' <span class="stwarn" title="'+esc(p.issue)+'">⚠ EMAIL</span>':'')+'<br><span class="stmail">'+esc(p.email||'—')+'</span></td>'+
+      '<td>'+esc(p.aud||'')+'</td><td>'+esc(p.pref||'')+'</td>'+
+      '<td>'+esc(fmtD(p.since))+'</td><td>'+esc(fmtD(p.lastVisit))+'</td>'+
+      ['prayed','wrote','gives'].map(k=>'<td class="num'+((p[k]||0)?'':' zero')+'">'+(p[k]||0)+'</td>').join('')+
+      '<td>'+esc(fmtD(p.lastIn))+'</td></tr>').join('')+'</tbody>';
+  tbl.querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{
+    const k=th.dataset.sk;
+    if(STSORT.k===k)STSORT.d*=-1; else STSORT={k,d:(k==='prayed'||k==='wrote'||k==='gives')?-1:1};
+    renderTable();
+  }));
+  tbl.querySelectorAll('tbody tr').forEach(tr=>tr.addEventListener('click',()=>{ setView('list'); openPerson(tr.dataset.k); }));
+}
+function setView(v){
+  const tableMode=v==='table';
+  document.getElementById('stwrap').style.display=tableMode?'':'none';
+  document.getElementById('split').style.display=tableMode?'none':'';
+  document.getElementById('vTable').classList.toggle('on',tableMode);
+  document.getElementById('vList').classList.toggle('on',!tableMode);
+  if(tableMode)renderTable();
+}
+document.getElementById('vTable').addEventListener('click',()=>setView('table'));
+document.getElementById('vList').addEventListener('click',()=>setView('list'));
+document.getElementById('pfind').addEventListener('input',e=>{ FLT=e.target.value.trim().toLowerCase(); renderPeople(); if(document.getElementById('stwrap').style.display!=='none')renderTable(); });
 function renderPeople(){
   const el=document.getElementById('people');
   if(!PEOPLE.length){ el.innerHTML='<div class="state">No supporters yet — when someone joins your wall or writes, they appear here.</div>'; return; }

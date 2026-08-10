@@ -83,7 +83,9 @@ exports.handler = async function (event) {
         const sd = await sr.json();
         (sd.records || []).forEach(rec => {
           const c = rec.fields || {};
-          subs.push({ name: c['Name'] || '', email: (c['Email'] || '').toLowerCase(), since: rec.createdTime || '', lastVisit: c['Last visit'] || '' });
+          const prefV = c['Preference'], audV = c['Audience'];
+          subs.push({ name: c['Name'] || '', email: (c['Email'] || '').toLowerCase(), since: rec.createdTime || '', lastVisit: c['Last visit'] || '',
+            pref: (prefV && prefV.name) ? prefV.name : (prefV || ''), aud: (audV && audV.name) ? audV.name : (audV || 'International'), issue: c['Email issue'] || '' });
         });
         surl = sd.offset ? subsBase + '&offset=' + sd.offset : '';
       }
