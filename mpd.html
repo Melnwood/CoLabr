@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/favicon.png">
+<title>Co·labr — MPD radar</title>
+<style>
+  :root{--acc:#FF6600;--ink:#241f1b;--bg:#f4f1ec;--card:#fff;--line:#e7e0d6;--muted:#7a6c58;--text:#241f1b;--green:#2f9e63;--red:#c0392b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:22px 22px 80px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .nav a{font-size:12.5px;font-weight:600;color:#241f1b;background:#fff;border:1px solid var(--line);padding:8px 14px;border-radius:22px;text-decoration:none;box-shadow:0 1px 2px rgba(60,40,20,.05)}
+  .nav a:hover{border-color:#d8cdb6}
+  h1{font-size:29px;font-weight:800;letter-spacing:-.02em;margin:12px 0 5px}
+  .lede{font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 18px;max-width:66ch}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+  .bar select{border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff}
+  .go{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+  .go:disabled{opacity:.55}
+  .msg{font-size:12.5px;color:var(--muted)}
+  .msg.err{color:var(--red)}
+  .sect{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px 17px;margin-bottom:11px;display:flex;gap:13px;align-items:flex-start}
+  .card.neg{border-color:#f0c4bd;background:#fffaf9}
+  .av{flex:none;width:40px;height:40px;border-radius:50%;background:#241f1b center/cover;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .cb{flex:1;min-width:0}
+  .who{font-size:14.5px;font-weight:800}
+  .meta{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 6px}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:12px;padding:4px 9px;background:#eef7f1;color:#2f7d55;border:1px solid #cfe9db}
+  .tag.s-strong{background:#eafaf1;color:#1f7a48;border-color:#bfe6cf}
+  .tag.s-faint{background:#fbf6ec;color:#94702a;border-color:#efe0c2}
+  .tag.neg{background:#fdecea;color:#b0342b;border-color:#f5c6c0}
+  .note{font-size:13.5px;line-height:1.6}
+  .quote{font-size:12.5px;color:#5a4f3f;border-left:3px solid var(--acc);padding:3px 0 3px 11px;margin-top:8px;line-height:1.55}
+  .open{font-size:12px;font-weight:700;color:var(--acc);text-decoration:none;white-space:nowrap}
+  .state{color:var(--muted);font-size:14px;padding:26px 0;text-align:center}
+  .silent{display:flex;flex-wrap:wrap;gap:8px}
+  .schip{font-size:12px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:7px 13px}
+  .costnote{font-size:12px;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:12px;padding:10px 13px;margin-bottom:16px;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav"><a href="admin.html">← Super admin</a><a href="care.html">Care radar</a><a href="manage.html">My Dashboard</a></div>
+  <h1>MPD radar</h1>
+  <p class="lede">Who is actually inviting people into partnership — and how well. Reads the words staff wrote in recent updates (not the Give button) so MPD directors can celebrate a strong ask, coach a faint one, and notice who never asked at all.</p>
+  <div class="costnote">Each scan reads up to 25 recent updates and costs roughly <b>2–5¢</b> of AI usage. Nothing runs until you press the button.</div>
+  <div class="bar">
+    <select id="days">
+      <option value="30">Last 30 days</option>
+      <option value="90" selected>Last 90 days</option>
+      <option value="180">Last 6 months</option>
+      <option value="365">Last year</option>
+    </select>
+    <button class="go" id="go">Run the scan</button>
+    <span class="msg" id="msg"></span>
+  </div>
+  <div id="out"></div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fd(s){ if(!s)return''; try{ return new Date(s+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }catch(_){ return s; } }
+function av(p){ return p.photo?`<span class="av" style="background-image:url('${esc(p.photo)}')"></span>`:`<span class="av">${esc((p.author||'?').trim().charAt(0).toUpperCase())}</span>`; }
+document.getElementById('go').addEventListener('click',async()=>{
+  const btn=document.getElementById('go'), msg=document.getElementById('msg'), out=document.getElementById('out');
+  btn.disabled=true; msg.className='msg'; msg.textContent='Reading updates…';
+  try{
+    const r=await fetch('/.netlify/functions/mpd-scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({days:+document.getElementById('days').value})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not finish the scan.');
+    msg.textContent=`Read ${d.scanned} update${d.scanned===1?'':'s'}.`;
+    const asks=(d.items||[]).filter(x=>x.kinds.length);
+    const negs=(d.items||[]).filter(x=>x.negative);
+    let html='';
+    html+=`<div class="sect">Partnership invitations (${asks.length})</div>`;
+    html+= asks.length ? asks.map(x=>`<div class="card">${av(x)}<div class="cb">
+        <div class="who">${esc(x.author)}${x.org?` <span class="meta">· ${esc(x.org)}</span>`:''}</div>
+        <div class="meta">${esc(x.title)} · ${esc(fd(x.date))}</div>
+        <div class="tags">${x.kinds.map(k=>`<span class="tag">${esc(k)}</span>`).join('')}${x.strength?`<span class="tag s-${esc(x.strength)}">${esc(x.strength)} ask</span>`:''}</div>
+        <div class="note">${esc(x.note)}</div>
+        ${x.quote?`<div class="quote">“${esc(x.quote)}”</div>`:''}
+      </div><a class="open" href="index.html?u=${encodeURIComponent(x.updateId)}&notour=1" target="_blank" rel="noopener">Open →</a></div>`).join('')
+      : '<div class="state">No partnership invitations found in this window.</div>';
+    if(negs.length){
+      html+=`<div class="sect">Tone worth a conversation (${negs.length})</div>`;
+      html+=negs.map(x=>`<div class="card neg">${av(x)}<div class="cb">
+        <div class="who">${esc(x.author)}</div>
+        <div class="meta">${esc(x.title)} · ${esc(fd(x.date))}</div>
+        <div class="tags"><span class="tag neg">Sustained negativity</span></div>
+        <div class="note">${esc(x.toneNote||x.note)}</div>
+        ${x.quote?`<div class="quote">“${esc(x.quote)}”</div>`:''}
+      </div><a class="open" href="index.html?u=${encodeURIComponent(x.updateId)}&notour=1" target="_blank" rel="noopener">Open →</a></div>`).join('');
+    }
+    if((d.silent||[]).length){
+      html+=`<div class="sect">Published, but never invited anyone (${d.silent.length})</div><div class="silent">`+
+        d.silent.map(s=>`<span class="schip">${esc(s.author)}${s.org?' · '+esc(s.org):''}</span>`).join('')+`</div>`;
+    }
+    out.innerHTML=html;
+  }catch(e){ msg.className='msg err'; msg.textContent=e.message||'Could not finish the scan.'; }
+  btn.disabled=false;
+});
+(async()=>{ try{ const r=await fetch('/.netlify/functions/me'); if(!r.ok) location.href='login.html?next=mpd.html'; }catch(_){} })();
+</script>
+<script src="help.js"></script>
+</body>
+</html>

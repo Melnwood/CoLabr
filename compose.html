@@ -227,6 +227,7 @@
     .rte a{color:var(--acc);text-decoration:underline;text-underline-offset:2px;cursor:text}
     .alopt{min-width:30px;height:26px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-family:var(--font);font-size:11.5px;color:var(--text);padding:0 9px}
     .alopt.on{border-color:var(--acc);color:var(--acc);font-weight:800}
+    .prayhint{font-size:11.5px;line-height:1.5;color:#94702a;background:#fdf8ec;border:1px solid #eddcae;border-radius:9px;padding:8px 11px;margin-top:7px}
     .fixednote{border:1px dashed var(--line);border-radius:11px;padding:11px 14px;margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6;background:#fdfbf7}
     /* Preview footer — the pressable bottom of the real reader */
     .pvtry{border:1px solid var(--line);background:#fff;border-radius:22px;padding:10px 18px;font-size:13.5px;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--font)}
@@ -636,7 +637,7 @@ function fieldHtml(b){
   }
   if(b.type==='numbers') return `<div class="two"><input data-id="${b.id}" data-f="a" placeholder="Number (e.g. 100)" value="${esc(b.a)}"><input data-id="${b.id}" data-f="al" placeholder="Label (e.g. camps)" value="${esc(b.al)}"></div><div class="two"><input data-id="${b.id}" data-f="b" placeholder="Number" value="${esc(b.b)}"><input data-id="${b.id}" data-f="bl" placeholder="Label" value="${esc(b.bl)}"></div><div class="two"><input data-id="${b.id}" data-f="c" placeholder="Number" value="${esc(b.c)}"><input data-id="${b.id}" data-f="cl" placeholder="Label" value="${esc(b.cl)}"></div>`;
   if(b.type==='text') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="Write this section…">${marks2html(b.text)}</div>`;
-  if(b.type==='prayer') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="A prayer request…">${marks2html(b.text)}</div>`+colorRow(b);
+  if(b.type==='prayer') return fmtBar(b)+`<div class="rte" contenteditable="true" data-id="${b.id}" data-f="text" data-ph="A prayer request…">${marks2html(b.text)}</div>`+prayHint(b)+colorRow(b);
   if(b.type==='photo') return `<div class="drop" data-drop="${b.id}"><img class="dprev" ${b.url?`src="${esc(b.url)}"`:'style="display:none"'}><div class="dinner">Drag a photo here, or tap to choose from Photos / desktop</div><input type="file" accept="image/*" hidden></div><input class="urlin" data-id="${b.id}" data-f="url" placeholder="…or paste an image URL" value="${esc(b.url)}"><div class="two"><input data-id="${b.id}" data-f="caption" placeholder="Caption (optional)" value="${esc(b.caption)}"></div>`;
   if(b.type==='video'){
     const done=b.url&&/storage\.googleapis\.com/.test(b.url);
@@ -772,6 +773,26 @@ function setupFocus(el){
     const band=el.querySelector('.focband'); if(band) band.style.top=(b.fy*0.4074).toFixed(1)+'%';
     const pv=document.querySelector('[data-fprev="'+id+'"]'); if(pv) pv.style.backgroundPosition=b.fx+'% '+b.fy+'%';});
   ['pointerup','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>{drag=false;}));
+}
+// Prayer requests are lifted onto the JV prayer wall on their own, with no story
+// around them. "Please pray this group grows" is unprayable by a stranger — so
+// nudge (never block) when the request leans on a word only the writer can see.
+function prayVague(t){
+  t=String(t||'').trim(); if(t.length<12) return '';
+  const m=t.match(/\b(this|these|that|those|they|them|their|he|she|it|his|her)\b/i);
+  if(!m) return '';
+  const bare=t.replace(/^[^a-zA-ZÁ-ž]*/,'').slice(1)
+    .replace(/\b(God|Jesus|Christ|Lord|Holy Spirit|Father|Him|His|He)\b/g,'');
+  const named=/\b[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽŁŚŻĄĘ][a-záčďéěíňóřšťúůýžłśżąę]{2,}/.test(bare);
+  const noun=/\b(camp|camps|team|teams|church|churches|student|students|youth|group|groups|family|families|school|city|town|village|conference|retreat|training|staff|leaders?|club|ministry)\b/i.test(t);
+  if(named) return '';
+  return noun
+    ? 'On the prayer wall this line stands alone — name the ' + (t.match(/\b(camp|team|church|student|youth|group|family|school|city|town|village|conference|retreat|training|club|ministry)\b/i)||[,'group'])[1].toLowerCase() + ' so someone who missed the story can still pray.'
+    : 'On the prayer wall this line stands alone — say who or what "' + m[0].toLowerCase() + '" is.';
+}
+function prayHint(b){
+  const w=prayVague(b.text);
+  return w?`<div class="prayhint">${esc(w)}</div>`:'';
 }
 /* Format bar: **bold**, _italic_, ++larger++ — wraps/unwraps the selection. */
 function fmtBar(b){
