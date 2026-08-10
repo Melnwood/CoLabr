@@ -106,6 +106,7 @@
   .tstr.on{border-color:var(--acc);box-shadow:0 4px 16px rgba(255,102,0,.09)}
   .tsh{display:flex;width:100%;align-items:center;gap:9px;background:none;border:none;padding:11px 14px;cursor:pointer;font-family:inherit;text-align:left}
   .tstr.on .tsh{background:#fff8f2}
+  .tsdot{width:8px;height:8px;border-radius:50%;background:var(--acc);flex:none}
   .tslab{font-size:13px;font-weight:750;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tstr.on .tslab{color:#c25200}
   .tsmeta{flex:none;font-size:10.5px;color:var(--muted)}
@@ -461,7 +462,7 @@ function openPerson(k){
       :(s.msgCount?(g.type==='Message'?'Direct conversation':esc(g.type||'Note')):'Prayed for you');
     const u=g.updateId&&DATA.updates[g.updateId];
     html+=`<div class="tstr" data-si="${si}">
-      <button type="button" class="tsh" data-ts="${si}"><span class="tslab">${label}</span><span class="tsmeta">${s.msgCount?s.msgCount+' message'+(s.msgCount===1?'':'s'):'prayer'}${s.hasPray&&s.msgCount?' + prayer':''} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
+      <button type="button" class="tsh" data-ts="${si}">${s.waiting?'<span class="tsdot" title="Waiting on you"></span>':''}<span class="tslab">${label}</span><span class="tsmeta">${s.msgCount?s.msgCount+' message'+(s.msgCount===1?'':'s'):'prayer'}${s.hasPray&&s.msgCount?' + prayer':''} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
       <div class="tsb">
         ${(u&&u.cover)?`<a class="ucard" href="index.html?m=${encodeURIComponent(p.flip?p.name:(DATA.me||''))}&u=${encodeURIComponent(g.updateId)}&notour=1" target="_blank" rel="noopener" title="Open this update on the wall"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||g.updateTitle)} <span class="uopen">Read →</span></div></a>`:''}
         ${s.entries.map(x=>{

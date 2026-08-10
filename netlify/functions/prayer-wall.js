@@ -29,20 +29,49 @@ exports.handler = async function (event) {
         const f = rec.fields || {}; const title = f[U_TITLE]; if (!title) return;
         const date = f[U_DATE] || '';
         const mid = (f[U_MISS] || [])[0]; const who = (mid && map[mid]) || { name: '', org: '', photo: '' };
-        // Prefer an English translation's prayer blocks when the original isn't English.
-        let blocks = parseJSON(f[U_BLOCKS]) || [];
+        // The inline index only carries title+excerpt — the translated BODY lives in
+        // the per-language file. Note which records need an English fetch below.
+        const blocks = parseJSON(f[U_BLOCKS]) || [];
         const tr = parseJSON(f[U_TR]);
-        if (tr && tr.src && tr.src !== 'en' && tr.tr && tr.tr.en && Array.isArray(tr.tr.en.blocks)) blocks = tr.tr.en.blocks;
-        blocks.forEach(b => {
+        const src = (tr && tr.src) || 'en';
+        blocks.forEach((b, bi) => {
           if (b && b.type === 'prayer' && b.text && String(b.text).trim()) {
-            items.push({ id: rec.id, author: who.name, org: who.org, photo: who.photo, title, date, text: String(b.text).trim() });
+            items.push({ id: rec.id, author: who.name, org: who.org, photo: who.photo, title, date,
+              text: String(b.text).trim(), src, bi,
+              title0: title });
           }
         });
       });
       url = d.offset ? `${baseUrl}&offset=${d.offset}` : '';
     }
     items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    return resp(200, { items: items.slice(0, 80) });
+    const top = items.slice(0, 80);
+
+    // English is the bridge language of the wall: a prayer written in Polish is
+    // shown in English here. The translated body lives in the language file, so
+    // fetch it for the handful of non-English items on this page.
+    const bucket = process.env.GCS_BUCKET;
+    if (bucket) {
+      const need = [...new Set(top.filter(x => x.src && x.src !== 'en').map(x => x.id))];
+      const byId = {};
+      await Promise.all(need.map(async id => {
+        try {
+          const gr = await fetch(`https://storage.googleapis.com/${bucket}/translations/${id}/en.json`, { cache: 'no-store' });
+          if (gr.ok) { const d = await gr.json(); if (d && Array.isArray(d.blocks)) byId[id] = d; }
+        } catch (e) {}
+      }));
+      top.forEach(x => {
+        const d = byId[x.id]; if (!d) return;
+        const b = d.blocks[x.bi];
+        if (b && b.type === 'prayer' && b.text && String(b.text).trim()) { x.text = String(b.text).trim(); x.translated = true; }
+        else {
+          const any = d.blocks.find(y => y && y.type === 'prayer' && y.text);
+          if (any) { x.text = String(any.text).trim(); x.translated = true; }
+        }
+        if (d.title) x.title = d.title;
+      });
+    }
+    return resp(200, { items: top });
   } catch (e) {
     return resp(200, { items: [] });
   }

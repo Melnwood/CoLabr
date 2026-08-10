@@ -214,10 +214,22 @@ document.getElementById('back').addEventListener('click',()=>{document.getElemen
 // Resolve an update to the reader's language (English by default; native-language updates carry a translation).
 function view(u){
   const src=u.src||'en', target='en';
-  if(target!==src && u.tr && u.tr[target] && Array.isArray(u.tr[target].blocks)){
-    return {title:u.tr[target].title||u.title, blocks:u.tr[target].blocks, translatedFrom:src};
+  // Cards: the inline index carries title+excerpt only (bodies live in the
+  // per-language file, fetched by viewFull when the reader opens).
+  if(target!==src && u.tr && u.tr[target]){
+    return {title:u.tr[target].title||u.title, blocks:u.blocks||[], translatedFrom:src};
   }
   return {title:u.title, blocks:u.blocks||[], translatedFrom:''};
+}
+const TRBASE='https://storage.googleapis.com/colabr-photos-jv';
+async function viewFull(u){
+  const src=u.src||'en'; const d=view(u);
+  if(src==='en') return d;
+  try{
+    const r=await fetch(TRBASE+'/translations/'+u.id+'/en.json',{cache:'no-store'});
+    if(r.ok){ const t=await r.json(); if(t&&Array.isArray(t.blocks)) return {title:t.title||d.title, blocks:t.blocks, translatedFrom:src}; }
+  }catch(e){}
+  return d;
 }
 function firstText(blocks){ const b=(blocks||[]).find(x=>x&&(x.type==='text'||x.type==='heading')); return b?b.text:''; }
 // The crop the missionary chose for the banner — never crop heads off.
@@ -225,8 +237,8 @@ function cfocus(u){ const b=((u&&u.blocks)||[]).find(x=>x&&(x.type==='hero'||x.t
 function fmtDate(s){ if(!s)return''; const p=s.split('-'); const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${M[(+p[1]||1)-1]} ${+p[2]||''}, ${p[0]}`; }
 
 function openReader(i){ const n=document.getElementById('pname').textContent; openReaderU(CUR[i], n, n); }
-function openReaderU(u, label, mname){
-  if(!u)return; const disp=view(u);
+async function openReaderU(u, label, mname){
+  if(!u)return; const disp=await viewFull(u);
   const body=(disp.blocks||[]).map(bk=>{
     if(bk.type==='text'||bk.type==='heading') return `<p class="rtext">${esc(bk.text||'').replace(/\n/g,'<br>')}</p>`;
     if(bk.type==='prayer') return `<div class="rprayer"><b>Prayer</b>${esc(bk.text||'').replace(/\n/g,'<br>')}</div>`;
