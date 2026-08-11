@@ -17,6 +17,7 @@ exports.handler = async function (event) {
   const row = rec => {
     const c = rec.fields || {};
     return { id: rec.id, name: c['Name'] || '', email: (c['Email'] || '').toLowerCase(),
+      partner: (c['Partner email'] || '').toLowerCase(),
       perspectives: c['Perspectives'] || [], device: c['Device'] || [],
       status: (c['Status'] && c['Status'].name) ? c['Status'].name : (c['Status'] || 'Invited'),
       notes: c['Notes'] || '' };
@@ -25,7 +26,8 @@ exports.handler = async function (event) {
   try {
     // Any signed-in member: "what am I testing?"
     if (b.action === 'mine') {
-      const f = encodeURIComponent(`LOWER({Email})='${String(sess.email || '').toLowerCase().replace(/'/g, "\\'")}'`);
+      const mine = String(sess.email || '').toLowerCase().replace(/'/g, "\\'");
+      const f = encodeURIComponent(`OR(LOWER({Email})='${mine}', LOWER({Partner email})='${mine}')`);
       const rr = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}?maxRecords=1&filterByFormula=${f}`, { headers: auth });
       const rec = rr.ok ? (((await rr.json()).records) || [])[0] : null;
       return r(200, { ok: true, me: rec ? row(rec) : null, admin: isAdmin(sess.email) });
@@ -48,6 +50,7 @@ exports.handler = async function (event) {
       const fields = {
         'Name': String(b.name || '').slice(0, 80),
         'Email': String(b.email || '').toLowerCase().slice(0, 120),
+        'Partner email': String(b.partner || '').toLowerCase().slice(0, 120),
         'Perspectives': Array.isArray(b.perspectives) ? b.perspectives.slice(0, 11) : [],
         'Device': Array.isArray(b.device) ? b.device.slice(0, 3) : [],
         'Status': b.status || 'Invited',
@@ -68,9 +71,11 @@ exports.handler = async function (event) {
       // Tell them what they're testing, with the door in.
       if (b.notify && fields.Email) {
         const site = process.env.SITE_BASE || '';
+        // A shared page is two people — both of them get the assignment.
+        const to = [fields.Email, fields['Partner email']].filter(Boolean).join(', ');
         try {
           await sendMail({
-            to: fields.Email, subject: 'You\'re on the Co·labr sandbox team',
+            to, subject: 'You\'re on the Co·labr sandbox team',
             html: `<div style="font-family:-apple-system,Arial,sans-serif;max-width:540px;color:#241f1b">
               <p style="font-size:15px">Hi ${esc((fields.Name || '').split(' ')[0] || 'there')},</p>
               <p style="font-size:14.5px;line-height:1.6">Thanks for helping us test Co·labr. You're looking at it from this perspective:</p>

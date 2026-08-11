@@ -60,7 +60,8 @@
     <div id="list"><div class="state">Loading…</div></div>
     <div class="form">
       <h3 id="formTitle">Assign someone</h3>
-      <div class="fr"><input type="text" id="fName" placeholder="Name"><input type="email" id="fEmail" placeholder="their@email.com"></div>
+      <div class="fr"><input type="text" id="fName" placeholder="Name — or both names, e.g. Noah &amp; Jill"><input type="email" id="fEmail" placeholder="their@email.com"></div>
+      <div class="fr"><input type="email" id="fPartner" placeholder="Spouse / co-writer email (optional — for a shared page)"></div>
       <div class="lab">Perspective — what they're looking from</div>
       <div class="opts" id="fPersp"></div>
       <div class="lab">Device</div>
@@ -85,7 +86,7 @@ const PLAYBOOK={
  'New missionary (cold start)':['Create your page from scratch — sign in, answer the questions, set your sign-off','Write and publish your first update','Invite two supporters and watch what they receive','Turn everything green on Get set up'],
  'Migrating missionary (Mailchimp history)':['Run Get set up → Bring my history with a real Mailchimp key','Check that photos, dates and open counts came across','Open three imported updates and look for junk text or missing images'],
  'National-org writer (own language)':['Write an update in your own language and publish it','Switch the wall language between English and yours','Check the org brand and the “Josiah Venture | country” mark'],
- 'Shared page (couple writing together)':['Both of you sign in to the same page','One writes while the other edits — see if anything is lost','Check whose name appears on emails and replies'],
+ 'Shared page (couple writing together)':['Both of you sign in with your own emails — you should land on the SAME page','One writes while the other edits — see if anything is lost','Check whose name appears on emails and replies'],
  'Supporter with a link (no account)':['Open a wall from an emailed link on your phone','Tap I’m praying, send a note, use the Give button','Open My Co·labr Dashboard and reply to a message there'],
  'Supporter who is also staff':['Follow a teammate’s page while signed in','Write them from their wall, then find that conversation on your own Conversations tab','Check that your own clicks are never counted as engagement'],
  'Stranger at a locked wall':['Open a wall link with no key and signed out','Confirm you can see who they are but no updates at all','Use Ask to follow and see what happens next'],
@@ -115,7 +116,7 @@ function renderList(){
   if(!ROWS.length){ el.innerHTML='<div class="state">Nobody assigned yet — add your first tester below.</div>'; return; }
   el.innerHTML=`<table><thead><tr><th>Tester</th><th>Looking from</th><th>Device</th><th>Status</th><th></th></tr></thead><tbody>`+
     ROWS.map(x=>`<tr>
-      <td><b>${esc(x.name||x.email)}</b><br><span style="font-size:11.5px;color:var(--muted)">${esc(x.email)}</span></td>
+      <td><b>${esc(x.name||x.email)}</b><br><span style="font-size:11.5px;color:var(--muted)">${esc(x.email)}${x.partner?'<br>'+esc(x.partner):''}</span></td>
       <td><div class="chips">${(x.perspectives||[]).map(p=>`<span class="chip">${esc(p)}</span>`).join('')||'—'}</div>${x.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:5px">${esc(x.notes)}</div>`:''}</td>
       <td>${(x.device||[]).map(esc).join(', ')||'—'}</td>
       <td><span class="st ${esc(x.status)}">${esc(x.status)}</span></td>
@@ -144,13 +145,14 @@ function editRow(id){
 }
 document.getElementById('clear').addEventListener('click',()=>{
   EDIT=null; document.getElementById('formTitle').textContent='Assign someone';
-  document.getElementById('fName').value=''; document.getElementById('fEmail').value=''; document.getElementById('fNotes').value='';
+  document.getElementById('fName').value=''; document.getElementById('fEmail').value=''; document.getElementById('fPartner').value=''; document.getElementById('fNotes').value='';
   chipBox('fPersp',PERSP,[]); chipBox('fDev',DEV,[]);
 });
 document.getElementById('save').addEventListener('click',async()=>{
   const msg=document.getElementById('msg'); msg.className='msg'; msg.textContent='Saving…';
   try{
     await api({action:'save',id:EDIT,name:document.getElementById('fName').value.trim(),email:document.getElementById('fEmail').value.trim(),
+      partner:document.getElementById('fPartner').value.trim(),
       perspectives:picked('fPersp'),device:picked('fDev'),notes:document.getElementById('fNotes').value.trim(),
       status:'Invited',notify:document.getElementById('notify').checked});
     msg.className='msg ok'; msg.textContent='Saved ✓';
