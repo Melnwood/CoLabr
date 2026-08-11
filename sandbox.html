@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/favicon.png">
+<title>Co·labr — Sandbox</title>
+<style>
+  :root{--acc:#FF6600;--ink:#241f1b;--bg:#f4f1ec;--card:#fff;--line:#e7e0d6;--muted:#7a6c58;--text:#241f1b;--green:#2f9e63;--red:#c0392b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:22px 22px 90px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .nav a{font-size:12.5px;font-weight:600;color:var(--text);background:#fff;border:1px solid var(--line);padding:8px 14px;border-radius:22px;text-decoration:none;box-shadow:0 1px 2px rgba(60,40,20,.05)}
+  h1{font-size:29px;font-weight:800;letter-spacing:-.02em;margin:12px 0 5px}
+  .lede{font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 20px;max-width:70ch}
+  .mine{background:#fff;border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:16px;padding:20px 22px;margin-bottom:22px}
+  .mine h2{margin:0 0 6px;font-size:19px;font-weight:800}
+  .mine .roles{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+  .role{font-size:12px;font-weight:700;background:#fff6ee;color:#c25200;border:1px solid #f3d3b6;border-radius:16px;padding:6px 12px}
+  .mine ul{margin:10px 0 0;padding-left:20px;font-size:13.5px;line-height:1.75;color:#4a443e}
+  .rule{font-size:12.5px;color:var(--muted);background:#faf7f2;border:1px dashed var(--line);border-radius:12px;padding:11px 14px;margin-top:14px;line-height:1.6}
+  .sect{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:28px 0 10px}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:13px}
+  th{text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line)}
+  td{padding:11px 12px;border-bottom:1px solid #f1ede7;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{font-size:10.5px;background:#f7f3ec;border:1px solid var(--line);border-radius:12px;padding:3px 8px}
+  .st{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;border-radius:11px;padding:3px 9px;background:#f0ece4;color:#6b6357}
+  .st.Testing{background:#fff3e0;color:#b26a00}
+  .st.Done{background:#eafaf1;color:#2f7d55}
+  .act{font-size:12px;font-weight:700;color:var(--acc);background:none;border:none;cursor:pointer;font-family:inherit;padding:0 6px 0 0}
+  .act.del{color:#c0392b}
+  .form{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:16px}
+  .form h3{margin:0 0 12px;font-size:15px;font-weight:800}
+  .fr{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .fr input[type=text],.fr input[type=email]{flex:1;min-width:200px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit}
+  .opts{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 12px}
+  .opt{font-size:12px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:7px 12px;cursor:pointer;user-select:none}
+  .opt.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .lab{font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;min-height:60px;resize:vertical}
+  .save{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+  .ghost{background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .msg{font-size:12.5px;margin-left:10px;color:var(--muted)}
+  .msg.err{color:var(--red)}.msg.ok{color:var(--green)}
+  .state{color:var(--muted);font-size:14px;padding:24px 0;text-align:center}
+  label.ck{font-size:12.5px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav"><a href="manage.html">My Dashboard</a><a href="admin.html" id="adminLink" style="display:none">Super admin</a></div>
+  <h1>Sandbox</h1>
+  <p class="lede">Real people, looking from different seats. Everyone sees the same product — what changes is <b>which pair of eyes</b> you bring. Your assignment is below.</p>
+  <div id="mine"><div class="state">Loading your assignment…</div></div>
+  <div id="adminZone" style="display:none">
+    <div class="sect">Testers</div>
+    <div id="list"><div class="state">Loading…</div></div>
+    <div class="form">
+      <h3 id="formTitle">Assign someone</h3>
+      <div class="fr"><input type="text" id="fName" placeholder="Name"><input type="email" id="fEmail" placeholder="their@email.com"></div>
+      <div class="lab">Perspective — what they're looking from</div>
+      <div class="opts" id="fPersp"></div>
+      <div class="lab">Device</div>
+      <div class="opts" id="fDev"></div>
+      <div class="lab">Anything specific for them</div>
+      <textarea id="fNotes" placeholder="e.g. Start from the email I forwarded you — don't sign in first."></textarea>
+      <div class="fr" style="margin-top:12px;align-items:center">
+        <button class="save" id="save">Save assignment</button>
+        <button class="ghost" id="clear">New</button>
+        <label class="ck"><input type="checkbox" id="notify" checked> Email them their assignment</label>
+        <span class="msg" id="msg"></span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PERSP=['New missionary (cold start)','Migrating missionary (Mailchimp history)','National-org writer (own language)','Shared page (couple writing together)','Supporter with a link (no account)','Supporter who is also staff','Stranger at a locked wall','Email reader (inbox experience)','Non-English reader (language switch)','MPD director','Super admin / platform'];
+const DEV=['Phone','Tablet','Desktop'];
+// What each seat should actually try — written so a tester never has to guess.
+const PLAYBOOK={
+ 'New missionary (cold start)':['Create your page from scratch — sign in, answer the questions, set your sign-off','Write and publish your first update','Invite two supporters and watch what they receive','Turn everything green on Get set up'],
+ 'Migrating missionary (Mailchimp history)':['Run Get set up → Bring my history with a real Mailchimp key','Check that photos, dates and open counts came across','Open three imported updates and look for junk text or missing images'],
+ 'National-org writer (own language)':['Write an update in your own language and publish it','Switch the wall language between English and yours','Check the org brand and the “Josiah Venture | country” mark'],
+ 'Shared page (couple writing together)':['Both of you sign in to the same page','One writes while the other edits — see if anything is lost','Check whose name appears on emails and replies'],
+ 'Supporter with a link (no account)':['Open a wall from an emailed link on your phone','Tap I’m praying, send a note, use the Give button','Open My Co·labr Dashboard and reply to a message there'],
+ 'Supporter who is also staff':['Follow a teammate’s page while signed in','Write them from their wall, then find that conversation on your own Conversations tab','Check that your own clicks are never counted as engagement'],
+ 'Stranger at a locked wall':['Open a wall link with no key and signed out','Confirm you can see who they are but no updates at all','Use Ask to follow and see what happens next'],
+ 'Email reader (inbox experience)':['Read an update email in Gmail, Apple Mail and on a phone','Check photos, buttons and the reply link all work from the email','Reply from the email and see where it lands'],
+ 'Non-English reader (language switch)':['Pick your language on a wall and read three updates','Look for anything still in English that should be translated','Check the prayer wall reads properly'],
+ 'MPD director':['Run the MPD radar over 90 days','Judge every flag: is it really a money ask?','Tell us anything it missed or wrongly flagged'],
+ 'Super admin / platform':['Walk Super Admin top to bottom','Care radar, MPD radar, branding, organizations, feedback triage','Try to break the platform switches']
+};
+let ROWS=[], EDIT=null;
+function playbookFor(list){ const out=[]; (list||[]).forEach(p=>(PLAYBOOK[p]||[]).forEach(x=>out.push(x))); return out; }
+async function api(body){ const r=await fetch('/.netlify/functions/sandbox',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Error'); return d; }
+function renderMine(me){
+  const el=document.getElementById('mine');
+  if(!me){ el.innerHTML='<div class="mine"><h2>No assignment yet</h2><p style="font-size:13.5px;color:#4a443e;line-height:1.6;margin:6px 0 0">You can still poke at anything — and if something confuses you for more than five seconds, that’s a bug worth reporting.</p><div class="rule"><b>How to report:</b> click Noah’s face at the bottom right of any page → <b>Found a problem?</b> → say what you expected, paste a screenshot.</div></div>'; return; }
+  const steps=playbookFor(me.perspectives);
+  el.innerHTML=`<div class="mine">
+    <h2>You're testing as…</h2>
+    <div class="roles">${(me.perspectives||[]).map(p=>`<span class="role">${esc(p)}</span>`).join('')||'<span class="role">Anything you like</span>'}</div>
+    ${me.device&&me.device.length?`<div style="font-size:12.5px;color:var(--muted)">On ${me.device.map(esc).join(', ')}</div>`:''}
+    ${me.notes?`<p style="font-size:13.5px;line-height:1.6;margin:10px 0 0"><b>From Mel:</b> ${esc(me.notes)}</p>`:''}
+    ${steps.length?`<ul>${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}
+    <div class="rule"><b>The one rule:</b> if anything confuses you for more than five seconds, that’s a bug. Click Noah’s face (bottom right) → <b>Found a problem?</b> → say what you <i>expected</i> to happen, and paste a screenshot.</div>
+  </div>`;
+}
+function renderList(){
+  const el=document.getElementById('list');
+  if(!ROWS.length){ el.innerHTML='<div class="state">Nobody assigned yet — add your first tester below.</div>'; return; }
+  el.innerHTML=`<table><thead><tr><th>Tester</th><th>Looking from</th><th>Device</th><th>Status</th><th></th></tr></thead><tbody>`+
+    ROWS.map(x=>`<tr>
+      <td><b>${esc(x.name||x.email)}</b><br><span style="font-size:11.5px;color:var(--muted)">${esc(x.email)}</span></td>
+      <td><div class="chips">${(x.perspectives||[]).map(p=>`<span class="chip">${esc(p)}</span>`).join('')||'—'}</div>${x.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:5px">${esc(x.notes)}</div>`:''}</td>
+      <td>${(x.device||[]).map(esc).join(', ')||'—'}</td>
+      <td><span class="st ${esc(x.status)}">${esc(x.status)}</span></td>
+      <td style="white-space:nowrap"><button class="act" data-edit="${x.id}">Edit</button><button class="act del" data-del="${x.id}">Remove</button></td>
+    </tr>`).join('')+`</tbody></table>`;
+  el.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>editRow(b.dataset.edit)));
+  el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
+    const x=ROWS.find(r=>r.id===b.dataset.del); if(!x)return;
+    if(!confirm('Remove '+(x.name||x.email)+' from the sandbox roster?'))return;
+    try{ await api({action:'remove',id:x.id}); await load(); }catch(e){ alert(e.message); }
+  }));
+}
+function chipBox(id,list,sel){
+  const el=document.getElementById(id);
+  el.innerHTML=list.map(v=>`<span class="opt${(sel||[]).includes(v)?' on':''}" data-v="${esc(v)}">${esc(v)}</span>`).join('');
+  el.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>o.classList.toggle('on')));
+}
+function picked(id){ return [...document.getElementById(id).querySelectorAll('.opt.on')].map(o=>o.dataset.v); }
+function editRow(id){
+  const x=ROWS.find(r=>r.id===id); if(!x)return;
+  EDIT=id; document.getElementById('formTitle').textContent='Editing '+(x.name||x.email);
+  document.getElementById('fName').value=x.name||''; document.getElementById('fEmail').value=x.email||'';
+  document.getElementById('fNotes').value=x.notes||'';
+  chipBox('fPersp',PERSP,x.perspectives); chipBox('fDev',DEV,x.device);
+  document.getElementById('fName').scrollIntoView({behavior:'smooth',block:'center'});
+}
+document.getElementById('clear').addEventListener('click',()=>{
+  EDIT=null; document.getElementById('formTitle').textContent='Assign someone';
+  document.getElementById('fName').value=''; document.getElementById('fEmail').value=''; document.getElementById('fNotes').value='';
+  chipBox('fPersp',PERSP,[]); chipBox('fDev',DEV,[]);
+});
+document.getElementById('save').addEventListener('click',async()=>{
+  const msg=document.getElementById('msg'); msg.className='msg'; msg.textContent='Saving…';
+  try{
+    await api({action:'save',id:EDIT,name:document.getElementById('fName').value.trim(),email:document.getElementById('fEmail').value.trim(),
+      perspectives:picked('fPersp'),device:picked('fDev'),notes:document.getElementById('fNotes').value.trim(),
+      status:'Invited',notify:document.getElementById('notify').checked});
+    msg.className='msg ok'; msg.textContent='Saved ✓';
+    document.getElementById('clear').click(); await load();
+  }catch(e){ msg.className='msg err'; msg.textContent=e.message||'Could not save.'; }
+});
+async function load(){
+  const d=await api({action:'mine'});
+  renderMine(d.me);
+  if(d.admin){
+    document.getElementById('adminZone').style.display='';
+    document.getElementById('adminLink').style.display='';
+    try{ ROWS=(await api({action:'list'})).rows||[]; renderList(); }catch(e){}
+  }
+}
+chipBox('fPersp',PERSP,[]); chipBox('fDev',DEV,[]);
+load().catch(()=>{ location.href='login.html?next=sandbox.html'; });
+</script>
+<script src="help.js"></script>
+</body>
+</html>
