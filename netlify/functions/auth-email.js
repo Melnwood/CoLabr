@@ -48,7 +48,7 @@ exports.handler = async function (event) {
     <p style="font-size:26px;font-weight:800;letter-spacing:.18em;margin:0 0 22px">${code}</p>
     <p style="font-size:12px;color:#7d8794;line-height:1.6">You asked to sign in as ${esc(email)}. If this wasn't you, you can safely ignore this email — nothing happens without the link or code.</p>
   </div>`;
-  const res = await sendMail({ to: email, subject: 'Your Co·labr sign-in link', html, fromName: 'Co·labr' });
+  const res = await sendMail({ to: email, subject: 'Your Co·labr sign-in link', html, fromName: 'Co·labr', essential: true });
   if (!res.ok) return r(502, { error: 'We couldn’t send the email — please try again.' });
   return r(200, { ok: true, ct: codeToken });
 };

@@ -2,8 +2,56 @@
 // domain-wide-delegated service account); falls back to Resend. Returns {ok, via, error}.
 const crypto = require('crypto');
 
-async function sendMail({ to, subject, html, replyTo, fromName }) {
+// ---- SANDBOX FENCE ------------------------------------------------------
+// While "Pause all email" is on, mail may ONLY reach people inside the testing
+// group: super admins and everyone on the Sandbox Testers roster. Real
+// supporters are unreachable no matter which button a tester presses — invites,
+// direct messages, replies, previews, notifications, all of it.
+// Sign-in codes are the one exception (essential:true) so nobody gets locked out.
+let _fenceCache = null, _fenceAt = 0;
+async function fence() {
+  if (_fenceCache && Date.now() - _fenceAt < 60000) return _fenceCache;
+  const token = process.env.AIRTABLE_TOKEN;
+  const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
+  const out = { paused: false, allow: new Set() };
+  (process.env.ADMIN_EMAILS || 'mellenwood@josiahventure.com,nellenwood@josiahventure.com')
+    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean).forEach(e => out.allow.add(e));
+  if (token) {
+    const auth = { Authorization: 'Bearer ' + token };
+    try {
+      const pr = await fetch(`https://api.airtable.com/v0/${BASE}/tblnAJuAOg7pmlVFR?maxRecords=1`, { headers: auth });
+      if (pr.ok) { const rec = (((await pr.json()).records) || [])[0]; out.paused = !!(rec && rec.fields && rec.fields['Pause all email']); }
+    } catch (e) {}
+    if (out.paused) {
+      try {
+        const sr = await fetch(`https://api.airtable.com/v0/${BASE}/tblnKDQEyHU8TIILB?pageSize=100`, { headers: auth });
+        if (sr.ok) ((await sr.json()).records || []).forEach(r2 => {
+          const f = r2.fields || {};
+          ['Email', 'Partner email'].forEach(k => { if (f[k]) out.allow.add(String(f[k]).trim().toLowerCase()); });
+        });
+      } catch (e) {}
+    }
+  }
+  _fenceCache = out; _fenceAt = Date.now();
+  return out;
+}
+
+async function sendMail({ to, subject, html, replyTo, fromName, essential }) {
   if (!to) return { ok: false, error: 'No recipient.' };
+  if (!essential) {
+    try {
+      const f = await fence();
+      if (f.paused) {
+        const rcpts = String(to).split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+          .map(s => (s.match(/<([^>]+)>/) || [, s])[1]);
+        const outside = rcpts.filter(e => !f.allow.has(e));
+        if (outside.length) {
+          console.log('MAIL BLOCKED (sandbox fence)', JSON.stringify({ to: rcpts, subject: String(subject || '').slice(0, 80) }));
+          return { ok: false, blocked: true, error: 'Test mode: email to people outside the sandbox group is blocked.' };
+        }
+      }
+    } catch (e) { /* never let the fence break a legitimate send path */ }
+  }
   const saKey = process.env.GWS_SA_KEY || process.env.GCP_SA_KEY; // reuse the storage service account
   const sender = process.env.GMAIL_SENDER;
   if (saKey && sender) {
