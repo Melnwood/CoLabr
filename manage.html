@@ -677,8 +677,13 @@ document.getElementById('nameInfo').addEventListener('click',()=>{
   if(f&&!f.dataset.set){ f.src='index.html?m='+encodeURIComponent(MYPAGE||v)+'&notour=1'; f.dataset.set='1'; }
   document.getElementById('ipop').classList.add('on');
 });
-document.getElementById('ipClose').addEventListener('click',()=>document.getElementById('ipop').classList.remove('on'));
-document.getElementById('ipop').addEventListener('click',e=>{ if(e.target.id==='ipop')e.currentTarget.classList.remove('on'); });
+// Delegated: the popover markup sits at the end of the page, so binding directly
+// here would run before it exists (that silently broke "Got it").
+document.addEventListener('click',e=>{
+  const pop=document.getElementById('ipop'); if(!pop||!pop.classList.contains('on'))return;
+  if(e.target.id==='ipClose'||e.target.id==='ipop') pop.classList.remove('on');
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const p=document.getElementById('ipop'); if(p)p.classList.remove('on'); } });
 /* Conversations at a glance: new · waiting on you · people praying. Each tile
    opens the Conversations page, where the newest responses sit on top. */
 async function loadConvoStats(){
