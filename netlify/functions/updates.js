@@ -31,6 +31,7 @@ const F = {
   arc:    'fldGKATli4f8Kk8d7',
   aud:    'fld6ZpC94Aq43d5ZY',
   blocks: 'fldN9B0v6YU0xptFu',
+  type:   'fldY0VaoPZjHrvzYD',
   tr:     'fld9BeSNNbZpUAtd0',
   hl:     'fldT4O1aeyqmxqqrH'
 };
@@ -111,6 +112,7 @@ exports.handler = async function (event) {
         cover:   https(c[F.cover] || ''),
         video:   c[F.video] || '',
         excerpt: c[F.excerpt] || '',
+        type:    (c[F.type] && c[F.type].name) ? c[F.type].name : (c[F.type] || ''),
         arc:     c[F.arc] || '',
         aud:     (c[F.aud] || []).map(a => (a && a.name) ? a.name : a),
         hl:      !!c[F.hl],

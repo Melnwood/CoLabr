@@ -119,6 +119,10 @@
   .seg button.on{background:var(--acc);color:#fff}
   select#yearsel{background:#fff;border:1px solid #ddd2b8;border-radius:9px;padding:9px 11px;font-size:12.5px;color:var(--text);font-weight:700;cursor:pointer}
   #monthrow{display:flex;flex-wrap:wrap;gap:7px;padding:2px 0 14px}
+  #typerow{display:flex;flex-wrap:wrap;gap:7px;padding:2px 0 10px;align-items:center}
+  #typerow .tlab{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#8a7550;margin-right:2px}
+  body.pano #typerow{max-width:860px;margin:0 auto;padding-left:22px;padding-right:22px}
+  body.pano #typerow .tlab{color:rgba(255,255,255,.55)}
   .mchip{border:1px solid #ddd2b8;background:#fff;border-radius:18px;padding:6px 13px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--font)}
   .mchip small{font-weight:600;opacity:.6;margin-left:4px}
   .mchip.on{background:var(--acc);border-color:var(--acc);color:var(--acc-text,#fff)}
@@ -456,6 +460,7 @@
       <div class="seg" id="sortseg"><button data-s="new" class="on">Newest</button><button data-s="old">Oldest</button></div>
       <select id="yearsel"><option value="all">All years</option></select>
     </div>
+    <div id="typerow" style="display:none"></div>
     <div id="monthrow" style="display:none"></div>
     <div id="stream"><div class="state">Loading updates…</div></div>
     <div class="foot">Every update the Ellenwoods have shared since 2012 — live from Co-Labr. Share it with anyone who wants to follow along.<br><a href="privacy.html" style="color:#8a7550">How we care for your details</a></div>
@@ -518,12 +523,25 @@ const MAST={
   wall:{t:'The wall',s:'Every moment we’ve shared, all in one place.'},
   pano:{t:'The panorama',s:'Scroll the story, floor to ceiling — every update a chapter.'}
 };
-let U=[],qs='',sortDir='new',yearFilter='all',monthFilter='all',STYLE='fieldnotes',HEROID='';
+let U=[],qs='',sortDir='new',yearFilter='all',monthFilter='all',typeFilter='all',STYLE='fieldnotes',HEROID='';
 let RAILS={hl:true,picks:true};   // per-page rail switches (dashboard-controlled)
 const urlStyle=new URLSearchParams(location.search).get('style');
 document.getElementById('q').addEventListener('input',e=>{qs=e.target.value.toLowerCase().trim();render();});
 document.querySelectorAll('#sortseg button').forEach(b=>b.addEventListener('click',()=>{sortDir=b.dataset.s;document.querySelectorAll('#sortseg button').forEach(x=>x.classList.toggle('on',x===b));render();}));
 document.getElementById('yearsel').addEventListener('change',e=>{yearFilter=e.target.value;monthFilter='all';renderMonthRow();render();});
+// Supporters shouldn't have to scroll years to find "the family ones".
+function renderTypeRow(){
+  const row=document.getElementById('typerow');
+  const counts={};
+  U.forEach(u=>{ const t=(u.type||'').trim(); if(t) counts[t]=(counts[t]||0)+1; });
+  const types=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));
+  if(types.length<2){ row.style.display='none'; row.innerHTML=''; return; }   // one kind = no choice to make
+  row.style.display='flex';
+  row.innerHTML='<span class="tlab">Show</span>'+
+    `<button class="mchip${typeFilter==='all'?' on':''}" data-t="all">Everything<small>${U.length}</small></button>`+
+    types.map(t=>`<button class="mchip${typeFilter===t?' on':''}" data-t="${esc(t)}">${esc(t)}<small>${counts[t]}</small></button>`).join('');
+  row.querySelectorAll('.mchip').forEach(b=>b.addEventListener('click',()=>{ typeFilter=b.dataset.t; renderTypeRow(); render(); }));
+}
 function renderMonthRow(){
   const row=document.getElementById('monthrow');
   if(yearFilter==='all'){ row.style.display='none'; row.innerHTML=''; return; }
@@ -666,7 +684,7 @@ function renderLocked(raw){
   document.body.classList.add('ready');   // reveal the page — the landing is the content
   const boot=document.getElementById('boot'); if(boot)boot.style.display='none';
   ['hero','stream','meta'].forEach(id=>{const el=document.getElementById(id); if(el)el.style.display='none';});
-  document.querySelectorAll('.tools,.jvrail,.yearrow,#monthrow,.foot').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.tools,.jvrail,.yearrow,#monthrow,#typerow,.foot').forEach(el=>el.style.display='none');
   const s=document.getElementById('stream');
   const first=(raw.page&&(raw.page.first||raw.page.name))||'this missionary';
   const lock=document.createElement('div');
@@ -722,7 +740,7 @@ async function load(){
       return {...u, y, date:`${mo} ${d}`};
     });
     applyLangTitles();
-    computeTop10(); renderHero(); buildYears(); render(); renderHighlights();
+    computeTop10(); renderHero(); buildYears(); renderTypeRow(); render(); renderHighlights();
     // Deep link: ?u=<updateId> opens that update's reader straight away —
     // conversation thumbnails and shared links land people right on the story.
     (function(){
@@ -814,9 +832,9 @@ function caption(u){const t=(u.type||'').toLowerCase();const yy=u.y?("'"+String(
 
 /* ---------- selection + filter shared ---------- */
 function getItems(){
-  const cleanView=!qs&&yearFilter==='all';   // the default archive view — hide the update that's in the hero
+  const cleanView=!qs&&yearFilter==='all'&&typeFilter==='all';   // the default archive view — hide the update that's in the hero
   let items=U.map((u,idx)=>({u,idx}))
-    .filter(o=>(!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs)) && (yearFilter==='all'||String(o.u.y)===yearFilter) && (monthFilter==='all'||(o.u.rawdate||'').slice(5,7)===monthFilter) && !(cleanView&&HEROID&&o.u.id===HEROID));
+    .filter(o=>(!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs)) && (yearFilter==='all'||String(o.u.y)===yearFilter) && (monthFilter==='all'||(o.u.rawdate||'').slice(5,7)===monthFilter) && (typeFilter==='all'||(o.u.type||'')===typeFilter) && !(cleanView&&HEROID&&o.u.id===HEROID));
   items.sort((a,b)=> sortDir==='new'
     ? ((b.u.rawdate||'').localeCompare(a.u.rawdate||'')||(b.u.created||'').localeCompare(a.u.created||''))
     : ((a.u.rawdate||'').localeCompare(b.u.rawdate||'')||(a.u.created||'').localeCompare(b.u.created||'')));
