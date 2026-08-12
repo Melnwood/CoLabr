@@ -533,7 +533,7 @@ document.getElementById('yearsel').addEventListener('change',e=>{yearFilter=e.ta
 function renderTypeRow(){
   const row=document.getElementById('typerow');
   const counts={};
-  U.forEach(u=>{ const t=(u.type||'').trim(); if(t) counts[t]=(counts[t]||0)+1; });
+  U.forEach(u=>{ const list=(u.tags&&u.tags.length)?u.tags:((u.type||'').trim()?[u.type.trim()]:[]); list.forEach(t=>{ counts[t]=(counts[t]||0)+1; }); });
   const types=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));
   if(types.length<2){ row.style.display='none'; row.innerHTML=''; return; }   // one kind = no choice to make
   row.style.display='flex';
@@ -834,7 +834,7 @@ function caption(u){const t=(u.type||'').toLowerCase();const yy=u.y?("'"+String(
 function getItems(){
   const cleanView=!qs&&yearFilter==='all'&&typeFilter==='all';   // the default archive view — hide the update that's in the hero
   let items=U.map((u,idx)=>({u,idx}))
-    .filter(o=>(!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs)) && (yearFilter==='all'||String(o.u.y)===yearFilter) && (monthFilter==='all'||(o.u.rawdate||'').slice(5,7)===monthFilter) && (typeFilter==='all'||(o.u.type||'')===typeFilter) && !(cleanView&&HEROID&&o.u.id===HEROID));
+    .filter(o=>(!qs||o.u.title.toLowerCase().includes(qs)||(o.u.excerpt||'').toLowerCase().includes(qs)) && (yearFilter==='all'||String(o.u.y)===yearFilter) && (monthFilter==='all'||(o.u.rawdate||'').slice(5,7)===monthFilter) && (typeFilter==='all'||((o.u.tags&&o.u.tags.length)?o.u.tags:[(o.u.type||'')]).includes(typeFilter)) && !(cleanView&&HEROID&&o.u.id===HEROID));
   items.sort((a,b)=> sortDir==='new'
     ? ((b.u.rawdate||'').localeCompare(a.u.rawdate||'')||(b.u.created||'').localeCompare(a.u.created||''))
     : ((a.u.rawdate||'').localeCompare(b.u.rawdate||'')||(a.u.created||'').localeCompare(b.u.created||'')));

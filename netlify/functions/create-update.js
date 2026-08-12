@@ -55,7 +55,10 @@ exports.handler = async function (event) {
     'Title': b.title.trim(),
     'Body': bodyText || (b.body || ''),
     'Excerpt': (bodyText || b.body || '').replace(/\s+/g, ' ').trim().slice(0, 240),
-    'Type': b.type || 'Newsletter',
+    'Type': b.type || (Array.isArray(b.tags) && b.tags[0]) || 'Newsletter',
+    // Tags are the real thing supporters filter by; Type stays in sync with the
+    // first tag so older screens keep working.
+    'Tags': Array.isArray(b.tags) ? b.tags.filter(Boolean).slice(0, 6).join(', ') : '',
     // A published update with a video still generating subtitles HOLDS as 'Processing' —
     // invisible to supporters — and the caption pipeline releases it when every language
     // is ready. No half-dressed updates on the wall.

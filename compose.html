@@ -141,7 +141,10 @@
 
       <div class="rowg">
         <div><label>Date</label><input id="date" type="date"></div>
-        <div><label>Type</label><select id="type"><option>Newsletter</option><option>Camp</option><option>Family</option><option>Prayer</option><option>Praise</option><option>Ministry</option></select></div>
+        <div style="grid-column:1/-1"><label>Tags <span style="font-weight:500;color:var(--muted)">— how supporters find this later</span></label>
+          <div class="taginput" id="tagbox"><span class="tagadd" id="tagadd">+ tag</span><input id="tagtype" placeholder="Type a tag and press Enter"></div>
+          <div class="tagsug" id="tagsug"></div>
+          <input type="hidden" id="type"></div>
       </div>
 
       <label>Who is this for?</label>
@@ -246,6 +249,15 @@
     .actions .btn svg{vertical-align:-2px;margin-right:5px}
     .focusbox{width:100%;aspect-ratio:16/9;background-size:cover;border-radius:10px;margin:8px 0 2px;position:relative;cursor:grab;touch-action:none;border:1px solid var(--line);overflow:hidden}
     .focusbox:active{cursor:grabbing}
+    .taginput{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#fff;min-height:42px}
+    .taginput input{flex:1;min-width:150px;border:none;outline:none;font-size:13.5px;font-family:inherit;padding:4px}
+    .tagchip{display:inline-flex;align-items:center;gap:6px;background:#fff6ee;color:#c25200;border:1px solid #f3d3b6;border-radius:14px;padding:4px 10px;font-size:12.5px;font-weight:700}
+    .tagchip b{cursor:pointer;font-weight:800;opacity:.6}
+    .tagchip b:hover{opacity:1}
+    .tagadd{display:none}
+    .tagsug{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+    .tagsug span{font-size:12px;border:1px dashed var(--line);border-radius:14px;padding:4px 10px;cursor:pointer;color:var(--muted);background:#fff}
+    .tagsug span:hover{border-color:var(--acc);color:var(--acc)}
     .focprevlab{font-size:11px;color:var(--muted);margin-top:9px}
     .focprev{width:100%;aspect-ratio:3/1;background-size:cover;border:1px solid var(--line);border-radius:10px;position:relative;overflow:hidden;margin:5px 0 2px}
     .focprev .fph{position:absolute;left:14px;bottom:9px;color:#fff;font-weight:800;font-size:15px;letter-spacing:-.01em;text-shadow:0 1px 10px rgba(0,0,0,.5)}
@@ -410,6 +422,11 @@ async function guard(){
     if(MYSIGN) DEF.signoff.text=MYSIGN;
     // Give blocks default to this missionary's own designated fund when they have one.
     if(me.miss&&me.miss.give) DEF.give.url=me.miss.give;
+    // Their own past tags are the best suggestions there are.
+    try{ const lr=await fetch('/.netlify/functions/admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})});
+      if(lr.ok){ const ld=await lr.json();
+        window.MYTAGS=[...new Set((ld.rows||[]).flatMap(r=>(r.tags&&r.tags.length)?r.tags:((r.type&&r.type!=='Newsletter')?[r.type]:[])))].slice(0,12);
+        renderTags(); } }catch(e){}
     // "See what your supporters will see" lives right here in the builder.
     if(me.miss&&me.miss.name){ const wb=document.getElementById('wallBtn'); if(wb){ wb.href='index.html?m='+encodeURIComponent(me.miss.name)+'&notour=1'; wb.style.display=''; } }
     ME_LIVE=!!(me.miss&&me.miss.live);
@@ -465,7 +482,7 @@ async function autoSaveDraft(){
   if(title.length<3||!meaty) return;   // nothing worth a draft yet
   AUTOBUSY=true;
   try{
-    const payload={publish:false,title,date:document.getElementById('date').value,type:document.getElementById('type').value,audiences:[...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a),blocks:clean};
+    const payload={publish:false,title,date:document.getElementById('date').value,type:document.getElementById('type').value,tags:TAGS,audiences:[...aud.querySelectorAll('.chip.on')].map(c=>c.dataset.a),blocks:clean};
     if(editId) payload.id=editId;
     const r=await fetch('/.netlify/functions/create-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json();
@@ -486,7 +503,9 @@ async function loadForEdit(id){
     SRV_STATUS=(rec.status&&rec.status.name)?rec.status.name:(rec.status||'Draft');
     document.getElementById('title').value=rec.title||'';
     if(rec.date) document.getElementById('date').value=rec.date;
-    if(rec.type) document.getElementById('type').value=rec.type;
+    // Bring the tags back as chips (older updates only have the single Type).
+    TAGS=(rec.tags&&rec.tags.length)?rec.tags.slice(0,6):((rec.type&&rec.type!=='Newsletter')?[rec.type]:[]);
+    renderTags();
     aud.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',(rec.audiences||[]).includes(c.dataset.a)));
     blocks=(rec.blocks||[]).map(b=>({id:seq++,...b}));
     // Banner and sign-off are always part of an update.
@@ -523,7 +542,7 @@ function stashDraft(){
     const t=document.getElementById('title').value.trim();
     const meaty=blocks.some(b=>(b.text&&b.text.trim())||(b.url&&b.url.trim())||(b.heading&&b.heading.trim()));
     if(!t&&!meaty) return;
-    localStorage.setItem(STASHKEY,JSON.stringify({t:Date.now(),title:t,date:document.getElementById('date').value,type:document.getElementById('type').value,blocks}));
+    localStorage.setItem(STASHKEY,JSON.stringify({t:Date.now(),title:t,date:document.getElementById('date').value,type:document.getElementById('type').value,tags:TAGS,blocks}));
   }catch(_){}
 }
 function scheduleStash(){ clearTimeout(stashT); stashT=setTimeout(stashDraft,1200); }
@@ -794,6 +813,39 @@ function prayHint(b){
   const w=prayVague(b.text);
   return w?`<div class="prayhint">${esc(w)}</div>`:'';
 }
+// Tags: free words, but tidied — trimmed, title-cased, de-duped — so a supporter's
+// filter never shows "family" and "Family" as two different things.
+const TAGSTART=['Family','Ministry','Camp','Prayer','Praise','Team','Students','Support'];
+let TAGS=[];
+function tidyTag(s){ s=String(s||'').replace(/[,]/g,' ').trim().replace(/\s+/g,' ').slice(0,24);
+  return s ? s.charAt(0).toUpperCase()+s.slice(1).toLowerCase() : ''; }
+function renderTags(){
+  const box=document.getElementById('tagbox'); if(!box)return;
+  [...box.querySelectorAll('.tagchip')].forEach(c=>c.remove());
+  const inp=document.getElementById('tagtype');
+  TAGS.forEach(t=>{
+    const c=document.createElement('span'); c.className='tagchip';
+    c.innerHTML=esc(t)+' <b data-x="'+esc(t)+'">×</b>';
+    box.insertBefore(c,inp);
+  });
+  box.querySelectorAll('.tagchip b').forEach(b=>b.addEventListener('click',()=>{ TAGS=TAGS.filter(x=>x!==b.dataset.x); renderTags(); scheduleAutosave&&scheduleAutosave(); }));
+  const hid=document.getElementById('type'); if(hid) hid.value=TAGS[0]||'Newsletter';
+  const sug=document.getElementById('tagsug');
+  if(sug){ const pool=[...new Set(TAGSTART.concat(window.MYTAGS||[]))].filter(t=>!TAGS.includes(t)).slice(0,10);
+    sug.innerHTML=pool.map(t=>`<span data-s="${esc(t)}">+ ${esc(t)}</span>`).join('');
+    sug.querySelectorAll('[data-s]').forEach(s=>s.addEventListener('click',()=>addTag(s.dataset.s)));
+  }
+}
+function addTag(raw){ const t=tidyTag(raw); if(!t||TAGS.includes(t)||TAGS.length>=6)return; TAGS.push(t); renderTags(); scheduleAutosave&&scheduleAutosave(); }
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('tagtype'); if(!inp)return;
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===','){ e.preventDefault(); addTag(inp.value); inp.value=''; }
+    else if(e.key==='Backspace'&&!inp.value&&TAGS.length){ TAGS.pop(); renderTags(); }
+  });
+  inp.addEventListener('blur',()=>{ if(inp.value.trim()){ addTag(inp.value); inp.value=''; } });
+  renderTags();
+});
 /* Format bar: **bold**, _italic_, ++larger++ — wraps/unwraps the selection. */
 function fmtBar(b){
   return `<div class="fbar"><button type="button" class="fbtn" data-w="**" title="Bold (⌘B)"><b>B</b></button><button type="button" class="fbtn" data-w="_" title="Italic (⌘I)"><i>I</i></button><button type="button" class="fbtn" data-w="++" title="Larger text">A<sup>+</sup></button><button type="button" class="fbtn" data-w="link" title="Link (⌘K)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline;vertical-align:-2px"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></button></div>`;

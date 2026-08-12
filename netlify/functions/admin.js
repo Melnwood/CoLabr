@@ -59,6 +59,7 @@ exports.handler = async function (event) {
           status: c['Status'] || 'Draft',
           opens: c['Opens'] || 0,
           source: c['Source'] || '',
+          tags: String(c['Tags'] || '').split(',').map(s => s.trim()).filter(Boolean),
           aud: c['Audiences'] || [],
           hasCover: !!c['Cover Image URL'],
           hasVideo: !!c['Video URL'],
@@ -82,7 +83,7 @@ exports.handler = async function (event) {
       let blocks = []; try { blocks = JSON.parse(c['Blocks'] || '[]'); } catch {}
       return resp(200, { ok: true, record: {
         id: rec.id, title: c['Title'] || '', date: c['Date'] || '',
-        type: c['Type'] || 'Newsletter', audiences: c['Audiences'] || [],
+        type: c['Type'] || 'Newsletter', tags: String(c['Tags'] || '').split(',').map(s => s.trim()).filter(Boolean), audiences: c['Audiences'] || [],
         status: c['Status'] || 'Draft', blocks
       }});
     }
