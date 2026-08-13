@@ -754,7 +754,7 @@ async function load(){
 }
 // The writer's own hand-picked highlights — a rail above the team picks, filled with
 // the updates they starred on their dashboard. Cards open the normal reader.
-const isPrayerUp=u=>Array.isArray(u&&u.tags)&&u.tags.some(t=>/^prayer update$/i.test(String(t||'').trim()));
+const isPrayerUp=u=>!!u&&(/^prayer update$/i.test(String(u.type||'').trim())||(Array.isArray(u.tags)&&u.tags.some(t=>/^prayer update$/i.test(String(t||'').trim()))));
 function renderHighlights(){
   let picks=U.map((u,i)=>({u,i})).filter(x=>x.u.hl);
   // This month's prayer update earns its place — nobody should have to star it again
@@ -1203,7 +1203,9 @@ function bodyHtml(u,dedupeCover){
       // A banner with no photo behind it is just words. Never a brown box, never a
       // stranded caption: whichever line they wrote becomes a real header.
       const heroText=b2=>{
-        const head=(b2.heading||'').trim(), sub=(b2.sub||'').trim();
+        let head=(b2.heading||'').trim(); const sub=(b2.sub||'').trim();
+        // A banner heading that only repeats the title is an echo, not a heading.
+        if(head&&head.toLowerCase()===String(u.title||'').trim().toLowerCase()) head='';
         if(!head&&!sub) return '';
         return `<div class="rherohead">${esc(head||sub)}${(head&&sub)?`<span>${esc(sub)}</span>`:''}</div>`;
       };

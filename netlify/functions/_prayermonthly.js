@@ -40,7 +40,7 @@ async function buildFor(auth, person, from, to, label) {
   const nameEsc = person.name.replace(/'/g, "\\'");
 
   // The month's updates — their prayer requests, and a banner to reuse.
-  const f = encodeURIComponent(`AND({Status}='Published', FIND('${nameEsc}', ARRAYJOIN({Missionary}))>0)`);
+  const f = encodeURIComponent(`FIND('${nameEsc}', ARRAYJOIN({Missionary}))>0`);
   const ur = await fetch(`https://api.airtable.com/v0/${BASE}/${UPDATES}?pageSize=100&filterByFormula=${f}&sort%5B0%5D%5Bfield%5D=Date&sort%5B0%5D%5Bdirection%5D=desc`, { headers: auth });
   if (!ur.ok) return false;
   const recs = ((await ur.json()).records || []);
@@ -55,9 +55,13 @@ async function buildFor(auth, person, from, to, label) {
     const title = String(c['Title'] || '');
     if (/^__.*__$/.test(title.trim())) continue;
     if (/^Praying together —/.test(title)) {
+      // This month already has one. Never make a second — the writer's edits and
+      // their chosen banner live on that record, and a duplicate strands them.
+      if (title.trim() === `Praying together — ${label}`) return false;
       if (!banner && c['Cover Image URL']) { banner = c['Cover Image URL']; bannerFocus = c['Cover Focus'] || '50% 35%'; }
       continue;   // never rebuild the content from a previous prayer update
     }
+    if (String(c['Status'] || '') !== 'Published') continue;   // only published work is material
     if (!fallback && c['Cover Image URL']) { fallback = c['Cover Image URL']; fallbackFocus = c['Cover Focus'] || '50% 35%'; }
     const date = c['Date'] || '';
     if (date < from || date >= to) continue;
@@ -82,12 +86,15 @@ async function buildFor(auth, person, from, to, label) {
   } catch (e) {}
 
   // Standing requests round it out when the month was quiet.
-  const standing = [];
+  const standing = [], vision = [];
   try {
     const sr = await fetch(`https://api.airtable.com/v0/${BASE}/${PROFILE}?pageSize=100&filterByFormula=${encodeURIComponent(`AND({Missionary}='${nameEsc}',{Active}=1)`)}`, { headers: auth });
     if (sr.ok) ((await sr.json()).records || []).forEach(rec => {
       const c = rec.fields || {};
-      if (c['Text']) standing.push(String(c['Text']).trim());
+      if (!c['Text']) return;
+      const cat = (c['Category'] && c['Category'].name) ? c['Category'].name : c['Category'];
+      if (/mission|vision/i.test(String(cat || ''))) vision.push(String(c['Text']).trim());
+      else standing.push(String(c['Text']).trim());
     });
   } catch (e) {}
 
@@ -100,7 +107,13 @@ async function buildFor(auth, person, from, to, label) {
   const blocks = [];
   blocks.push({ type: 'hero', url: banner, fx: parseFloat(String(bannerFocus).split(' ')[0]) || 50,
     fy: parseFloat(String(bannerFocus).split(' ')[1]) || 35,
-    heading: `Praying together — ${label}`, sub: 'Everything you helped us carry this month' });
+    heading: '', sub: 'Everything you helped us carry this month' });
+  // The why, first, and freshly worded — the same longing said a new way each month.
+  const vis = await visionPrayer(vision, label, person.name);
+  if (vis) {
+    blocks.push({ type: 'heading', text: 'Why we are here' });
+    blocks.push({ type: 'prayer', text: vis });
+  }
   if (answered.length) {
     blocks.push({ type: 'heading', text: 'What God did' });
     answered.forEach(a => {
@@ -123,7 +136,7 @@ async function buildFor(auth, person, from, to, label) {
     'Body': body,
     'Excerpt': body.replace(/\s+/g, ' ').trim().slice(0, 240),
     'Type': 'Prayer update',
-    'Tags': 'Prayer update',
+    'Tags': ['Prayer update'],
     'Status': 'Draft',
     'Source': 'Co-Labr',
     'Missionary': [person.name],
@@ -177,6 +190,43 @@ async function prayerTemplateBanner(auth, email) {
     const focus = hero ? `${hero.fx != null ? +hero.fx : 50}% ${hero.fy != null ? +hero.fy : 35}%` : '';
     return { url, focus };
   } catch (e) { return {}; }
+}
+
+// One fresh way of asking people to pray for the mission, every month.
+// The AI rewording costs a fraction of a cent per person per month; when there is
+// no key or the API is down, we rotate their own standing wording instead, so the
+// section never vanishes and never repeats two months running.
+async function visionPrayer(vision, label, who) {
+  const base = vision.filter(Boolean);
+  if (!base.length) return '';
+  const monthIdx = MONTHS.indexOf(String(label).split(' ')[0]);
+  const rotated = base[((monthIdx < 0 ? 0 : monthIdx) % base.length)];
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return rotated;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5', max_tokens: 200,
+        system: `You are helping a missionary ask their supporters to pray for the mission they gave their life to.
+
+You are given how they themselves describe it. Say the same longing a FRESH way for this month — same substance, different words, so that someone reading twelve of these in a row never feels read the same sentence twice.
+
+Rules:
+- One or two sentences. Warm, plain, specific to what they wrote. Never churchy filler.
+- It must stand alone on a prayer wall: name the who and the what.
+- Do not invent places, names, numbers or events that are not in their own words.
+- Do not mention the month.
+Return ONLY the prayer request text — no preamble, no quotation marks.`,
+        messages: [{ role: 'user', content: `How ${who} describes the mission they are praying toward:\n` + base.map(t => '- ' + t).join('\n') }]
+      })
+    });
+    if (!res.ok) return rotated;
+    const d = await res.json();
+    const out = ((d.content && d.content[0] && d.content[0].text) || '').trim().replace(/^["']|["']$/g, '');
+    return out.length > 20 ? out.slice(0, 600) : rotated;
+  } catch (e) { return rotated; }
 }
 
 module.exports = { runMonthly };
