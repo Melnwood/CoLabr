@@ -42,6 +42,94 @@ would leak in six ways:
 
 ---
 
+## Answered-prayer loop — WITHOUT the upkeep that killed the prayer room
+**Raised:** 2026-08-11 · **Status:** idea, strongest candidate to build next
+
+**The payoff.** A supporter taps "I'm praying" and it disappears into a counter.
+Instead: when a request is answered, everyone who prayed hears about it —
+"You prayed for Marek in March. He was baptized Sunday." Nobody in missions does
+this because nobody has the data connected. Co·labr already stores who prayed,
+for which update, on which request.
+
+**Mel's hard-won caution (JV's old prayer room):** follow-up died under upkeep.
+People cannot remember months later to go mark something answered.
+
+**The rule that makes it survivable: never a separate errand.**
+1. **Ask inside the composer.** When they're already writing (the only time they
+   show up anyway), show 1–2 still-open requests as small cards:
+   *Answered · Still praying · It didn't go that way.* One tap.
+2. **Let their words answer it.** On publish, check whether the new text echoes an
+   open request ("Marek was baptized") and ask once: "Tell the 14 people who
+   prayed?" Zero recall required. Cost: a fraction of a cent per update.
+3. **Quiet retirement.** Unanswered requests stop being shown after ~90 days. No
+   badge, no overdue count, no guilt. The pile never grows.
+4. **Supporters are the reminder — as encouragement.** A supporter can tap "still
+   praying" on an old request; the missionary sees "6 people are still praying for
+   Marek." Being carried, not chased.
+5. **Three honest outcomes**, not one. "It didn't go the way we hoped" closes the
+   loop just as truly, and is often the most bonding thing they can say.
+6. **Hard cap:** at most one prompt per writing session. Never a list of twelve.
+
+---
+
+## Prayer rhythm ("pray for them on Tuesdays")
+**Status:** idea
+
+A supporter opts into a weekly nudge for one family, carrying that family's current
+requests. Missionaries have mailed fridge magnets for decades to make this happen.
+Turns a monthly reader into someone woven into the week. Pairs with the loop above.
+
+---
+
+## Voice notes, both directions
+**Status:** idea
+
+Twenty seconds of talking instead of typing. Grandma will never write a note but
+will happily speak one; and a missionary's actual voice — tired, laughing, real —
+carries what no newsletter can. Also the most meaningful accessibility win for the
+older half of the supporter base. (Storage already exists; needs recording UI +
+playback in the reader and in Conversations.)
+
+---
+
+## One digest instead of five emails
+**Status:** idea — competitive moat
+
+A JV supporter may follow five families and get five separate emails: exactly the
+inbox fatigue Co·labr exists to end. A single weekly "your people" digest is
+something only a platform can do — individual newsletters structurally cannot.
+Needs: supporter-level email preference + a weekly assembly job.
+
+---
+
+## "Our story together" (supporter relationship timeline)
+**Status:** idea
+
+The hub already knows: following since 2019, prayed 47 times, wrote 6 notes, last
+visit. Show it back to them — and at year's end, "Your year with the Ellenwoods."
+The kind of thing people screenshot. Honest emotional accounting of what they've given.
+
+---
+
+## Gratitude nudges for the missionary (two minutes, highest return)
+**Status:** idea
+
+- **Gone quiet:** "8 of your people haven't opened anything in six months — send a
+  personal note?" (last-visit data already exists; one-click personal messages already exist.)
+- **Anniversaries:** "Rebecca has walked with you for five years today."
+Nobody remembers these dates; the system does.
+
+---
+
+## Year-end printed keepsake
+**Status:** idea — possible paid product
+
+A printed booklet of a family's year of updates. Grandparents put these on coffee
+tables. Distinctive, physical, costs nothing until someone orders, and priced like
+the history-translation offer (quote → consent → produce).
+
+---
+
 ## JV House style (org-branded wall)
 **Raised:** 2026-08-10 · **Status:** in progress, paused by Mel mid-build
 
