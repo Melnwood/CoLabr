@@ -31,6 +31,20 @@ Rules:
 
 Return ONLY JSON: [{"cat":"Family","text":"..."}] — no other words.`;
 
+const DRAFT_SYSTEM = `A missionary is writing a support update and wants help turning it into one or two prayer requests.
+
+You are given the text of the update they are writing.
+
+Write 1–2 prayer requests drawn from THIS update:
+- Use their specifics — real names, places, ministries, dates that appear in the text. Never invent any.
+- Each request must STAND ALONE. It appears on a prayer wall with no story around it, so a
+  stranger must be able to pray it without reading the update. Name the who and the what:
+  "Pray for Marek and the Ostrava team as they prepare for camp" — never "pray that this group grows".
+- One sentence each. Warm, specific, plain — the way they write, not churchy filler.
+- If the update genuinely gives nothing to pray for, return [].
+
+Return ONLY JSON: ["request one","request two"] — no other words.`;
+
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') return r(405, { error: 'Method not allowed' });
   const sess = sessionFromEvent(event);
@@ -44,6 +58,29 @@ exports.handler = async function (event) {
   try { me = await missByEmail(auth, sess.email); } catch (e) {}
   if (!me || !me.name) return r(403, { error: 'Your page isn\'t set up yet.' });
   const nameEsc = String(me.name).replace(/'/g, "\\'");
+
+  let body = {}; try { body = JSON.parse(event.body || '{}'); } catch (e) {}
+
+  // ---- From the update being written right now ----
+  if (body.action === 'draft') {
+    const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, 3000);
+    if (text.length < 60) return r(200, { ok: true, items: [], note: 'Write a little more first — there is nothing to draw from yet.' });
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify({ model: MODEL, max_tokens: 400, system: DRAFT_SYSTEM,
+          messages: [{ role: 'user', content: text }] })
+      });
+      const d = await res.json();
+      if (!res.ok) return r(502, { error: (d.error && d.error.message) || 'The AI could not answer.' });
+      const out = (d.content && d.content[0] && d.content[0].text) || '';
+      let items = [];
+      try { items = JSON.parse(out); } catch { const m = out.match(/\[[\s\S]*\]/); if (m) { try { items = JSON.parse(m[0]); } catch {} } }
+      items = (Array.isArray(items) ? items : []).map(x => String(x || '').trim()).filter(Boolean).slice(0, 2);
+      return r(200, { ok: true, items });
+    } catch (e) { return r(502, { error: 'Could not draft one right now.' }); }
+  }
 
   try {
     const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 86400000).toISOString().slice(0, 10);

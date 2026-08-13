@@ -356,7 +356,10 @@
     .pvsheet .rnum{flex:1;background:#f4f1ec;border:1px solid var(--line);border-radius:11px;padding:13px 8px;text-align:center}
     .pvsheet .rnum b{display:block;font-size:22px;font-weight:750;color:var(--acc)}
     .pvsheet .rnum span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
-    .pvsheet .rhero{position:relative;border-radius:12px;overflow:hidden;min-height:200px;background:linear-gradient(155deg,#9a7c4a,#4a3a22);background-size:cover;background-position:center;margin:4px 0 16px;display:flex;align-items:flex-end}
+    .pvsheet .rhero{position:relative;border-radius:12px;overflow:hidden;min-height:200px;background:#efe7d7;margin:4px 0 16px;display:flex;align-items:flex-end}
+    .pvsheet .rhero>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+    .pvsheet .rherohead{font-size:21px;font-weight:780;letter-spacing:-.02em;margin:18px 0 10px;color:#241f1b}
+    .pvsheet .rherohead span{display:block;font-size:13.5px;font-weight:600;color:#7a756f;letter-spacing:0;margin-top:3px}
     .pvsheet .rherog{position:absolute;inset:0;background:linear-gradient(to top,rgba(15,10,6,.75),rgba(15,10,6,.1) 60%,transparent)}
     .pvsheet .rherot{position:relative;padding:20px 22px;color:#fff}
     .pvsheet .rherot h2{color:#fff;margin:0;font-size:24px;font-weight:770;letter-spacing:-.02em}
@@ -1511,7 +1514,14 @@ function pvFmt(t){
 function pvBlockHtml(bk){
   const C=bk.color&&/^#[0-9a-fA-F]{6}$/.test(bk.color)?bk.color:'';
   // A banner with no photo is just words — a heading, never a giant gold canvas.
-  if(bk.type==='hero') return bk.url?`<div class="rhero" style="background-image:url('${esc(bk.url)}');background-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:((bk.heading||bk.sub)?`${bk.heading?`<h3 class="rh">${esc(bk.heading)}</h3>`:''}${bk.sub?`<div class="rcap" style="margin-top:${bk.heading?'-8px':'0'}">${esc(bk.sub)}</div>`:''}`:'');
+// A banner whose photo is already the cover (or that has no photo yet) must never
+// render as an empty coloured frame — it collapses to the words, given real weight.
+function heroWords(bk){
+  const head=String(bk.heading||'').trim(), sub=String(bk.sub||'').trim();
+  if(!head&&!sub) return '';
+  return `<div class="rherohead">${esc(head||sub)}${(head&&sub)?`<span>${esc(sub)}</span>`:''}</div>`;
+}
+  if(bk.type==='hero') return bk.url?`<div class="rhero"><img src="${esc(bk.url)}" alt="" style="object-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:heroWords(bk);
   if(bk.type==='praise') return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${pvFmt(bk.text)}</div>`;
   if(bk.type==='heading') return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;
   if(bk.type==='divider') return `<hr class="rhr">`;
@@ -1544,7 +1554,7 @@ document.getElementById('previewBtn').addEventListener('click',()=>{
   const body=clean.map((bk,i)=>{
     if(i===ci&&cover){
       if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';
-      return (bk.heading||bk.sub)?`<div class="rhero"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`:'';
+      return heroWords(bk);
     }
     return pvBlockHtml(bk);
   }).join('')||'<p class="rtext" style="color:#8a7550">Nothing here yet — add some sections first.</p>';

@@ -325,7 +325,11 @@
   .sheet .rnum{flex:1;background:#f4f1ec;border:1px solid var(--line);border-radius:11px;padding:13px 8px;text-align:center}
   .sheet .rnum b{display:block;font-size:22px;font-weight:750;color:var(--acc)}
   .sheet .rnum span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
-  .sheet .rhero{position:relative;border-radius:12px;overflow:hidden;min-height:200px;background:linear-gradient(155deg,#9a7c4a,#4a3a22);background-size:cover;background-position:center;margin:4px 0 16px;display:flex;align-items:flex-end}
+  .sheet .rhero{position:relative;border-radius:12px;overflow:hidden;min-height:200px;background:#efe7d7;margin:4px 0 16px;display:flex;align-items:flex-end}
+  .sheet .rhero>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  /* A banner that lost its photo is words, not a brown box — see heroText(). */
+  .sheet .rherohead{font-size:21px;font-weight:780;letter-spacing:-.02em;margin:18px 0 10px;color:#241f1b}
+  .sheet .rherohead span{display:block;font-size:13.5px;font-weight:600;color:#7a756f;letter-spacing:0;margin-top:3px}
   .sheet .rherog{position:absolute;inset:0;background:linear-gradient(to top,rgba(15,10,6,.75),rgba(15,10,6,.1) 60%,transparent)}
   .sheet .rherot{position:relative;padding:20px 22px;color:#fff}
   .sheet .rherot h2{color:#fff;margin:0;font-size:24px;font-weight:770;letter-spacing:-.02em}
@@ -758,9 +762,18 @@ async function load(){
 }
 // The writer's own hand-picked highlights — a rail above the team picks, filled with
 // the updates they starred on their dashboard. Cards open the normal reader.
+const isPrayerUp=u=>Array.isArray(u&&u.tags)&&u.tags.some(t=>/^prayer update$/i.test(String(t||'').trim()));
 function renderHighlights(){
-  const picks=U.map((u,i)=>({u,i})).filter(x=>x.u.hl)
-    .sort((a,b)=>(b.u.rawdate||'').localeCompare(a.u.rawdate||''));
+  let picks=U.map((u,i)=>({u,i})).filter(x=>x.u.hl);
+  // This month's prayer update earns its place — nobody should have to star it again
+  // every month for it to lead the rail.
+  const pr=U.map((u,i)=>({u,i})).filter(x=>isPrayerUp(x.u))
+    .sort((a,b)=>(b.u.rawdate||'').localeCompare(a.u.rawdate||''))[0];
+  if(pr&&!picks.some(x=>x.i===pr.i)) picks.push(pr);
+  picks.sort((a,b)=>{
+    const pa=isPrayerUp(a.u)?1:0, pb=isPrayerUp(b.u)?1:0;
+    return (pb-pa)||(b.u.rawdate||'').localeCompare(a.u.rawdate||'');
+  });
   const rail=document.getElementById('hlrail'); if(!rail)return;
   if(!RAILS.hl||!picks.length){ rail.style.display='none'; return; }
   const first=(PAGE_FIRST||'').trim();
@@ -1167,25 +1180,48 @@ function coverFocus(u){
   const b=(u.blocks||[]).find(x=>x&&(x.type==='hero'||x.type==='photo')&&x.url);
   return b&&(b.fx!=null||b.fy!=null)?((b.fx!=null?+b.fx:50)+'% '+(b.fy!=null?+b.fy:50)+'%'):'';
 }
+// Two URLs point at the same picture even if one carries a cache-buster or a size.
+function sameImg(a,b){
+  if(!a||!b) return false;
+  const bare=s=>String(s).split('?')[0].split('#')[0];
+  if(bare(a)===bare(b)) return true;
+  const file=s=>bare(s).split('/').pop();
+  return !!file(a)&&file(a)===file(b);
+}
+// If a banner's photo can't load, don't leave a coloured frame standing in for it.
+function heroFail(img){
+  const box=img.closest('.rhero'); if(!box) return;
+  const head=(box.dataset.head||'').trim(), sub=(box.dataset.sub||'').trim();
+  const d=document.createElement('div');
+  if(head||sub){ d.className='rherohead'; d.textContent=head||sub;
+    if(head&&sub){ const s=document.createElement('span'); s.textContent=sub; d.appendChild(s); } }
+  box.replaceWith(d);
+}
 function bodyHtml(u,dedupeCover){
   if(u.blocks && u.blocks.length){
     // The cover already shows above the title — don't repeat that same image as the first block.
     let skipIdx=-1;
     if(dedupeCover&&u.cover){
       const i=u.blocks.findIndex(b=>b&&(b.type==='photo'||b.type==='hero')&&b.url);
-      if(i>-1&&u.blocks[i].url===u.cover) skipIdx=i;
+      if(i>-1&&sameImg(u.blocks[i].url,u.cover)) skipIdx=i;
     }
     return u.blocks.map((bk,bidx)=>{
       // A banner with no photo behind it is just words — render it as a heading,
       // never as a giant empty canvas.
-      const heroText=b2=>((b2.heading||b2.sub)?`${b2.heading?`<h3 class="rh">${esc(b2.heading)}</h3>`:''}${b2.sub?`<div class="rcap" style="margin-top:${b2.heading?'-8px':'0'}">${esc(b2.sub)}</div>`:''}`:'');
+      // A banner with no photo behind it is just words. Never a brown box, never a
+      // stranded caption: whichever line they wrote becomes a real header.
+      const heroText=b2=>{
+        const head=(b2.heading||'').trim(), sub=(b2.sub||'').trim();
+        if(!head&&!sub) return '';
+        return `<div class="rherohead">${esc(head||sub)}${(head&&sub)?`<span>${esc(sub)}</span>`:''}</div>`;
+      };
       if(bidx===skipIdx){
         if(bk.type==='photo') return bk.caption?`<div class="rcap" style="margin-top:0">${esc(bk.caption)}</div>`:'';
         return heroText(bk);
       }
       if(bk.type==='hero'){
         if(!bk.url) return heroText(bk);
-        return `<div class="rhero" style="background-image:url('${esc(bk.url)}');background-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
+        return `<div class="rhero" data-head="${esc(bk.heading||'')}" data-sub="${esc(bk.sub||'')}"><img src="${esc(bk.url)}" alt="" style="object-position:${(bk.fx!=null?+bk.fx:50)}% ${(bk.fy!=null?+bk.fy:50)}%" onerror="heroFail(this)"><div class="rherog"></div><div class="rherot">${bk.heading?`<h2>${esc(bk.heading)}</h2>`:''}${bk.sub?`<span>${esc(bk.sub)}</span>`:''}</div></div>`;
       }
       if(bk.type==='praise'){const C=blockColor(bk);return `<div class="rpraise"${C?` style="border-left-color:${C};background:${hexA(C,.08)}"`:''}><b${C?` style="color:${C}"`:''}>Praise</b>${fmt(bk.text)}</div>`;}
       if(bk.type==='heading'){const C=blockColor(bk);return `<h3 class="rh"${C?` style="color:${C}"`:''}>${esc(bk.text||'')}</h3>`;}

@@ -46,14 +46,19 @@ async function buildFor(auth, person, from, to, label) {
   const recs = ((await ur.json()).records || []);
 
   const asks = [];
-  let banner = '', bannerFocus = '';
+  // The prayer update should look the same every month. So the banner is inherited
+  // from last month's prayer update — set it once in the composer and it sticks.
+  // Only if there has never been one do we borrow the newest cover to start.
+  let banner = '', bannerFocus = '', fallback = '', fallbackFocus = '';
   for (const rec of recs) {
     const c = rec.fields || {};
     const title = String(c['Title'] || '');
     if (/^__.*__$/.test(title.trim())) continue;
-    // Never rebuild from a previous prayer update.
-    if (/^Praying together —/.test(title)) continue;
-    if (!banner && c['Cover Image URL']) { banner = c['Cover Image URL']; bannerFocus = c['Cover Focus'] || '50% 35%'; }
+    if (/^Praying together —/.test(title)) {
+      if (!banner && c['Cover Image URL']) { banner = c['Cover Image URL']; bannerFocus = c['Cover Focus'] || '50% 35%'; }
+      continue;   // never rebuild the content from a previous prayer update
+    }
+    if (!fallback && c['Cover Image URL']) { fallback = c['Cover Image URL']; fallbackFocus = c['Cover Focus'] || '50% 35%'; }
     const date = c['Date'] || '';
     if (date < from || date >= to) continue;
     let blocks = []; try { blocks = JSON.parse(c['Blocks'] || '[]'); } catch (e) {}
@@ -86,10 +91,15 @@ async function buildFor(auth, person, from, to, label) {
     });
   } catch (e) {}
 
+  const tpl = await prayerTemplateBanner(auth, person.email);
+  if (tpl.url) { banner = tpl.url; bannerFocus = tpl.focus || bannerFocus; }
+  if (!banner) { banner = fallback; bannerFocus = fallbackFocus; }
+
   if (!asks.length && !answered.length) return false;      // a quiet month makes nothing
 
   const blocks = [];
-  blocks.push({ type: 'hero', url: banner, fx: 50, fy: parseFloat(String(bannerFocus).split(' ')[1]) || 35,
+  blocks.push({ type: 'hero', url: banner, fx: parseFloat(String(bannerFocus).split(' ')[0]) || 50,
+    fy: parseFloat(String(bannerFocus).split(' ')[1]) || 35,
     heading: `Praying together — ${label}`, sub: 'Everything you helped us carry this month' });
   if (answered.length) {
     blocks.push({ type: 'heading', text: 'What God did' });
@@ -144,6 +154,29 @@ async function buildFor(auth, person, from, to, label) {
     } catch (e) {}
   }
   return id;
+}
+
+// A personal template named "Prayer update" is the explicit way to fix the banner:
+// build it once in the composer, save it, and every month wears the same face.
+const TEMPLATES = 'tblhh1ZIw0jFbllzw';
+const T_NAME = 'fldGYkH3AYLtoxj3o', T_OWNER = 'fldUUEIuzwQW1gH6R', T_BANNER = 'fldDlW4hgqau65x71', T_BLOCKS = 'fldJX050XPtNFR2G8';
+async function prayerTemplateBanner(auth, email) {
+  const mine = String(email || '').split(',')[0].trim().toLowerCase();
+  if (!mine) return {};
+  try {
+    const f = encodeURIComponent(`AND(LOWER({Owner Email})='${mine.replace(/'/g, "\\'")}', FIND('prayer', LOWER({Name}))>0)`);
+    const r = await fetch(`https://api.airtable.com/v0/${BASE}/${TEMPLATES}?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${f}`, { headers: auth });
+    if (!r.ok) return {};
+    const rec = (((await r.json()).records) || [])[0];
+    if (!rec) return {};
+    const c = rec.fields || {};
+    let hero = null;
+    try { hero = (JSON.parse(c[T_BLOCKS] || '[]') || []).find(b => b && b.type === 'hero' && b.url) || null; } catch (e) {}
+    const url = (hero && hero.url) || c[T_BANNER] || '';
+    if (!url) return {};
+    const focus = hero ? `${hero.fx != null ? +hero.fx : 50}% ${hero.fy != null ? +hero.fy : 35}%` : '';
+    return { url, focus };
+  } catch (e) { return {}; }
 }
 
 module.exports = { runMonthly };
