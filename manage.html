@@ -224,6 +224,10 @@
   .ipmark{flex:none;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:#fff6ee;border:1px solid #f3d3b6;border-radius:10px;padding:3px 7px}
   .ipclose{margin-top:14px;background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer}
   /* Standing prayer requests — short, categorised, ready to share. */
+  .prtop{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+  .prhint{font-size:11.5px;color:var(--muted);flex:1;min-width:180px;line-height:1.5}
+  .prstale{font-size:10px;font-weight:700;color:#b26a00;background:#fff3e0;border:1px solid #f3d3a6;border-radius:10px;padding:2px 7px;text-transform:none;letter-spacing:0;margin-left:6px}
+  .prage{font-size:10.5px;color:#a29b93;margin:-3px 0 8px 2px}
   .prcat{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);margin:14px 0 6px}
   .prrow{display:flex;gap:8px;align-items:flex-start;margin-bottom:7px}
   .prrow textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13.5px;font-family:inherit;min-height:44px;resize:vertical}
@@ -705,23 +709,49 @@ const PRCATS=['Mission & vision','Our work','Family','Personal & spiritual'];
 let PRITEMS=[];
 function prRender(){
   const box=document.getElementById('praybody'); if(!box)return;
-  let html='';
+  let html='<div class="prtop"><button class="pradd" id="prdraft">\u2726 Draft these from my updates</button><span class="prhint">You\u2019ve already written most of this \u2014 we\u2019ll pull it from your recent updates and you edit from there.</span></div>';
+  // Mission & vision holds for a year; the work, family and personal ones should be
+  // close to today — so those are the only ones we ever call stale.
+  const FRESHCATS={'Our work':70,'Family':120,'Personal & spiritual':120};
+  const ageOf=u=>{ if(!u)return null; const d=Math.floor((Date.now()-new Date(u))/86400000); return isNaN(d)?null:d; };
   PRCATS.forEach(c=>{
     const rows=PRITEMS.map((x,i)=>({x,i})).filter(o=>o.x.cat===c);
-    html+=`<div class="prcat">${esc(c)}</div>`;
-    html+=rows.map(o=>`<div class="prrow"><textarea data-pi="${o.i}" placeholder="What would you ask them to pray?">${esc(o.x.text)}</textarea><button class="prx" data-px="${o.i}" title="Remove">✕</button></div>`).join('');
+    const stale=rows.some(o=>{ const a=ageOf(o.x.updated); return FRESHCATS[c]&&a!==null&&a>FRESHCATS[c]; });
+    html+=`<div class="prcat">${esc(c)}${stale?' <span class="prstale">worth refreshing before you send it</span>':''}</div>`;
+    html+=rows.map(o=>{
+      const a=ageOf(o.x.updated);
+      return `<div class="prrow"><textarea data-pi="${o.i}" placeholder="What would you ask them to pray?">${esc(o.x.text)}</textarea><button class="prx" data-px="${o.i}" title="Remove">✕</button></div>`+
+        (a!==null?`<div class="prage">written ${a===0?'today':(a===1?'yesterday':a+' days ago')}</div>`:'');
+    }).join('');
     html+=`<button class="pradd" data-pc="${esc(c)}">+ add</button>`;
   });
   const url=location.origin+'/prayer.html?m='+encodeURIComponent(MYPAGE||'');
+  const myurl=url+'&back=1';
   html+=`<div class="prfoot"><input class="prlink" id="prlink" readonly value="${esc(url)}">
     <button class="pglink" id="prcopy" type="button">Copy link</button>
-    <a class="pglink" href="${esc(url)}" target="_blank" rel="noopener">Open</a>
+    <a class="pglink" href="${esc(myurl)}" target="_blank" rel="noopener">Open</a>
     <button class="photobtn" id="prsave" type="button">Save</button><span class="savenote" id="prmsg" style="margin:0"></span></div>
     <div class="prnote">Send that link when a church or small group asks how to pray. It also shows the prayer requests from your recent updates automatically — nothing to keep up with. Anyone with the link can read it, so write these as things you're glad to share.</div>`;
   box.innerHTML=html;
   box.querySelectorAll('[data-pi]').forEach(t=>t.addEventListener('input',()=>{ PRITEMS[+t.dataset.pi].text=t.value; }));
   box.querySelectorAll('[data-px]').forEach(b=>b.addEventListener('click',()=>{ PRITEMS.splice(+b.dataset.px,1); prRender(); }));
   box.querySelectorAll('[data-pc]').forEach(b=>b.addEventListener('click',()=>{ PRITEMS.push({cat:b.dataset.pc,text:''}); prRender(); const ts=box.querySelectorAll('[data-pi]'); if(ts.length)ts[ts.length-1].focus(); }));
+  const dbtn=document.getElementById('prdraft');
+  if(dbtn)dbtn.addEventListener('click',async()=>{
+    const m=document.getElementById('prmsg');
+    dbtn.disabled=true; m.className='savenote'; m.textContent='Reading your updates…';
+    try{
+      const r=await fetch('/.netlify/functions/prayer-suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+      const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not draft them.');
+      const add=(d.items||[]).filter(x=>!PRITEMS.some(y=>(y.text||'').trim()===x.text.trim()));
+      if(!add.length){ m.className='savenote'; m.textContent=(d.note||'Nothing new to add from your updates.'); dbtn.disabled=false; return; }
+      // Never overwrite their words — drafts are added underneath.
+      PRITEMS=PRITEMS.filter(x=>(x.text||'').trim()).concat(add.map(x=>({cat:x.cat,text:x.text,updated:''})));
+      prRender();
+      const m2=document.getElementById('prmsg'); m2.className='savenote ok';
+      m2.textContent=`Drafted ${add.length} from ${d.read||0} updates — edit them, then Save.`;
+    }catch(e){ m.className='savenote err'; m.textContent=e.message||'Could not draft them.'; dbtn.disabled=false; }
+  });
   document.getElementById('prcopy').addEventListener('click',async()=>{
     const m=document.getElementById('prmsg');
     try{ await navigator.clipboard.writeText(url); m.className='savenote ok'; m.textContent='Link copied'; }
@@ -741,7 +771,7 @@ async function loadPrayerProfile(){
   try{
     const r=await fetch('/.netlify/functions/prayer-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'mine'})});
     if(!r.ok)return; const d=await r.json();
-    PRITEMS=(d.standing||[]).map(x=>({cat:x.cat,text:x.text}));
+    PRITEMS=(d.standing||[]).map(x=>({cat:x.cat,text:x.text,updated:x.updated||''}));
     if(!PRITEMS.length) PRITEMS=PRCATS.map(c=>({cat:c,text:''}));   // one empty line per category to start
     prRender();
   }catch(e){}

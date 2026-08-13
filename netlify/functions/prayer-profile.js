@@ -57,6 +57,10 @@ exports.handler = async function (event) {
       const items = (Array.isArray(b.items) ? b.items : []).slice(0, 12)
         .map(x => ({ cat: CATS.includes(x.cat) ? x.cat : CATS[0], text: String(x.text || '').trim().slice(0, 600) }))
         .filter(x => x.text);
+      // A request that hasn't changed keeps its original date — "written in March"
+      // has to stay true, or freshness means nothing.
+      const wasWritten = {};
+      (await readProfile(auth, nameEsc)).forEach(x => { if (x.updated) wasWritten[x.cat + '|' + x.text] = x.updated; });
       // Replace wholesale — a short list is easier to keep true than a merge.
       const old = [];
       let url = `https://api.airtable.com/v0/${BASE}/${PROFILE}?pageSize=100&filterByFormula=${encodeURIComponent(`{Missionary}='${nameEsc}'`)}`;
@@ -73,7 +77,7 @@ exports.handler = async function (event) {
       for (let i = 0; i < items.length; i += 10) {
         const recs = items.slice(i, i + 10).map((x, j) => ({ fields: {
           'Missionary': me.name, 'Category': x.cat, 'Text': x.text,
-          'Order': i + j, 'Active': true, 'Updated': now
+          'Order': i + j, 'Active': true, 'Updated': wasWritten[x.cat + '|' + x.text] || now
         }}));
         await fetch(`https://api.airtable.com/v0/${BASE}/${PROFILE}`, { method: 'POST', headers: auth,
           body: JSON.stringify({ records: recs, typecast: true }) });
@@ -95,7 +99,7 @@ async function readProfile(auth, nameEsc) {
     const d = await rr.json();
     (d.records || []).forEach(rec => { const c = rec.fields || {};
       out.push({ cat: (c['Category'] && c['Category'].name) ? c['Category'].name : (c['Category'] || CATS[0]),
-        text: c['Text'] || '', order: c['Order'] || 0 }); });
+        text: c['Text'] || '', order: c['Order'] || 0, updated: c['Updated'] || '' }); });
     url = d.offset ? url.split('&offset=')[0] + '&offset=' + d.offset : '';
   }
   out.sort((a, b) => (CATS.indexOf(a.cat) - CATS.indexOf(b.cat)) || (a.order - b.order));

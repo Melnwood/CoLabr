@@ -9,6 +9,8 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
   .wrap{max-width:640px;margin:0 auto;padding:34px 22px 70px}
+  .backlink{display:inline-block;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:16px}
+  .backlink:hover{color:var(--acc)}
   .who{display:flex;align-items:center;gap:15px;margin-bottom:8px}
   .av{flex:none;width:64px;height:64px;border-radius:50%;background:#e7e0d6 center/cover;border:3px solid #fff;box-shadow:0 3px 12px rgba(60,40,20,.14)}
   h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:0}
@@ -78,6 +80,10 @@ function plain(d){
     </div><div class="said" id="said"></div>
     <p class="note">Shared by ${esc(d.page.name)} through Co·labr. Standing requests are updated by them; “Right now” comes from their recent updates.</p>`;
     wrap.innerHTML=html;
+    // A member looking at their own shared page needs the way home.
+    let mine=(new URLSearchParams(location.search)).get('back');
+    if(!mine){ try{ const mr=await fetch('/.netlify/functions/me'); mine=mr.ok; }catch(_){} }
+    if(mine) wrap.insertAdjacentHTML('afterbegin','<a class="backlink" href="manage.html">\u2190 My Dashboard</a>');
     document.getElementById('print').addEventListener('click',()=>window.print());
     document.getElementById('copy').addEventListener('click',async()=>{
       const said=document.getElementById('said');
