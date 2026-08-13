@@ -131,6 +131,7 @@
       <h1>Build your update</h1>
       <p class="sub">Add blocks, drag to reorder, and it saves as a real update — text, photos, and video in the order you choose.</p>
       <div id="livestrip" style="display:none;align-items:center;gap:10px;border-radius:12px;padding:10px 14px;margin:10px 0 2px;font-size:13px;line-height:1.45"></div>
+      <div id="prayask"></div>
 
       <div class="win">
       <div class="winlab">Update details</div>
@@ -249,6 +250,20 @@
     .actions .btn svg{vertical-align:-2px;margin-right:5px}
     .focusbox{width:100%;aspect-ratio:16/9;background-size:cover;border-radius:10px;margin:8px 0 2px;position:relative;cursor:grab;touch-action:none;border:1px solid var(--line);overflow:hidden}
     .focusbox:active{cursor:grabbing}
+    .pray-card{background:#fbf6ec;border:1px solid #eddcae;border-radius:14px;padding:14px 16px;margin:12px 0 2px}
+    .pray-card .pk{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94702a}
+    .pray-card .pq{font-size:14px;line-height:1.55;color:#4a3f2a;margin:7px 0 4px;white-space:pre-wrap}
+    .pray-card .pm{font-size:11.5px;color:#8a7550}
+    .pray-btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+    .pray-btns button{font-size:12.5px;font-weight:700;border-radius:18px;padding:8px 14px;cursor:pointer;font-family:inherit;border:1px solid #e0cfa4;background:#fff;color:#6b5a35}
+    .pray-btns button.yes{background:#2f9e63;border-color:#2f9e63;color:#fff}
+    .pray-btns button:hover{border-color:#c9a44a;color:#4a3f2a}
+    .pray-tell{margin-top:11px;display:none}
+    .pray-tell.on{display:block}
+    .pray-tell textarea{width:100%;box-sizing:border-box;border:1px solid #e0cfa4;border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;min-height:70px;resize:vertical;background:#fff}
+    .pray-tell .send{margin-top:8px;background:var(--acc);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+    .pray-skip{background:none;border:none;color:#8a7550;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;margin-left:6px}
+    .pray-done{font-size:13px;color:#2f7d55;font-weight:700}
     .taginput{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#fff;min-height:42px}
     .taginput input{flex:1;min-width:150px;border:none;outline:none;font-size:13.5px;font-family:inherit;padding:4px}
     .tagchip{display:inline-flex;align-items:center;gap:6px;background:#fff6ee;color:#c25200;border:1px solid #f3d3b6;border-radius:14px;padding:4px 10px;font-size:12.5px;font-weight:700}
@@ -812,6 +827,62 @@ function prayVague(t){
 function prayHint(b){
   const w=prayVague(b.text);
   return w?`<div class="prayhint">${esc(w)}</div>`:'';
+}
+// ---- The answered-prayer loop -------------------------------------------
+// Asked ONLY here, where the missionary already is. One request per sitting, and
+// a request that is set aside is never raised again. Nothing to go maintain.
+async function askPrayers(){
+  const box=document.getElementById('prayask'); if(!box)return;
+  if(sessionStorage.getItem('prayasked'))return;              // once per sitting
+  try{
+    const r=await fetch('/.netlify/functions/prayers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'open'})});
+    if(!r.ok)return; const d=await r.json();
+    const it=(d.items||[])[0]; if(!it)return;                  // nothing open — say nothing
+    sessionStorage.setItem('prayasked','1');
+    box.innerHTML=`<div class="pray-card" id="pcard">
+      <div class="pk">Before you write — how did this turn out?</div>
+      <div class="pq">${esc(it.text)}</div>
+      <div class="pm">You asked in ${esc(it.title)}${it.prayed?` · ${it.prayed} ${it.prayed===1?'person':'people'} prayed`:''}</div>
+      <div class="pray-btns">
+        <button type="button" class="yes" data-p="Answered">God answered</button>
+        <button type="button" data-p="Went another way">It went another way</button>
+        <button type="button" data-p="Still praying">Still praying</button>
+        <button type="button" class="pray-skip" data-p="skip">not now</button>
+      </div>
+      <div class="pray-tell" id="ptell">
+        <textarea id="ptext" placeholder="Tell them what happened — this goes only to the people who prayed."></textarea>
+        <button type="button" class="send" id="psend">Send to the ${it.prayed||0} who prayed</button>
+        <button type="button" class="pray-skip" id="pquiet">just close it quietly</button>
+      </div>
+    </div>`;
+    let choice='';
+    const done=(msg)=>{ document.getElementById('pcard').innerHTML='<div class="pray-done">'+esc(msg)+'</div>';
+      setTimeout(()=>{ const c=document.getElementById('pcard'); if(c)c.remove(); },4000); };
+    const save=async(status,outcome,notify)=>{
+      try{
+        const rr=await fetch('/.netlify/functions/prayers',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'resolve',key:it.key,status,outcome:outcome||'',text:it.text,notify:!!notify})});
+        const dd=await rr.json();
+        if(notify&&dd.told) done(`Told ${dd.told} ${dd.told===1?'person':'people'} who prayed. Thank you.`);
+        else done('Closed. We won\u2019t ask about this one again.');
+      }catch(e){ done('Saved.'); }
+    };
+    box.querySelectorAll('[data-p]').forEach(btn=>btn.addEventListener('click',()=>{
+      choice=btn.dataset.p;
+      if(choice==='skip'){ const c=document.getElementById('pcard'); if(c)c.remove(); return; }   // asked once; gone for now
+      if(choice==='Still praying'){ save('Still praying','',false); return; }
+      document.getElementById('ptell').classList.add('on');
+      document.getElementById('ptext').focus();
+      document.getElementById('psend').textContent=(it.prayed?`Send to the ${it.prayed} who prayed`:'Save what happened');
+    }));
+    const ps=document.getElementById('psend'); if(ps)ps.addEventListener('click',()=>{
+      const t=(document.getElementById('ptext').value||'').trim();
+      if(!t){ document.getElementById('ptext').focus(); return; }
+      ps.disabled=true; ps.textContent='Sending…';
+      save(choice||'Answered',t,true);
+    });
+    const pq=document.getElementById('pquiet'); if(pq)pq.addEventListener('click',()=>save(choice||'Answered','',false));
+  }catch(e){}
 }
 // Tags: free words, but tidied — trimmed, title-cased, de-duped — so a supporter's
 // filter never shows "family" and "Family" as two different things.
@@ -1590,6 +1661,7 @@ document.getElementById('tplsaveGo').addEventListener('click',doSaveTemplate);
 document.getElementById('tplsave').addEventListener('click',e=>{ if(e.target.id==='tplsave')tov('tplsave',false); });
 
 guard();
+if(!new URLSearchParams(location.search).get('id')) askPrayers();
 </script>
 <script src="help.js"></script>
 </body>
