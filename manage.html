@@ -223,6 +223,18 @@
   .iprow{display:flex;gap:9px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);font-size:12px;background:#fff}
   .ipmark{flex:none;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--acc);background:#fff6ee;border:1px solid #f3d3b6;border-radius:10px;padding:3px 7px}
   .ipclose{margin-top:14px;background:var(--text);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer}
+  /* Standing prayer requests — short, categorised, ready to share. */
+  .prcat{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);margin:14px 0 6px}
+  .prrow{display:flex;gap:8px;align-items:flex-start;margin-bottom:7px}
+  .prrow textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13.5px;font-family:inherit;min-height:44px;resize:vertical}
+  .prrow textarea:focus{border-color:var(--acc);outline:none}
+  .prx{flex:none;background:#fff;border:1px solid var(--line);border-radius:9px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:14px;line-height:1}
+  .prx:hover{border-color:#c0392b;color:#c0392b}
+  .pradd{background:#fff;border:1px dashed #d8cdb6;border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:700;color:#8a7550;cursor:pointer;font-family:inherit}
+  .pradd:hover{border-color:var(--acc);color:var(--acc)}
+  .prfoot{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+  .prlink{flex:1;min-width:200px;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:12.5px;background:#faf7f2;color:#5a4f3f}
+  .prnote{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:9px}
   /* Conversations at a glance — three tiles, each a door into the full page. */
   .cstats{display:flex;gap:10px}
   .cstat{flex:1;background:#faf7f2;border:1px solid #efe9df;border-radius:12px;padding:12px 10px;text-align:center;text-decoration:none;color:inherit;transition:transform .12s,box-shadow .12s}
@@ -280,6 +292,10 @@
       <div class="panel" id="convoPanel">
         <h2>Conversations <a href="messages.html" style="color:var(--acc);font-weight:700">Open &rarr;</a></h2>
         <div class="cstats" id="cstats"><div class="state" style="padding:6px 0">Counting…</div></div>
+      </div>
+      <div class="panel" id="prayPanel">
+        <h2>Prayer requests <span class="hint">what you send when a church asks</span></h2>
+        <div id="praybody"><div class="state" style="padding:6px 0">Loading…</div></div>
       </div>
       <div class="panel" id="sharePanel" style="display:none">
         <h2>Feature requests <span class="ib zero" id="sharecount">0</span></h2>
@@ -684,6 +700,52 @@ document.addEventListener('click',e=>{
   if(e.target.id==='ipClose'||e.target.id==='ipop') pop.classList.remove('on');
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const p=document.getElementById('ipop'); if(p)p.classList.remove('on'); } });
+/* ---- Prayer requests: the answer to "do you have any prayer requests?" ---- */
+const PRCATS=['Mission & vision','Our work','Family','Personal & spiritual'];
+let PRITEMS=[];
+function prRender(){
+  const box=document.getElementById('praybody'); if(!box)return;
+  let html='';
+  PRCATS.forEach(c=>{
+    const rows=PRITEMS.map((x,i)=>({x,i})).filter(o=>o.x.cat===c);
+    html+=`<div class="prcat">${esc(c)}</div>`;
+    html+=rows.map(o=>`<div class="prrow"><textarea data-pi="${o.i}" placeholder="What would you ask them to pray?">${esc(o.x.text)}</textarea><button class="prx" data-px="${o.i}" title="Remove">✕</button></div>`).join('');
+    html+=`<button class="pradd" data-pc="${esc(c)}">+ add</button>`;
+  });
+  const url=location.origin+'/prayer.html?m='+encodeURIComponent(MYPAGE||'');
+  html+=`<div class="prfoot"><input class="prlink" id="prlink" readonly value="${esc(url)}">
+    <button class="pglink" id="prcopy" type="button">Copy link</button>
+    <a class="pglink" href="${esc(url)}" target="_blank" rel="noopener">Open</a>
+    <button class="photobtn" id="prsave" type="button">Save</button><span class="savenote" id="prmsg" style="margin:0"></span></div>
+    <div class="prnote">Send that link when a church or small group asks how to pray. It also shows the prayer requests from your recent updates automatically — nothing to keep up with. Anyone with the link can read it, so write these as things you're glad to share.</div>`;
+  box.innerHTML=html;
+  box.querySelectorAll('[data-pi]').forEach(t=>t.addEventListener('input',()=>{ PRITEMS[+t.dataset.pi].text=t.value; }));
+  box.querySelectorAll('[data-px]').forEach(b=>b.addEventListener('click',()=>{ PRITEMS.splice(+b.dataset.px,1); prRender(); }));
+  box.querySelectorAll('[data-pc]').forEach(b=>b.addEventListener('click',()=>{ PRITEMS.push({cat:b.dataset.pc,text:''}); prRender(); const ts=box.querySelectorAll('[data-pi]'); if(ts.length)ts[ts.length-1].focus(); }));
+  document.getElementById('prcopy').addEventListener('click',async()=>{
+    const m=document.getElementById('prmsg');
+    try{ await navigator.clipboard.writeText(url); m.className='savenote ok'; m.textContent='Link copied'; }
+    catch(_){ document.getElementById('prlink').select(); m.textContent='Press ⌘/Ctrl+C'; }
+  });
+  document.getElementById('prsave').addEventListener('click',async()=>{
+    const m=document.getElementById('prmsg'); m.className='savenote'; m.textContent='Saving…';
+    try{
+      const r=await fetch('/.netlify/functions/prayer-profile',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'save',items:PRITEMS.filter(x=>x.text.trim())})});
+      const d=await r.json(); if(!r.ok) throw new Error(d.error||'Could not save.');
+      m.className='savenote ok'; m.textContent='Saved ✓';
+    }catch(e){ m.className='savenote err'; m.textContent=e.message||'Could not save.'; }
+  });
+}
+async function loadPrayerProfile(){
+  try{
+    const r=await fetch('/.netlify/functions/prayer-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'mine'})});
+    if(!r.ok)return; const d=await r.json();
+    PRITEMS=(d.standing||[]).map(x=>({cat:x.cat,text:x.text}));
+    if(!PRITEMS.length) PRITEMS=PRCATS.map(c=>({cat:c,text:''}));   // one empty line per category to start
+    prRender();
+  }catch(e){}
+}
 /* Conversations at a glance: new · waiting on you · people praying. Each tile
    opens the Conversations page, where the newest responses sit on top. */
 async function loadConvoStats(){
@@ -796,7 +858,7 @@ document.getElementById('photoFile').addEventListener('change',async e=>{
   }catch(err){ msg.className='savenote err'; msg.textContent=err.message; }
   finally{ e.target.value=''; }
 });
-(async()=>{ if(await guard()){ load(); loadStyle(); loadProfile(); loadConvoStats(); loadMetrics(); loadShares(); } })();
+(async()=>{ if(await guard()){ load(); loadStyle(); loadProfile(); loadConvoStats(); loadMetrics(); loadShares(); loadPrayerProfile(); } })();
 </script>
 <div id="ipop"><div class="ipbox">
   <h3>Where your page name shows up</h3>

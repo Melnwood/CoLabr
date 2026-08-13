@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/favicon.png">
+<title>Prayer requests — Co·labr</title>
+<style>
+  :root{--acc:#FF6600;--bg:#f4f1ec;--card:#fff;--line:#e7e0d6;--muted:#7a6c58;--text:#241f1b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;padding:34px 22px 70px}
+  .who{display:flex;align-items:center;gap:15px;margin-bottom:8px}
+  .av{flex:none;width:64px;height:64px;border-radius:50%;background:#e7e0d6 center/cover;border:3px solid #fff;box-shadow:0 3px 12px rgba(60,40,20,.14)}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:0}
+  .loc{font-size:13px;color:var(--muted);margin-top:3px}
+  .lede{font-size:14.5px;color:#4a443e;line-height:1.6;margin:16px 0 26px}
+  .cat{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin:26px 0 10px}
+  ul{list-style:none;margin:0;padding:0}
+  li{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 17px;margin-bottom:9px;font-size:15px;line-height:1.6;white-space:pre-wrap}
+  li .from{display:block;font-size:11.5px;color:var(--muted);margin-top:7px}
+  .tools{display:flex;gap:9px;flex-wrap:wrap;margin:28px 0 0}
+  .tools button{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:10px 17px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--text)}
+  .tools button:hover{border-color:var(--acc);color:var(--acc)}
+  .tools .prim{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .tools .prim:hover{color:#fff}
+  .note{font-size:12px;color:var(--muted);margin-top:20px;line-height:1.6}
+  .state{color:var(--muted);font-size:14.5px;padding:50px 0;text-align:center}
+  .said{font-size:12.5px;color:#2f7d55;font-weight:700;margin-top:10px;min-height:16px}
+  @media print{
+    body{background:#fff}
+    .tools,.note,.said{display:none}
+    li{break-inside:avoid;border-color:#ddd}
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap"><div class="state">Loading prayer requests…</div></div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const M=(new URLSearchParams(location.search)).get('m')||'';
+function fd(s){ if(!s)return''; try{ return new Date(s+'T12:00:00').toLocaleDateString(undefined,{month:'long',year:'numeric'}); }catch(_){ return s; } }
+function plain(d){
+  const L=[`Prayer requests — ${d.page.name}${d.page.location?` (${d.page.location})`:''}`,''];
+  d.cats.forEach(c=>{
+    const items=d.standing.filter(x=>x.cat===c);
+    if(!items.length)return;
+    L.push(c.toUpperCase());
+    items.forEach(x=>L.push('• '+x.text));
+    L.push('');
+  });
+  if(d.recent.length){ L.push('RECENTLY'); d.recent.forEach(x=>L.push('• '+x.text)); L.push(''); }
+  L.push('Thank you for praying.');
+  return L.join('\n');
+}
+(async()=>{
+  const wrap=document.getElementById('wrap');
+  if(!M){ wrap.innerHTML='<div class="state">No page named in the link.</div>'; return; }
+  try{
+    const r=await fetch('/.netlify/functions/prayer-profile?m='+encodeURIComponent(M));
+    const d=await r.json();
+    if(!r.ok||!d.ok){ wrap.innerHTML='<div class="state">'+esc((d&&d.error)||'Could not load these prayer requests.')+'</div>'; return; }
+    if(!d.standing.length&&!d.recent.length){
+      wrap.innerHTML='<div class="state">'+esc(d.page.name)+' hasn’t written their prayer requests yet.</div>'; return; }
+    let html=`<div class="who">${d.page.photo?`<div class="av" style="background-image:url('${esc(d.page.photo)}')"></div>`:'<div class="av"></div>'}
+      <div><h1>How to pray for ${esc(d.page.name)}</h1>${d.page.location?`<div class="loc">${esc(d.page.location)}${d.page.org?' · '+esc(d.page.org):''}</div>`:''}</div></div>
+      <p class="lede">Thank you for asking. These are the things we would most love you to carry to God on our behalf.</p>`;
+    d.cats.forEach(c=>{
+      const items=d.standing.filter(x=>x.cat===c);
+      if(!items.length)return;
+      html+=`<div class="cat">${esc(c)}</div><ul>`+items.map(x=>`<li>${esc(x.text)}</li>`).join('')+`</ul>`;
+    });
+    if(d.recent.length){
+      html+=`<div class="cat">Right now</div><ul>`+d.recent.map(x=>`<li>${esc(x.text)}<span class="from">From “${esc(x.title)}” · ${esc(fd(x.date))}</span></li>`).join('')+`</ul>`;
+    }
+    html+=`<div class="tools">
+      <button class="prim" id="copy">Copy as text</button>
+      <button id="print">Print this page</button>
+    </div><div class="said" id="said"></div>
+    <p class="note">Shared by ${esc(d.page.name)} through Co·labr. Standing requests are updated by them; “Right now” comes from their recent updates.</p>`;
+    wrap.innerHTML=html;
+    document.getElementById('print').addEventListener('click',()=>window.print());
+    document.getElementById('copy').addEventListener('click',async()=>{
+      const said=document.getElementById('said');
+      try{ await navigator.clipboard.writeText(plain(d)); said.textContent='Copied — paste it into an email or your bulletin.'; }
+      catch(_){ said.textContent='Press ⌘/Ctrl+A then ⌘/Ctrl+C to copy.'; }
+    });
+  }catch(e){ wrap.innerHTML='<div class="state">Could not reach the server.</div>'; }
+})();
+</script>
+</body>
+</html>
