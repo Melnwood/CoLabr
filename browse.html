@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Across Josiah Venture — Co-Labr</title>
+<title>Across Josiah Venture — Co·labr</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
 :root{--acc:#FF6600;--ink:#241f1b;--bg:#f4f1ec;--card:#fff;--line:#e7e0d6;--muted:#7a6c58;--text:#241f1b;--font:'Open Sans',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
@@ -358,7 +358,7 @@ async function openPrayerUpdate(item){
 (async()=>{ if(await guard()){ loadDir(); } })();
 </script>
 <script>
-// "View site" should mean YOUR site — the bare root is Co-Labr's front page now.
+// "View site" should mean YOUR site — the bare root is Co·labr's front page now.
 fetch('/.netlify/functions/me?full=1').then(r=>r.ok?r.json():null).then(me=>{
   if(me&&me.miss&&me.miss.name){document.querySelectorAll('a[href="index.html"]').forEach(a=>a.href='index.html?m='+encodeURIComponent(me.miss.name));}
 });

@@ -459,7 +459,7 @@
     <div id="typerow" style="display:none"></div>
     <div id="monthrow" style="display:none"></div>
     <div id="stream"><div class="state">Loading updates…</div></div>
-    <div class="foot">Every update the Ellenwoods have shared since 2012 — live from Co-Labr. Share it with anyone who wants to follow along.<br><a href="privacy.html" style="color:#8a7550">How we care for your details</a></div>
+    <div class="foot">Every update the Ellenwoods have shared since 2012 — live from Co·labr. Share it with anyone who wants to follow along.<br><a href="privacy.html" style="color:#8a7550">How we care for your details</a></div>
   </div>
   <div class="reader" id="reader"><div class="sheet" id="sheet"></div></div>
   <div id="cltoast"></div>
@@ -632,7 +632,7 @@ function applyPageIdentity(page){
   // The personal voice: first names from the sign-off ("Mel and Amy") wherever the
   // page speaks person-to-person; the full family name stays on the masthead title.
   PAGE_FIRST=(page.first||'').trim()||page.name||'';
-  const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+(PAGE_FIRST||page.name)+' have shared — live from Co-Labr. Share it with anyone who wants to follow along.';
+  const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+(PAGE_FIRST||page.name)+' have shared — live from Co·labr. Share it with anyone who wants to follow along.';
   const t=document.getElementById('mtitle'); if(t&&page.name) t.textContent=page.name;
   const l=document.getElementById('mloctext'); if(l&&page.location) l.textContent=page.location;
   const sn=document.getElementById('subctaname'); if(sn&&PAGE_FIRST) sn.textContent=PAGE_FIRST;

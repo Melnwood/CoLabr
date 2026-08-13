@@ -1,4 +1,4 @@
-// Co-Labr — pull a video from a shared Google Drive link into JV's Google Cloud Storage,
+// Co·labr — pull a video from a shared Google Drive link into JV's Google Cloud Storage,
 // server-side (no size cap on our side). Secret-gated. Writes the resulting GCS URL onto a
 // scratch Airtable record (__VIDEO_INGEST__) so we can confirm it landed.
 // This is the "any-size ingest" step of the heart-language (video subtitles) pipeline.
@@ -48,14 +48,14 @@ exports.handler = async function (event) {
 // Google Drive public download, handling the large-file confirm interstitial.
 async function fetchDrive(fileId) {
   const u1 = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
-  let res = await fetch(u1, { headers: { 'User-Agent': 'Mozilla/5.0 CoLabr' } });
+  let res = await fetch(u1, { headers: { 'User-Agent': 'Mozilla/5.0 Co·labr' } });
   const ctype = res.headers.get('content-type') || '';
   if (/text\/html/i.test(ctype)) {
     const html = await res.text();
     const uuid = (html.match(/name="uuid" value="([^"]+)"/) || [])[1];
     const confirm = (html.match(/name="confirm" value="([^"]+)"/) || [])[1] || 't';
     const u2 = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=${encodeURIComponent(confirm)}${uuid ? '&uuid=' + encodeURIComponent(uuid) : ''}`;
-    res = await fetch(u2, { headers: { 'User-Agent': 'Mozilla/5.0 CoLabr' } });
+    res = await fetch(u2, { headers: { 'User-Agent': 'Mozilla/5.0 Co·labr' } });
   }
   if (!res.ok) throw new Error('drive fetch ' + res.status);
   const ct2 = res.headers.get('content-type') || '';

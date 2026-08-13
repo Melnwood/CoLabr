@@ -1,4 +1,4 @@
-// Co-Labr — "Organizations forming" (admin only). Clusters missionaries by the organization
+// Co·labr — "Organizations forming" (admin only). Clusters missionaries by the organization
 // they named at signup, falling back to their email domain (freemail domains don't cluster).
 // 3+ from one organization = time for a human conversation about an org account.
 const { sessionFromEvent, isAdmin } = require('./_auth');

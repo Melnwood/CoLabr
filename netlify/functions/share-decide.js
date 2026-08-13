@@ -1,4 +1,4 @@
-// Co-Labr — the author of an update approves or declines a request to feature it on a teammate's
+// Co·labr — the author of an update approves or declines a request to feature it on a teammate's
 // wall. Only the update's author may decide. Approve → the story appears on the requester's rail.
 const { sessionFromEvent } = require('./_auth');
 const { BASE, missByEmail } = require('./_shares');

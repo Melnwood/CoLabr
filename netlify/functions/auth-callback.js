@@ -1,4 +1,4 @@
-// Handles Google's redirect back: verifies the user, then sets a Co-Labr session.
+// Handles Google's redirect back: verifies the user, then sets a Co·labr session.
 const { CLIENT_ID, ALLOWED_DOMAIN, parseCookies, makeSessionCookie, siteBase } = require('./_auth');
 const { missByEmail } = require('./_shares');
 

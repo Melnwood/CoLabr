@@ -1,4 +1,4 @@
-// Co-Labr — create an update. Writes a new record into Airtable.
+// Co·labr — create an update. Writes a new record into Airtable.
 // Security: requires a private passcode (Netlify env var EDIT_KEY) sent by the composer.
 // Uses AIRTABLE_TOKEN (must have data.records:write scope on the base).
 

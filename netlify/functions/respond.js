@@ -1,4 +1,4 @@
-// Co-Labr — supporter response intake (public, no login).
+// Co·labr — supporter response intake (public, no login).
 // A supporter prays or writes a note on an update. Nothing a supporter writes is
 // public — there is no comment wall, and the Public flag is never set on new rows.
 // Writes to the Responses table. Uses AIRTABLE_TOKEN (needs write scope).
@@ -107,13 +107,13 @@ async function notify(token, x) {
     `<div style="font-family:-apple-system,Arial,sans-serif;max-width:520px">
       <p style="font-size:15px;color:#241f1b"><b>${esc(x.name)}</b> ${label}${x.updateTitle ? ` on <b>${esc(x.updateTitle)}</b>` : ''}.</p>
       ${x.message ? `<blockquote style="border-left:3px solid #FF6600;margin:0 0 14px;padding:6px 0 6px 14px;color:#3c3733;font-size:15px;line-height:1.5">${esc(x.message)}</blockquote>` : ''}
-      ${x.email ? `<p style="font-size:13px;color:#7a756f">From ${esc(x.email)} — reply to this email (or reply inside Co-Labr) to write ${esc(x.name)} back.</p>` : ''}
+      ${x.email ? `<p style="font-size:13px;color:#7a756f">From ${esc(x.email)} — reply to this email (or reply inside Co·labr) to write ${esc(x.name)} back.</p>` : ''}
       ${site ? ((x.type !== 'Prayer' && x.id)
         ? `<p><a href="${site}/messages.html?c=${x.id}" style="background:#FF6600;color:#fff;font-weight:700;text-decoration:none;border-radius:10px;padding:11px 20px;display:inline-block">Reply in Co\u00b7labr \u2192</a><br><span style="font-size:12px;color:#7a756f">That link opens this exact conversation \u2014 every reply on both sides is kept there.</span></p>`
-        : `<p><a href="${site}/manage.html" style="color:#FF6600;font-weight:700">Open your Co-Labr inbox \u2192</a></p>`) : ''}
+        : `<p><a href="${site}/manage.html" style="color:#FF6600;font-weight:700">Open your Co·labr inbox \u2192</a></p>`) : ''}
     </div>`;
 
-  const fromName = x.missionary ? `${x.missionary} via Co-Labr` : 'Co-Labr';
+  const fromName = x.missionary ? `${x.missionary} via Co·labr` : 'Co·labr';
   await sendMail({ to, subject, html, replyTo: x.email, fromName });
 }
 

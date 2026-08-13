@@ -1,4 +1,4 @@
-// Co-Labr — update templates. Personal templates belong to their owner; Shared templates are
+// Co·labr — update templates. Personal templates belong to their owner; Shared templates are
 // published by admins and available to every signed-in staff member.
 const { sessionFromEvent, isAdmin } = require('./_auth');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';

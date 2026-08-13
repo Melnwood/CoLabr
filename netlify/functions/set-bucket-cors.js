@@ -1,4 +1,4 @@
-// Co-Labr — one-time: allow the browser to upload directly to the GCS bucket (CORS).
+// Co·labr — one-time: allow the browser to upload directly to the GCS bucket (CORS).
 // Secret-gated; run once. Needs the SA to have storage.buckets.update on the bucket.
 const crypto = require('crypto');
 

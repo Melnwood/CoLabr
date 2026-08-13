@@ -1,4 +1,4 @@
-// Co-Labr — serve a caption track (WebVTT) for a published update's video block, same-origin
+// Co·labr — serve a caption track (WebVTT) for a published update's video block, same-origin
 // and with the correct text/vtt MIME so iOS/Safari actually load it. Public (read-only).
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tbl7aVErl35Qw36QZ';

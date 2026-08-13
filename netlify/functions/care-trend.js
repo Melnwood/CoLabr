@@ -1,4 +1,4 @@
-// Co-Labr — Care radar trajectories: read each person's recent updates in sequence and
+// Co·labr — Care radar trajectories: read each person's recent updates in sequence and
 // judge the direction of their tone — not single events, but drift. Super-admin only.
 const { sessionFromEvent, isAdmin } = require('./_auth');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';

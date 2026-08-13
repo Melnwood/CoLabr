@@ -1,4 +1,4 @@
-// Co-Labr — AI title suggestions, grounded in the writer's OWN past titles (their register:
+// Co·labr — AI title suggestions, grounded in the writer's OWN past titles (their register:
 // declarations of faith, lived questions, Scripture images) plus what earns opens.
 // Requires a signed-in staff session. Uses ANTHROPIC_API_KEY (set in Netlify).
 const { sessionFromEvent } = require('./_auth');

@@ -1,4 +1,4 @@
-// Co-Labr — photo upload to Google Cloud Storage (one central JV bucket).
+// Co·labr — photo upload to Google Cloud Storage (one central JV bucket).
 // Requires a signed-in staff session. Env: GCS_BUCKET, GCP_SA_KEY (service-account JSON).
 const { sessionFromEvent } = require('./_auth');
 const crypto = require('crypto');

@@ -1,4 +1,4 @@
-// Co-Labr — automated off-Airtable backup. Every few hours (see netlify.toml schedule) this reads
+// Co·labr — automated off-Airtable backup. Every few hours (see netlify.toml schedule) this reads
 // every table in the Airtable base and writes one complete, timestamped JSON snapshot into the
 // JV Google Cloud bucket (backups/…), independent of Airtable. Keeps a rolling history and a
 // backups/latest.json pointer. Restoring is just reading one of those files back.

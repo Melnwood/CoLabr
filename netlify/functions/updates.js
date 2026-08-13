@@ -1,4 +1,4 @@
-// Co-Labr — live updates feed. Reads published updates for one missionary's page from Airtable.
+// Co·labr — live updates feed. Reads published updates for one missionary's page from Airtable.
 // The Airtable token lives ONLY here (server-side), never sent to the browser.
 // ?m=<Missionary Name> selects whose page this is (defaults to the Ellenwoods).
 

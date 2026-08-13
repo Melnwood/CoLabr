@@ -1,4 +1,4 @@
-// Co-Labr — start a resumable upload straight to GCS so the browser can send a large video
+// Co·labr — start a resumable upload straight to GCS so the browser can send a large video
 // directly (no function body-size limit). Signed-in staff only. Returns a one-time upload URL
 // plus the eventual public URL. The browser PUTs the file bytes to uploadUrl.
 const { sessionFromEvent } = require('./_auth');

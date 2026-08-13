@@ -1,4 +1,4 @@
-// Co-Labr — super-admin: add JV staff to Co-Labr and email them the onboarding walkthrough.
+// Co·labr — super-admin: add JV staff to Co·labr and email them the onboarding walkthrough.
 // Admin-only (see ADMIN_EMAILS). Creates a Missionary/page record, then sends the welcome email.
 const { sessionFromEvent, isAdmin } = require('./_auth');
 const { sendMail } = require('./_mail');
@@ -11,7 +11,7 @@ exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') return resp(405, { error: 'Method not allowed' });
   const session = sessionFromEvent(event);
   if (!session) return resp(401, { error: 'Please sign in.' });
-  if (!isAdmin(session.email)) return resp(403, { error: 'This area is for Co-Labr admins.' });
+  if (!isAdmin(session.email)) return resp(403, { error: 'This area is for Co·labr admins.' });
   const token = process.env.AIRTABLE_TOKEN;
   if (!token) return resp(500, { error: 'Server not configured.' });
   let b; try { b = JSON.parse(event.body || '{}'); } catch { return resp(400, { error: 'Bad request.' }); }
@@ -45,7 +45,7 @@ exports.handler = async function (event) {
       const sent = []; const failed = [];
       for (const to of emails) {
         try {
-          const m = await sendMail({ to, subject: 'Welcome to Co-Labr — let’s get your updates online', html: onboardingEmail(o.name.trim(), emails), fromName: 'Josiah Venture · Co-Labr' });
+          const m = await sendMail({ to, subject: 'Welcome to Co·labr — let’s get your updates online', html: onboardingEmail(o.name.trim(), emails), fromName: 'Josiah Venture · Co·labr' });
           (m.ok ? sent : failed).push(to);
         } catch (e) { failed.push(to); }
       }
@@ -66,7 +66,7 @@ exports.handler = async function (event) {
       const f = (await gr.json()).fields || {};
       const emails = String(f[F.email] || '').split(',').map(s => s.trim()).filter(Boolean);
       const sent = []; const failed = [];
-      for (const to of emails) { try { const m = await sendMail({ to, subject: 'Your Co-Labr sign-in & setup', html: onboardingEmail(f[F.name] || '', emails), fromName: 'Josiah Venture · Co-Labr' }); (m.ok ? sent : failed).push(to); } catch (e) { failed.push(to); } }
+      for (const to of emails) { try { const m = await sendMail({ to, subject: 'Your Co·labr sign-in & setup', html: onboardingEmail(f[F.name] || '', emails), fromName: 'Josiah Venture · Co·labr' }); (m.ok ? sent : failed).push(to); } catch (e) { failed.push(to); } }
       return resp(200, { ok: true, sent, failed });
     }
 
@@ -83,7 +83,7 @@ function onboardingEmail(name, emails) {
   const step = (n, t, d) => `<tr><td style="vertical-align:top;padding:0 12px 16px 0"><div style="width:26px;height:26px;border-radius:50%;background:#FF6600;color:#fff;font-weight:800;font-size:13px;text-align:center;line-height:26px">${n}</div></td><td style="padding:0 0 16px 0"><div style="font-weight:700;font-size:15px;color:#241f1b">${t}</div><div style="font-size:14px;line-height:1.55;color:#4a4030;margin-top:2px">${d}</div></td></tr>`;
   return `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:560px;margin:0 auto;color:#241f1b">
     <p style="font-size:16px">Hi ${escH(name)},</p>
-    <p style="font-size:15px;line-height:1.6">Welcome to <b>Co-Labr</b> — a simple, living home for your supporter updates. One place where your friends and partners can read your stories, watch your videos (with translation for other languages), pray with you, and cheer you on — and where you can see who's engaging. Here's how to get going; it takes just a few minutes.</p>
+    <p style="font-size:15px;line-height:1.6">Welcome to <b>Co·labr</b> — a simple, living home for your supporter updates. One place where your friends and partners can read your stories, watch your videos (with translation for other languages), pray with you, and cheer you on — and where you can see who's engaging. Here's how to get going; it takes just a few minutes.</p>
     <table style="border-collapse:collapse;margin:18px 0">
       ${step(1, 'Sign in', `Go to <a href="${site}" style="color:#FF6600;font-weight:700">${site.replace(/^https?:\/\//,'')}</a> and click <b>Sign in with Google</b> using ${which}. No password to remember.`)}
       ${step(2, 'Add your photo &amp; pick a style', `On your dashboard, upload a photo of you/your family and choose how your page looks under <b>Get set up</b>.`)}
@@ -93,7 +93,7 @@ function onboardingEmail(name, emails) {
     </table>
     <p style="font-size:15px;line-height:1.6">Your page will live here once you publish your first update:<br><a href="${escH(pageUrl)}" style="color:#FF6600;font-weight:700">${escH(pageUrl)}</a></p>
     <p style="font-size:15px;line-height:1.6">We're so glad you're on board. Praise God for what He's doing through you.</p>
-    <p style="font-size:13px;color:#7a756f;margin-top:22px">Sent from Co-Labr · Josiah Venture. If you weren't expecting this, you can ignore it.</p>
+    <p style="font-size:13px;color:#7a756f;margin-top:22px">Sent from Co·labr · Josiah Venture. If you weren't expecting this, you can ignore it.</p>
   </div>`;
 }
 

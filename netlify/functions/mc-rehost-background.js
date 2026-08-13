@@ -42,7 +42,7 @@ exports.handler = async function (event) {
       if (map[url]) return map[url];
       const fetchUrl = url.replace('gallery.mailchimp.com', 'mcusercontent.com').replace(/^http:\/\//i, 'https://');
       try {
-        const r = await fetch(fetchUrl, { headers: { 'User-Agent': 'Mozilla/5.0 CoLabr-migrate' } });
+        const r = await fetch(fetchUrl, { headers: { 'User-Agent': 'Mozilla/5.0 Co·labr-migrate' } });
         if (!r.ok) { failed++; return null; }
         const buf = Buffer.from(await r.arrayBuffer());
         if (buf.length < 200 || buf.length > 15 * 1024 * 1024) { failed++; return null; }

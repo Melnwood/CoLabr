@@ -1,4 +1,4 @@
-// Co-Labr — the "Across Josiah Venture" rail. Returns the teammate stories that have been
+// Co·labr — the "Across Josiah Venture" rail. Returns the teammate stories that have been
 // approved to appear on a given supporter page. Gated like the wall itself: a locked
 // visitor gets NOTHING — no teammate story leaks past the sign-up card.
 const { sessionFromEvent } = require('./_auth');

@@ -1,4 +1,4 @@
-// Co-Labr — Care radar follow-up log. A row in Care Follow-ups means someone on the
+// Co·labr — Care radar follow-up log. A row in Care Follow-ups means someone on the
 // care team reached out about that flagged update. Super-admin only.
 const { sessionFromEvent, isAdmin } = require('./_auth');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';

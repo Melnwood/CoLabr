@@ -1,4 +1,4 @@
-// Co-Labr — National Org branding (logos + colors). Signed-in staff can read;
+// Co·labr — National Org branding (logos + colors). Signed-in staff can read;
 // save/delete is super-admin only (branding is platform config, not a personal setting).
 // Uses AIRTABLE_TOKEN (read for list; read+write for save/delete).
 const { sessionFromEvent, isAdmin } = require('./_auth');

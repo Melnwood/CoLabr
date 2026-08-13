@@ -1,4 +1,4 @@
-// Co-Labr — shared email renderer (wrap + block→HTML). Used by the subscriber send and the
+// Co·labr — shared email renderer (wrap + block→HTML). Used by the subscriber send and the
 // "send me a preview" endpoint so both produce identical emails.
 const { esc } = require('./_mail');
 

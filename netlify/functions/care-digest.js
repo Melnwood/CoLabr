@@ -1,4 +1,4 @@
-// Co-Labr — Care radar morning digest, on the Netlify scheduler (see netlify.toml).
+// Co·labr — Care radar morning digest, on the Netlify scheduler (see netlify.toml).
 // Netlify blocks direct HTTP calls to scheduled functions, so the admin "send it now"
 // button lives in care-digest-now.js; both share _caredigest.js.
 const { runDigest } = require('./_caredigest');

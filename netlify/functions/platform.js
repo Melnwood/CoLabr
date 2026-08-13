@@ -1,4 +1,4 @@
-// Co-Labr — platform switches. GET: current state (any signed-in user, so UIs can show it).
+// Co·labr — platform switches. GET: current state (any signed-in user, so UIs can show it).
 // POST {pause:true|false}: admin only — freeze or resume ALL outbound subscriber email.
 const { sessionFromEvent, isAdmin } = require('./_auth');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';

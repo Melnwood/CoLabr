@@ -1,4 +1,4 @@
-// Co-Labr — a signed-in JV staff member asks to feature another teammate's update on their own
+// Co·labr — a signed-in JV staff member asks to feature another teammate's update on their own
 // supporter wall. Creates a Pending Feature Share, routed to the update's author for approval.
 const { sessionFromEvent } = require('./_auth');
 const { BASE, UPDATES, missByEmail, missById } = require('./_shares');

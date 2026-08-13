@@ -1,4 +1,4 @@
-// Co-Labr — "your people": the signed-in missionary's subscriber list, with status.
+// Co·labr — "your people": the signed-in missionary's subscriber list, with status.
 // list → everyone tied to your page (Following / Invited — waiting / Not following)
 // remove → delete one person from your list
 const { sessionFromEvent } = require('./_auth');

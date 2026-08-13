@@ -1,4 +1,4 @@
-// Co-Labr — send the real rendered email of one update to a chosen address (a "see the true
+// Co·labr — send the real rendered email of one update to a chosen address (a "see the true
 // email" preview). Secret-gated (SESSION_SECRET or IMPORT_SECRET). Reuses the exact email
 // renderer the live subscriber-send uses, so what lands is what supporters would get.
 const { sendMail, esc } = require('./_mail');

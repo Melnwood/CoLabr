@@ -1,4 +1,4 @@
-// Co-Labr — JV-wide prayer wall. Pulls the prayer requests out of every teammate's published
+// Co·labr — JV-wide prayer wall. Pulls the prayer requests out of every teammate's published
 // updates so staff can pray together across the whole movement. Auth required. English where a
 // native-language update carries a translation.
 const { sessionFromEvent } = require('./_auth');

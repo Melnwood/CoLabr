@@ -1,4 +1,4 @@
-// Co-Labr — heart-language for written updates. When an update is published, translate its
+// Co·labr — heart-language for written updates. When an update is published, translate its
 // text into every JV field language + English with Claude, and store one JSON per language in
 // GCS (translations/<recordId>/<lang>.json) so the supporter page & emails can show each reader
 // their own language. Background function (up to 15 min). Secret-gated. Idempotent (overwrites).

@@ -1,4 +1,4 @@
-// Co-Labr — shared Care-digest core: run the last-day scan, build the morning email,
+// Co·labr — shared Care-digest core: run the last-day scan, build the morning email,
 // send it to the care list. Used by care-digest.js (scheduler) and care-digest-now.js
 // (the admin "Email me this now" button — scheduled functions can't be called over HTTP).
 const { careScan } = require('./_care');
@@ -33,7 +33,7 @@ async function runDigest() {
 
   const results = [];
   for (const to of recipients) {
-    const res = await sendMail({ to, subject, html, fromName: 'Co-Labr Care Radar' });
+    const res = await sendMail({ to, subject, html, fromName: 'Co·labr Care Radar' });
     results.push({ to, ok: res.ok, via: res.via || '', error: res.error || '' });
   }
   return { sent: results.filter(x => x.ok).length, flagged: items.length, scanned, results };

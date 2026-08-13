@@ -74,7 +74,7 @@ exports.handler = async function (event) {
           <p style="font-size:14px">JV account: <b>#${esc(account)}</b><br>Signed: <b>${esc(signature)}</b> (in-app, timestamped) — permission to pull the cost from their ministry account.</p>
           <p style="font-size:13px;color:#7a756f">Run it, then mark the order handled in Super Admin → Help-chat questions.</p>
         </div>`,
-        replyTo: sess.email || '', fromName: 'Co-Labr Orders'
+        replyTo: sess.email || '', fromName: 'Co·labr Orders'
       });
     } catch (e) {}
     return r(200, { ok: true, count, price });

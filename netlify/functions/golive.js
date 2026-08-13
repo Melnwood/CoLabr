@@ -1,4 +1,4 @@
-// Co-Labr — the go-live ceremony. A missionary flips their OWN page from test mode to live:
+// Co·labr — the go-live ceremony. A missionary flips their OWN page from test mode to live:
 // from now on, publishing an update emails their subscribers. The UI shows the subscriber
 // count in the confirm; this endpoint just records the deliberate choice.
 const { sessionFromEvent } = require('./_auth');

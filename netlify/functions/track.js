@@ -1,4 +1,4 @@
-// Co-Labr — lightweight event tracking (public). Currently logs Give-button clicks
+// Co·labr — lightweight event tracking (public). Currently logs Give-button clicks
 // (interest, not gifts). Uses AIRTABLE_TOKEN (write).
 // Signed-in members are never counted — engagement means people OUTSIDE the team.
 const { sessionFromEvent } = require('./_auth');

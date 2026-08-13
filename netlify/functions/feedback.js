@@ -84,7 +84,7 @@ exports.handler = async function (event) {
           ${shot ? `<p><a href="${esc(shot)}"><img src="${esc(shot)}" style="max-width:100%;border-radius:10px;border:1px solid #e7e4e0"></a></p>` : ''}
           <p style="font-size:12px;color:#7a756f">The full working list is in Super Admin → Sandbox feedback.</p>
         </div>`,
-        replyTo: sess.email || '', fromName: 'Co-Labr Sandbox'
+        replyTo: sess.email || '', fromName: 'Co·labr Sandbox'
       });
     } catch (e) {}
     return r(200, { ok: true });

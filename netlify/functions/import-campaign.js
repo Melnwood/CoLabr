@@ -1,4 +1,4 @@
-// Co-Labr — parse one Mailchimp campaign's HTML into photo+text blocks and save them onto
+// Co·labr — parse one Mailchimp campaign's HTML into photo+text blocks and save them onto
 // the matching Airtable update. Called by the Make import (or a one-off) with a shared secret.
 // Idempotent: it overwrites Blocks for the target record each run, so re-running is safe.
 const { htmlToBlocks } = require('./_htmlblocks');

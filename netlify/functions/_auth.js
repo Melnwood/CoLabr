@@ -1,4 +1,4 @@
-// Shared auth helpers for Co-Labr (session signing + cookie parsing).
+// Shared auth helpers for Co·labr (session signing + cookie parsing).
 const crypto = require('crypto');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID ||

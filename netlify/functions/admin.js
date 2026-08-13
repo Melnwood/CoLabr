@@ -1,4 +1,4 @@
-// Co-Labr — staff admin actions (list / publish-unpublish / delete).
+// Co·labr — staff admin actions (list / publish-unpublish / delete).
 // Passcode-gated with EDIT_KEY. Uses AIRTABLE_TOKEN (read+write scope).
 
 const crypto = require('crypto');
@@ -298,7 +298,7 @@ exports.handler = async function (event) {
       const title = c['Update Title'] || '';
       const missionary = c['Missionary'] || '';
       // Who is replying (their JV inbox stays as a fallback Reply-To, but the button
-      // steers the supporter back into Co-Labr so the whole conversation is kept).
+      // steers the supporter back into Co·labr so the whole conversation is kept).
       let replyTo = '';
       const sess = sessionFromEvent(event); if (sess && sess.email) replyTo = sess.email;
       const site = process.env.SITE_BASE || '';
@@ -319,7 +319,7 @@ exports.handler = async function (event) {
           <p style="font-size:12px;color:#7a756f">Replying at that link keeps your whole conversation together in one place.</p>` : ''}
           ${title ? `<p style="font-size:12px;color:#7a756f;margin-top:18px">In reply to your message on “${escH(title)}”.</p>` : ''}
         </div>`;
-      const mail = await sendMail({ to: toEmail, subject: (title ? `Re: ${title}` : 'A note back from us'), html, replyTo, fromName: (missionary ? `${missionary} via Co-Labr` : 'Co-Labr') });
+      const mail = await sendMail({ to: toEmail, subject: (title ? `Re: ${title}` : 'A note back from us'), html, replyTo, fromName: (missionary ? `${missionary} via Co·labr` : 'Co·labr') });
       if (!mail.ok) return resp(502, { error: 'Could not send the reply: ' + (mail.error || 'email not set up') });
       // Record the reply in the thread and mark handled.
       await fetch(`https://api.airtable.com/v0/${BASE}/${RTABLE}`, { method: 'PATCH', headers: auth,

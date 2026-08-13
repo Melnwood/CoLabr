@@ -1,4 +1,4 @@
-// Co-Labr — send the personalized invite letter to supporters. Signed-in staff only.
+// Co·labr — send the personalized invite letter to supporters. Signed-in staff only.
 //
 // The flow, end to end:
 //   1. Each recipient is added to Subscribers immediately (Active=false, Source=Invited)
@@ -7,7 +7,7 @@
 //   2. The letter's button is their PERSONAL link (prefs.html?t=…&welcome=1): one click,
 //      no typing their details again — they choose how to follow, or decline.
 //   3. When they choose, Active flips on with their preference; delivery then happens
-//      straight from Co-Labr (no Mailchimp, no Google Group — this IS the list).
+//      straight from Co·labr (no Mailchimp, no Google Group — this IS the list).
 //
 // Sends in small batches (the browser loops) so we never hit the function timeout.
 const crypto = require('crypto');
@@ -31,7 +31,7 @@ exports.handler = async function (event) {
   const subject = (b.subject || '').toString().trim().slice(0, 160) || 'Come follow our journey';
   const bodyText = (b.body || '').toString();
   if (!bodyText.trim()) return r(400, { error: 'The letter is empty.' });
-  const fromName = (b.fromName || '').toString().trim().slice(0, 80) || 'Co-Labr';
+  const fromName = (b.fromName || '').toString().trim().slice(0, 80) || 'Co·labr';
   const recipients = Array.isArray(b.recipients) ? b.recipients.slice(0, MAX) : [];
   const existingSupporters = !!b.existing;   // they already receive updates — start them as Following
   if (!recipients.length) return r(400, { error: 'No recipients in this batch.' });

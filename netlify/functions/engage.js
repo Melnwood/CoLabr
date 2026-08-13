@@ -1,4 +1,4 @@
-// Co-Labr — public engagement for the supporter page.
+// Co·labr — public engagement for the supporter page.
 // Returns the prayer count for one update (or all updates). Messages are never
 // returned here — nothing a supporter writes is shown to other supporters.
 // Private notes are NEVER returned here. Uses AIRTABLE_TOKEN (read).

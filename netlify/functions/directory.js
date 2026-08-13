@@ -1,5 +1,5 @@
-// Co-Labr — staff directory. Lists every JV missionary who has published updates, so a signed-in
-// staff member can browse teammates' Co-Labr pages and feature their stories. Auth required.
+// Co·labr — staff directory. Lists every JV missionary who has published updates, so a signed-in
+// staff member can browse teammates' Co·labr pages and feature their stories. Auth required.
 const { sessionFromEvent } = require('./_auth');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const UPDATES = 'tbl7aVErl35Qw36QZ';

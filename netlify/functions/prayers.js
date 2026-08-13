@@ -131,7 +131,7 @@ exports.handler = async function (event) {
                 <p style="font-size:12.5px;color:#7a756f;margin-top:18px">Thank you for praying. It mattered.</p>
                 ${site ? `<p style="font-size:12px;color:#7a756f">— ${esc(me.name)} via Co·labr</p>` : ''}
               </div>`,
-              replyTo: sess.email || '', fromName: `${me.name} via Co-Labr`
+              replyTo: sess.email || '', fromName: `${me.name} via Co·labr`
             });
             if (res && res.ok) told++;
           } catch (e) {}

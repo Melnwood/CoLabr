@@ -1,4 +1,4 @@
-// Co-Labr — Care radar: scan everyone's latest updates for significant life events
+// Co·labr — Care radar: scan everyone's latest updates for significant life events
 // (hard news, exciting news, big changes, babies, deaths). Super-admin only.
 // The scan itself lives in _care.js (shared with the daily care-digest email).
 const { sessionFromEvent, isAdmin } = require('./_auth');

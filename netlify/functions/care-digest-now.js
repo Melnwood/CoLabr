@@ -1,4 +1,4 @@
-// Co-Labr — "Email me this now": lets a signed-in super-admin trigger the Care-radar
+// Co·labr — "Email me this now": lets a signed-in super-admin trigger the Care-radar
 // morning digest immediately (for testing). The daily send is care-digest.js.
 const { runDigest } = require('./_caredigest');
 const { sessionFromEvent, isAdmin } = require('./_auth');

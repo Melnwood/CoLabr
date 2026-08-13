@@ -1,4 +1,4 @@
-// Co-Labr — an individual missionary creates their page. Signed-in (any Google account).
+// Co·labr — an individual missionary creates their page. Signed-in (any Google account).
 // Creates their Missionaries record in TEST MODE (Live unchecked): they can compose, publish
 // to their wall, and preview freely — publishing emails no one until they choose to go live.
 const { sessionFromEvent } = require('./_auth');

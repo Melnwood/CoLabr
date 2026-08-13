@@ -1,4 +1,4 @@
-// Co-Labr — shared email sender. Prefers Google Workspace / Gmail (impersonation via a
+// Co·labr — shared email sender. Prefers Google Workspace / Gmail (impersonation via a
 // domain-wide-delegated service account); falls back to Resend. Returns {ok, via, error}.
 const crypto = require('crypto');
 
@@ -36,8 +36,16 @@ async function fence() {
   return out;
 }
 
+// The wordmark, set as type rather than as an image: mail clients block images by
+// default, and the coral dot as a rounded <span> breaks in Outlook. This is the
+// logo in the one form that survives every inbox.
+const MARK = '<div style="margin:26px 0 4px;text-align:center;font-family:Georgia,\'Times New Roman\',serif;'
+  + 'font-size:17px;font-weight:600;color:#241f1b;letter-spacing:.01em">'
+  + 'Co<span style="color:#FF6B5B">&#183;</span>labr</div>';
+
 async function sendMail({ to, subject, html, replyTo, fromName, essential }) {
   if (!to) return { ok: false, error: 'No recipient.' };
+  if (html && html.indexOf('>Co<span style="color:#FF6B5B"') === -1) html = html + MARK;
   if (!essential) {
     try {
       const f = await fence();
@@ -55,11 +63,11 @@ async function sendMail({ to, subject, html, replyTo, fromName, essential }) {
   const saKey = process.env.GWS_SA_KEY || process.env.GCP_SA_KEY; // reuse the storage service account
   const sender = process.env.GMAIL_SENDER;
   if (saKey && sender) {
-    try { await gmailSend(JSON.parse(saKey), sender, fromName || 'Co-Labr', { to, subject, html, replyTo }); return { ok: true, via: 'gmail' }; }
+    try { await gmailSend(JSON.parse(saKey), sender, fromName || 'Co·labr', { to, subject, html, replyTo }); return { ok: true, via: 'gmail' }; }
     catch (e) { if (!process.env.RESEND_API_KEY) return { ok: false, error: e.message }; }
   }
   if (process.env.RESEND_API_KEY) {
-    const from = process.env.NOTIFY_FROM || 'Co-Labr <onboarding@resend.dev>';
+    const from = process.env.NOTIFY_FROM || 'Co·labr <onboarding@resend.dev>';
     const payload = { from, to: [to], subject, html }; if (replyTo) payload.reply_to = replyTo;
     const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!r.ok) { const t = await r.text(); return { ok: false, error: 'resend ' + r.status + ' ' + t.slice(0, 140) }; }

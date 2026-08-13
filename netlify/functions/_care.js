@@ -1,4 +1,4 @@
-// Co-Labr — shared Care-radar scan core. Reads recent published updates across all
+// Co·labr — shared Care-radar scan core. Reads recent published updates across all
 // staff and asks the AI to flag significant life events. Used by care-scan.js (the
 // admin page) and care-digest.js (the scheduled morning email).
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';

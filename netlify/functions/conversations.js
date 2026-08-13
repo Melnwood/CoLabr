@@ -149,7 +149,7 @@ exports.handler = async function (event) {
         ${site ? `<p style="margin:20px 0"><a href="${site}/my.html?c=${cd.id}&k=${tkey}" style="background:#FF6600;color:#fff;font-weight:700;text-decoration:none;border-radius:10px;padding:11px 20px;display:inline-block">Reply →</a></p>
         <p style="font-size:12px;color:#7a756f">That link opens your own Co·labr page — this conversation, every missionary you follow, all in one place.</p>` : ''}
       </div>`,
-      replyTo: sess.email || '', fromName: `${myName} via Co-Labr`
+      replyTo: sess.email || '', fromName: `${myName} via Co·labr`
     });
     if (!mail.ok) return r(502, { error: 'Saved, but the email could not be sent: ' + (mail.error || 'email not set up') });
     return r(200, { ok: true, id: cd.id, thread });

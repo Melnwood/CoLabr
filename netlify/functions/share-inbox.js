@@ -1,4 +1,4 @@
-// Co-Labr — the signed-in member's share requests: incoming (teammates who want to feature
+// Co·labr — the signed-in member's share requests: incoming (teammates who want to feature
 // MY updates, awaiting my yes) and outgoing (my requests awaiting a teammate's yes).
 const { sessionFromEvent } = require('./_auth');
 const { BASE, esc, missByEmail } = require('./_shares');
