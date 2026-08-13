@@ -12,7 +12,7 @@ exports.handler = async function (event) {
   const token = process.env.AIRTABLE_TOKEN;
   if (!token) return r(500, { error: 'Server not configured.' });
   try {
-    const out = await runMonthly({ token, only: (b.missionary || '').trim() });
+    const out = await runMonthly({ token, only: (b.missionary || '').trim(), back: b.back });
     return r(200, { ok: true, ...out });
   } catch (e) { return r(502, { error: e.message || 'Could not build it.' }); }
 };

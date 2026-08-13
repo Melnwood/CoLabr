@@ -9,11 +9,16 @@ const PROFILE = 'tblLzzvsLeLeFOWGl';
 const M_NAME = 'fldPYSQwxoQJGb0Zd', M_EMAIL = 'fld65nJ51ewtIWTxj', M_PHOTO = 'fldiXSCuELTQiiT08';
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-async function runMonthly({ token, only }) {
+// back = 1 (default): the month just finished — what the 1st-of-month run wants.
+// back = 0: this month so far — useful when someone asks for it mid-month.
+async function runMonthly({ token, only, back }) {
   const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
   const now = new Date();
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const b = (back === 0 || back === '0') ? 0 : 1;
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - b, 1));
+  const end = b === 0
+    ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const from = start.toISOString().slice(0, 10), to = end.toISOString().slice(0, 10);
   const label = `${MONTHS[start.getUTCMonth()]} ${start.getUTCFullYear()}`;
 
@@ -112,7 +117,7 @@ async function buildFor(auth, person, from, to, label) {
     'Status': 'Draft',
     'Source': 'Co-Labr',
     'Missionary': [person.name],
-    'Date': to,
+    'Date': (to > new Date().toISOString().slice(0, 10)) ? new Date().toISOString().slice(0, 10) : to,
     'Blocks': JSON.stringify(blocks)
   };
   if (banner) { fields['Cover Image URL'] = banner; fields['Cover Focus'] = bannerFocus || '50% 35%'; }
