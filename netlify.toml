@@ -12,3 +12,8 @@
 # Care radar morning digest: daily at 05:00 UTC = 7:00 in Czechia (summer).
 [functions."care-digest"]
   schedule = "0 5 * * *"
+
+# Monthly prayer update: 1st of each month, 06:00 UTC. Gathers the month's prayer
+# requests + anything answered into a DRAFT update and tells the missionary.
+[functions."prayer-monthly"]
+  schedule = "0 6 1 * *"
