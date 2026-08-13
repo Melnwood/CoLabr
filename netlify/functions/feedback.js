@@ -25,7 +25,10 @@ exports.handler = async function (event) {
       if (fr.ok) {
         rows = (((await fr.json()).records) || []).map(rec => {
           const c = rec.fields || {};
-          return { id: rec.id, note: c['Note'] || '', name: c['Name'] || '', email: c['Email'] || '', page: c['Page'] || '', shot: c['Screenshot'] || '', status: c['Status'] || 'New', created: rec.createdTime || '' };
+          // Reports filed through the sandbox kit carry the screenshot as an attachment;
+          // older ones point at a hosted URL. Either way the admin list shows a picture.
+          const att = Array.isArray(c['Shot']) ? c['Shot'][0] : null;
+          return { id: rec.id, note: c['Note'] || '', name: c['Name'] || '', email: c['Email'] || '', page: c['Page'] || '', shot: (att && att.url) || c['Screenshot'] || '', status: c['Status'] || 'New', created: rec.createdTime || '' };
         }).sort((a, z) => (z.created || '').localeCompare(a.created || ''));
       }
       return r(200, { ok: true, rows });

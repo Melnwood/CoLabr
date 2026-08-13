@@ -51,7 +51,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="nav"><a href="manage.html">My Dashboard</a><a href="admin.html" id="adminLink" style="display:none">Super admin</a></div>
+  <div class="nav"><a href="manage.html">My Dashboard</a><a href="admin.html" id="adminLink" style="display:none">Super admin</a><a href="sandbox-board.html" id="boardLink" style="display:none">What testers found</a></div>
   <h1>Sandbox</h1>
   <p class="lede">Real people, looking from different seats. Everyone sees the same product — what changes is <b>which pair of eyes</b> you bring. Your assignment is below.</p>
   <div id="mine"><div class="state">Loading your assignment…</div></div>
@@ -165,6 +165,7 @@ async function load(){
   if(d.admin){
     document.getElementById('adminZone').style.display='';
     document.getElementById('adminLink').style.display='';
+    document.getElementById('boardLink').style.display='';
     try{ ROWS=(await api({action:'list'})).rows||[]; renderList(); }catch(e){}
   }
 }

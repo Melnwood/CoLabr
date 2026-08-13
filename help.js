@@ -106,13 +106,36 @@
     fbtab.textContent=box.classList.contains('fb')?'Back to chat':'Found a problem?';
     if(box.classList.contains('fb')) document.getElementById('fbnote').focus();
   });
+  // Shrink first — a phone screenshot is 3 MB and nothing is gained by sending all of it.
   function fbSetShot(file){
     if(!file||!/^image\//.test(file.type)) return;
     const rd=new FileReader();
-    rd.onload=()=>{ FBSHOT={data:String(rd.result).split(',')[1],type:file.type};
-      const t=document.getElementById('fbthumb'); t.src=String(rd.result); t.style.display='block';
-      document.getElementById('fbpick').textContent='Screenshot attached ✓'; };
+    rd.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height; const max=1600;
+        if(Math.max(w,h)>max){ const k=max/Math.max(w,h); w=Math.round(w*k); h=Math.round(h*k); }
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        const url=cv.toDataURL('image/jpeg',0.82);
+        FBSHOT={data:url.split(',')[1],type:'image/jpeg'};
+        const t=document.getElementById('fbthumb'); t.src=url; t.style.display='block';
+        document.getElementById('fbpick').textContent='Screenshot attached ✓';
+      };
+      img.src=String(rd.result);
+    };
     rd.readAsDataURL(file);
+  }
+  // What a report should carry without anyone having to type it.
+  const FBERR=[];
+  addEventListener('error',e=>{ FBERR.push((e.message||'Error')+' @ '+String(e.filename||'').split('/').pop()+':'+(e.lineno||0)); if(FBERR.length>5) FBERR.shift(); });
+  addEventListener('unhandledrejection',e=>{ FBERR.push('Unhandled: '+((e.reason&&(e.reason.message||e.reason))||'')); if(FBERR.length>5) FBERR.shift(); });
+  function fbContext(){
+    const bits=[navigator.userAgent,
+      'Window '+innerWidth+'×'+innerHeight+' · screen '+screen.width+'×'+screen.height+' @'+(devicePixelRatio||1)+'x',
+      'Local time '+new Date().toString()];
+    if(FBERR.length) bits.push('JS errors on this page:\n- '+FBERR.join('\n- '));
+    return bits.join('\n');
   }
   document.getElementById('fbpick').addEventListener('click',()=>document.getElementById('fbfile').click());
   document.getElementById('fbfile').addEventListener('change',e=>fbSetShot(e.target.files&&e.target.files[0]));
@@ -123,15 +146,11 @@
   document.getElementById('fbsend').addEventListener('click',async()=>{
     const note=document.getElementById('fbnote').value.trim(), out=document.getElementById('fbout'), btn=document.getElementById('fbsend');
     if(!note){ out.textContent='Describe what you saw first.'; return; }
-    btn.disabled=true; out.textContent='Sending…';
+    btn.disabled=true; out.textContent=FBSHOT?'Sending your report and screenshot…':'Sending…';
     try{
-      let shot='';
-      if(FBSHOT){
-        out.textContent='Uploading screenshot…';
-        const ur=await fetch('/.netlify/functions/upload-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:FBSHOT.data,type:FBSHOT.type,folder:'feedback'})});
-        const ud=await ur.json(); if(ur.ok&&ud.url) shot=ud.url;
-      }
-      const r=await fetch('/.netlify/functions/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({note,page:location.href,shot})});
+      const r=await fetch('/.netlify/functions/sandbox-report',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'submit',note,page:location.href,context:fbContext(),
+          shot:FBSHOT?FBSHOT.data:'',shotType:FBSHOT?FBSHOT.type:''})});
       const d=await r.json();
       if(!r.ok) throw new Error(d.error||'Could not send.');
       out.textContent='Got it — thank you! It’s on the fix list and Mel has it in his inbox.';
