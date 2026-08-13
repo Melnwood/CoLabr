@@ -27,6 +27,7 @@
   .num{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:8px}
   .stop h2{font-family:var(--serif);font-size:24px;font-weight:600;margin:0 0 10px}
   .stop p{font-size:14.5px;line-height:1.7;color:var(--body);margin:0}
+  .stop p + p{margin-top:13px}
   .stop p b{color:var(--ink)}
   .vis{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:18px;min-height:200px;display:flex;flex-direction:column;justify-content:center;gap:9px}
   .vis .blk{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:12.5px;color:var(--body);display:flex;align-items:center;gap:9px}
@@ -47,6 +48,23 @@
   .lchip{display:inline-block;font-size:10px;font-weight:800;border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:var(--muted);letter-spacing:.06em;vertical-align:1px;background:#fff}
   .sdot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px}
   .sdot.o{background:#e8a13c}.sdot.g{background:#2f9e63}
+  /* Printed, the tour is a handout: one stop per page, nothing split down the middle. */
+  @media print{
+    @page{size:letter;margin:14mm}
+    header nav,.cta a{display:none}
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    .hero{padding:0 0 8px;text-align:left}
+    .hero h1{font-size:30px}
+    .hero p{margin:0;max-width:none}
+    .stop{page-break-inside:avoid;break-inside:avoid;page-break-after:always;break-after:page;
+          padding:22px 0;border-bottom:none;grid-template-columns:1fr 1.05fr;gap:26px;align-items:start}
+    .stop:nth-child(even of .stop){direction:ltr}
+    .vis{min-height:0;background:#F7F8F9;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .vis .chip,.sdot,.bar i,.num{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cta{page-break-before:avoid;padding:16px 0 0;text-align:left}
+    a[href]:after{content:none}
+  }
 </style>
 </head>
 <body>
