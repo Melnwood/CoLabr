@@ -298,8 +298,8 @@
         <div class="cstats" id="cstats"><div class="state" style="padding:6px 0">Counting…</div></div>
       </div>
       <div class="panel" id="prayPanel">
-        <h2>Prayer requests <span class="hint">what you send when a church asks</span></h2>
-        <div id="praybody"><div class="state" style="padding:6px 0">Loading…</div></div>
+        <h2 id="praytoggle" class="acc-h">Prayer requests <span class="hint">(what you send when a church asks)</span> <span class="chev" id="praychev">▸</span> <span class="cnt" id="praycnt"></span></h2>
+        <div id="praybody" style="display:none"><div class="state" style="padding:6px 0">Loading…</div></div>
       </div>
       <div class="panel" id="sharePanel" style="display:none">
         <h2>Feature requests <span class="ib zero" id="sharecount">0</span></h2>
@@ -616,6 +616,10 @@ async function goLive(){
 liveStrip();
 document.getElementById('sysBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('sysMenu').classList.toggle('on');});
 document.addEventListener('click',()=>{const m=document.getElementById('sysMenu');if(m)m.classList.remove('on');});
+document.getElementById('praytoggle').addEventListener('click',()=>{
+  const h=document.getElementById('praytoggle');
+  document.getElementById('praybody').style.display=h.classList.toggle('open')?'':'none';
+});
 document.getElementById('listtoggle').addEventListener('click',()=>{
   const h=document.getElementById('listtoggle'); const open=h.classList.toggle('open');
   document.getElementById('list').style.display=open?'':'none';
@@ -707,6 +711,21 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const p=document.
 /* ---- Prayer requests: the answer to "do you have any prayer requests?" ---- */
 const PRCATS=['Mission & vision','Our work','Family','Personal & spiritual'];
 let PRITEMS=[];
+// Folded shut, the header carries the only two things worth knowing: how many
+// requests are written, and whether any have gone stale enough to fix first.
+function prSummary(){
+  const el=document.getElementById('praycnt'); if(!el)return;
+  const written=PRITEMS.filter(x=>String(x.text||'').trim()).length;
+  const FRESH={'Our work':70,'Family':120,'Personal & spiritual':120};
+  const stale=PRITEMS.filter(x=>{
+    if(!String(x.text||'').trim()||!FRESH[x.cat]||!x.updated)return false;
+    const d=Math.floor((Date.now()-new Date(x.updated))/86400000);
+    return !isNaN(d)&&d>FRESH[x.cat];
+  }).length;
+  el.innerHTML = written
+    ? `${written} written${stale?` · <span style="color:#b26a00;font-weight:700">${stale} worth refreshing</span>`:''}`
+    : 'none written yet';
+}
 function prRender(){
   const box=document.getElementById('praybody'); if(!box)return;
   let html='<div class="prtop"><button class="pradd" id="prdraft">\u2726 Draft these from my updates</button><span class="prhint">You\u2019ve already written most of this \u2014 we\u2019ll pull it from your recent updates and you edit from there.</span></div>';
@@ -773,7 +792,7 @@ async function loadPrayerProfile(){
     if(!r.ok)return; const d=await r.json();
     PRITEMS=(d.standing||[]).map(x=>({cat:x.cat,text:x.text,updated:x.updated||''}));
     if(!PRITEMS.length) PRITEMS=PRCATS.map(c=>({cat:c,text:''}));   // one empty line per category to start
-    prRender();
+    prRender(); prSummary();
   }catch(e){}
 }
 /* Conversations at a glance: new · waiting on you · people praying. Each tile
