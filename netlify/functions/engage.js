@@ -1,5 +1,6 @@
 // Co-Labr — public engagement for the supporter page.
-// Returns the prayer count and PUBLIC encouragement for one update (or all updates).
+// Returns the prayer count for one update (or all updates). Messages are never
+// returned here — nothing a supporter writes is shown to other supporters.
 // Private notes are NEVER returned here. Uses AIRTABLE_TOKEN (read).
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tblVNMG5VnOnFFeto';
@@ -14,7 +15,7 @@ exports.handler = async function (event) {
   const q = event.queryStringParameters || {};
   const updateId = q.updateId || '';
 
-  let formula = "OR({Type}='Prayer',AND({Type}='Encouragement',{Public}=1))";
+  let formula = "{Type}='Prayer'";
   if (updateId) formula = `AND({Update ID}='${updateId.replace(/'/g, '')}',${formula})`;
   const url = `https://api.airtable.com/v0/${BASE}/${TABLE}?pageSize=100&returnFieldsByFieldId=true&filterByFormula=${encodeURIComponent(formula)}`;
 
@@ -28,9 +29,8 @@ exports.handler = async function (event) {
       const uid = c[F.updateId] || '_';
       byUpdate[uid] = byUpdate[uid] || { prayers: 0, encouragements: [] };
       if (c[F.type] === 'Prayer') byUpdate[uid].prayers++;
-      else if (c[F.type] === 'Encouragement' && c[F.public]) {
-        byUpdate[uid].encouragements.push({ name: c[F.name] || 'A supporter', message: c[F.message] || '', at: rec.createdTime });
-      }
+      // The empty `encouragements` array stays for callers that still read the shape;
+      // it is never filled, because no supporter message is shown to other supporters.
     });
     if (updateId) return j(200, byUpdate[updateId] || { prayers: 0, encouragements: [] }, 'no-store');
     return j(200, byUpdate, 'no-store');

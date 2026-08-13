@@ -1562,7 +1562,7 @@ document.getElementById('previewBtn').addEventListener('click',()=>{
   // appears where the writer placed a Give or Button block.
   const footer=`<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:22px 0 8px;padding-top:16px;border-top:1px solid #eee9e2">
       <button type="button" class="pvtry" data-say="On your live wall, this records their prayer with their name — it lands in your Responses.">I'm praying</button>
-      <button type="button" class="pvtry" data-say="On your live wall, this opens the message box — public encouragement or a private note to you.">Send a note</button>
+      <button type="button" class="pvtry" data-say="On your live wall, this opens the message box — whatever they write comes straight to you.">Send a note</button>
     </div>`;
   document.getElementById('pvsheet').innerHTML=`<div class="rcov">${cover?`<img src="${esc(cover)}" alt="" style="object-position:${cfoc}">`:''}<button class="x" id="pvx" type="button">×</button></div>
     <div class="rbody"><div class="rk">Update</div><h2>${esc(title)}</h2>

@@ -1,5 +1,6 @@
 // Co-Labr — supporter response intake (public, no login).
-// A supporter prays, sends a private note, or leaves public encouragement on an update.
+// A supporter prays or writes a note on an update. Nothing a supporter writes is
+// public — there is no comment wall, and the Public flag is never set on new rows.
 // Writes to the Responses table. Uses AIRTABLE_TOKEN (needs write scope).
 // Notifies the missionary by email — via Google Workspace/Gmail (preferred) or Resend (fallback).
 const { sendMail, esc } = require('./_mail');
@@ -55,7 +56,7 @@ exports.handler = async function (event) {
   if ((type === 'Note' || type === 'Encouragement') && !message) return r(400, { error: 'Please write a message.' });
 
   // Only encouragement can ever be public; notes & prayers are private to the missionary.
-  const isPublic = type === 'Encouragement' && b.public !== false;
+  const isPublic = false;   // responses are between the two of them, always
 
   const fields = {
     [F.name]: name,

@@ -348,9 +348,6 @@
   .praybtn{display:inline-flex;align-items:center;gap:8px;background:#eef3fe;color:#2f6df0;border:1px solid #cfe0fb;font-weight:750;font-size:14px;padding:11px 18px;border-radius:24px;cursor:pointer}
   .praybtn.done{background:#2f6df0;color:#fff;border-color:#2f6df0;cursor:default}
   .praycount{font-size:12.5px;color:var(--muted)}
-  .rtabs{display:flex;gap:8px;margin-bottom:12px}
-  .rtab{font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
-  .rtab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
   .rform input,.rform textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;margin-bottom:9px;outline:none;color:var(--text)}
   .rform input[type=hidden]{display:none;margin:0}
   .rfrom{font-size:12.5px;color:#6b6357;background:#faf6ef;border:1px solid #efe4cd;border-radius:9px;padding:9px 13px;margin-bottom:9px}
@@ -360,11 +357,6 @@
   .rform .send{background:var(--acc);color:#fff;font-weight:700;font-size:14px;padding:11px 22px;border:none;border-radius:9px;cursor:pointer}
   .rhint{font-size:11.5px;color:var(--muted);margin:-2px 0 10px}
   .rmsg{font-size:12.5px;margin-top:8px;min-height:15px}.rmsg.ok{color:#2f9e63}.rmsg.err{color:#c0392b}
-  .ewall{margin-top:20px}
-  .ewall .ewt{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px}
-  .ewall .wc{background:#faf7f2;border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:9px}
-  .ewall .wc b{font-size:13px;color:var(--text)}
-  .ewall .wc p{margin:3px 0 0;font-size:13.5px;color:#463a28;line-height:1.5}
   /* follow + subscribe */
   .topcta{margin-left:auto;display:flex;gap:8px;align-items:center}
   .langsel{font-size:12px;color:#6f6047;cursor:pointer;border:1px solid var(--line);border-radius:20px;padding:6px 10px 6px 30px;background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="%237a756f" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.6 3 14.4 0 18M12 3c-3 3.6-3 14.4 0 18"/></svg>') 9px center/15px no-repeat}
@@ -661,10 +653,10 @@ function maybeTour(){
   let st={}; try{ st=JSON.parse(localStorage.getItem('walltour')||'{}'); }catch(_){}
   if(st.off || (st.n||0)>=2) return;
   st.n=(st.n||0)+1; try{ localStorage.setItem('walltour',JSON.stringify(st)); }catch(_){}
-  const F=PAGE_FIRST||FAMSHORT;
+  const F=pageName();
   const steps=[
     {i:licon('heart',34),h:'Welcome — this wall is for you',p:'You\u2019re part of '+esc(F)+'\u2019s support team, so everything they share lives here: every update, photo, and video, going back years. Scroll anytime, from any email.'},
-    {i:licon('chat',34),h:'Tap any update to read it',p:'Inside you can do three things: tap <b>I\u2019m praying</b> so they know you\u2019re standing with them, <b>write a message</b> — public encouragement or a note straight to them — and <b>give</b> toward their ministry.'},
+    {i:licon('chat',34),h:'Tap any update to read it',p:'Inside you can do three things: tap <b>I\u2019m praying</b> so they know you\u2019re standing with them, <b>write a message</b> that goes straight to them, and <b>give</b> toward their ministry.'},
     {i:licon('globe',34),h:'Read in your language',p:'Use the language picker up top and the whole wall — even video subtitles — switches to the language of your heart. Change how you get emails anytime from the link in any update.'}
   ];
   let i=0;
@@ -1285,34 +1277,32 @@ async function openReader(i){
   pollCaptions(sheet);
   wireRespond(u);
 }
-let FAMILY=PAGEM||'The Ellenwood Family'; const FAMSHORT=PAGEM||'Ellenwoods';
+let FAMILY=PAGEM||'The Ellenwood Family';
 let PAGE_FIRST='';
+// Whatever they typed in their name box, verbatim — we never bolt an article onto
+// the front of it ("the Mel & Amy") or guess at a family surname.
+function pageName(){ return (PAGE_FIRST||PAGEM||FAMILY||'').trim(); }
 function respondHTML(u){
   return `<div class="eng">
-    <h4>Respond to the ${FAMSHORT}</h4>
+    <h4>Respond to ${esc(pageName())}</h4>
     <div class="prayrow" id="respondRow"><button class="praybtn" id="prayBtn">${licon('pray',15)} I'm praying</button><span class="praycount" id="prayCount"></span></div>
-    <div class="rtabs"><button class="rtab on" data-m="Encouragement">Leave encouragement</button><button class="rtab" data-m="Note">Send a note</button></div>
     <div class="rform">
       ${(function(){
         // We already KNOW who this is — never make them type their own name.
         const who=(VIEWER&&VIEWER.name)?{name:VIEWER.name,email:VIEWER.email||''}:(ME?{name:MYPAGE||ME.name||ME.email,email:ME.email||''}:null);
         return who
-          ?`<div class="rfrom">From <b>${esc(who.name)}</b>${who.email?` <span>· ${esc(who.email)}</span>`:''} → to ${esc(FAMSHORT)}</div><input id="rName" type="hidden" value="${esc(who.name)}"><input id="rEmail" type="hidden" value="${esc(who.email)}">`
+          ?`<div class="rfrom">From <b>${esc(who.name)}</b>${who.email?` <span>· ${esc(who.email)}</span>`:''} → to ${esc(pageName())}</div><input id="rName" type="hidden" value="${esc(who.name)}"><input id="rEmail" type="hidden" value="${esc(who.email)}">`
           :`<input id="rName" placeholder="Your name"><input id="rEmail" placeholder="Email (optional)" type="email">`;
       })()}
       <textarea id="rMsg" placeholder="Write something…"></textarea>
-      <div class="rhint" id="rHint">Public — shown under this update so others can be encouraged too.</div>
+      <div class="rhint" id="rHint">Goes straight to ${esc(pageName())} — nobody else sees it.</div>
       <button class="send" id="rSend">Send</button>
       <div class="rmsg" id="rMsgOut"></div>
     </div>
-    <div class="ewall" id="ewall"></div>
   </div>`;
 }
-let respondMode='Encouragement';
 function wireRespond(u){
-  respondMode='Encouragement';
   const q=id=>document.getElementById(id);
-  const hint=q('rHint');
   // Known people are locked in by respondHTML — nothing to prefill here.
   q('prayBtn').addEventListener('click',async()=>{
     const btn=q('prayBtn'); if(btn.classList.contains('done'))return;
@@ -1323,22 +1313,17 @@ function wireRespond(u){
       if(!(d&&d.test)) loadEngagement(u.id);
     }catch(e){ /* ignore */ }
   });
-  document.querySelectorAll('.rtab').forEach(t=>t.addEventListener('click',()=>{
-    respondMode=t.dataset.m; document.querySelectorAll('.rtab').forEach(x=>x.classList.toggle('on',x===t));
-    hint.textContent = respondMode==='Encouragement' ? 'Public — shown under this update so others can be encouraged too.' : 'Private — only the family will see this note.';
-  }));
   q('rSend').addEventListener('click',async()=>{
     const out=q('rMsgOut'); const name=(q('rName').value||'').trim(); const message=(q('rMsg').value||'').trim();
     if(!name){ out.className='rmsg err'; out.textContent='Please add your name.'; return; }
     if(!message){ out.className='rmsg err'; out.textContent='Please write a message.'; return; }
     q('rSend').disabled=true; out.className='rmsg'; out.textContent='Sending…';
     try{
-      const d=await postResp({type:respondMode,updateId:u.id,updateTitle:u.title,missionary:FAMILY,name,email:(q('rEmail').value||'').trim(),message,public:respondMode==='Encouragement',t:VIEWTOK||undefined});
+      const d=await postResp({type:'Note',updateId:u.id,updateTitle:u.title,missionary:FAMILY,name,email:(q('rEmail').value||'').trim(),message,public:false,t:VIEWTOK||undefined});
       out.className='rmsg ok';
       out.textContent = (d&&d.test) ? 'Test only — responses to your own page aren’t counted or sent.'
-        : (respondMode==='Encouragement' ? 'Thank you — your encouragement is posted below.' : 'Thank you — your note was sent to the family.');
+        : 'Thank you — your note is on its way to '+pageName()+'.';
       q('rMsg').value='';
-      if(respondMode==='Encouragement') loadEngagement(u.id);
     }catch(e){ out.className='rmsg err'; out.textContent=e.message||'Could not send.'; }
     finally{ q('rSend').disabled=false; }
   });
@@ -1354,10 +1339,6 @@ async function loadEngagement(id){
     if(!r.ok) return; const d=await r.json();
     const pc=document.getElementById('prayCount');
     if(pc) pc.textContent = d.prayers ? (d.prayers===1?'1 person praying':d.prayers+' people praying') : 'Be the first to pray';
-    const ew=document.getElementById('ewall');
-    if(ew){ const list=d.encouragements||[];
-      ew.innerHTML = list.length ? `<div class="ewt">Encouragement from supporters</div>`+list.map(e=>`<div class="wc"><b>${esc(e.name)}</b><p>${esc(e.message)}</p></div>`).join('') : '';
-    }
   }catch(e){}
 }
 function closeReader(){document.getElementById('reader').classList.remove('open');document.getElementById('sheet').innerHTML='';document.body.style.overflow='';}
