@@ -718,7 +718,23 @@ async function loadBilling(){
     // Covered by an organisation, or simply not switched on yet: say nothing at all.
     if(!d.armed||d.state==='covered'||d.state==='none')return;
     let tone='#f0f7ff', edge='#cfe0f5', ink='#1f5b9e', title='', body='', cta='Set up billing';
-    if(d.state==='paid'){ return; }
+    if(d.state==='paid'){
+      // Nothing to warn about — just the way in to card, invoices and cancelling.
+      if(d.daysLeft!=null&&d.daysLeft<=30){
+        box.style.display='';
+        box.innerHTML=`<div style="background:#f6faf7;border:1px solid #cfe6d8;border-radius:12px;padding:13px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div style="font-size:13.5px;color:#2f7d55;font-weight:700">Subscription renews ${esc(d.paidUntil||'')}</div>
+          <button id="portalBtn" style="background:#fff;border:1px solid #cfe6d8;color:#2f7d55;font-weight:700;font-size:12.5px;border-radius:8px;padding:7px 13px;cursor:pointer;font-family:inherit">Manage billing</button></div>`;
+        const qb=document.getElementById('portalBtn');
+        if(qb) qb.addEventListener('click',async()=>{
+          qb.disabled=true;
+          try{ const rr=await fetch('/.netlify/functions/stripe-portal',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+            const dd=await rr.json().catch(()=>({})); if(rr.ok&&dd.url) location.href=dd.url; else qb.disabled=false;
+          }catch(e){ qb.disabled=false; }
+        });
+      }
+      return;
+    }
     if(d.state==='trial'){
       if(d.daysLeft>7) return;              // early days: leave them alone
       title=d.daysLeft===0?'Your trial ends today':`${d.daysLeft} day${d.daysLeft===1?'':'s'} left on your trial`;
@@ -738,10 +754,25 @@ async function loadBilling(){
     box.innerHTML=`<div style="background:${tone};border:1px solid ${edge};border-radius:12px;padding:15px 17px">
       <div style="font-size:15px;font-weight:800;color:${ink};margin-bottom:5px">${esc(title)}</div>
       <div style="font-size:13.5px;line-height:1.6;color:#4a443e">${body}</div>
-      <div style="margin-top:12px;display:flex;gap:9px;flex-wrap:wrap">
-        <a href="pricing.html" style="background:var(--acc);color:#fff;font-weight:700;font-size:13px;text-decoration:none;border-radius:9px;padding:9px 16px">${esc(cta)}</a>
+      <div style="margin-top:12px;display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+        <button id="payBtn" style="background:var(--acc);color:#fff;border:none;font-weight:700;font-size:13px;border-radius:9px;padding:9px 16px;cursor:pointer;font-family:inherit">${esc(cta)}</button>
         ${d.archive?`<a href="${esc(d.archive)}" style="font-size:13px;font-weight:700;color:${ink};text-decoration:none;border:1px solid ${edge};border-radius:9px;padding:9px 16px">Download my archive</a>`:''}
+        <span id="payMsg" style="font-size:12.5px;color:var(--muted)"></span>
       </div></div>`;
+    // Straight to Stripe when there is a plan to buy; until then, the pricing page.
+    const pb=document.getElementById('payBtn');
+    if(pb) pb.addEventListener('click',async()=>{
+      const m=document.getElementById('payMsg');
+      pb.disabled=true; m.textContent='Opening checkout…';
+      try{
+        const rr=await fetch('/.netlify/functions/stripe-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+        const dd=await rr.json().catch(()=>({}));
+        if(rr.ok&&dd.url){ location.href=dd.url; return; }
+        if(rr.status===503){ location.href='pricing.html'; return; }   // not switched on yet
+        m.textContent=dd.error||'Could not open checkout.';
+      }catch(e){ m.textContent='Could not reach the server.'; }
+      pb.disabled=false;
+    });
   }catch(e){}
 }
 /* ---- Prayer requests: the answer to "do you have any prayer requests?" ---- */

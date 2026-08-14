@@ -1,0 +1,4 @@
+# Stripe docs skills — local tooling, not part of the deployed site.
+.agents/
+.claude/skills/
+node_modules/

@@ -1,0 +1,8 @@
+{
+  "name": "colabr",
+  "private": true,
+  "description": "Co·labr — supporter updates for missionaries. Static pages + Netlify Functions.",
+  "dependencies": {
+    "stripe": "^22.4.0"
+  }
+}
