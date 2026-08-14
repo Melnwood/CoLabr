@@ -89,7 +89,12 @@ async function load(){
           ${x.hiddenOn?'<button class="act" data-restore="1">Restore</button>':''}
         </td></tr>`).join('')+`</tbody></table>`;
     wire();
-  }catch(e){ document.getElementById('list').innerHTML='<div class="state">'+esc(e.message)+'</div>'; }
+  }catch(e){
+    // Never leave the switch reading "Checking…" — an unknown state is the one
+    // thing this page must not display.
+    document.getElementById('armState').innerHTML='<span class="off">Couldn\u2019t read it \u2014 '+esc(e.message)+'</span>';
+    document.getElementById('list').innerHTML='<div class="state">'+esc(e.message)+'</div>';
+  }
 }
 function wire(){
   document.querySelectorAll('tr[data-id]').forEach(tr=>{
