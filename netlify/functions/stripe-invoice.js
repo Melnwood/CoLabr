@@ -18,9 +18,14 @@ exports.handler = async function (event) {
   const org = String(b.org || '').trim();
   const email = String(b.email || '').trim();
   const seats = Math.max(1, parseInt(b.seats, 10) || 0);
-  const price = b.price || process.env.STRIPE_PRICE_ID;
+  // Organization pricing is negotiated, not taken off the shelf — an invoice line
+  // carries the agreed per-seat amount. (It also CANNOT carry the subscription
+  // price: Stripe only accepts one-time pricing on an invoice item.)
+  const cents = Math.round(Number(b.perSeat) * 100);
+  const currency = String(b.currency || 'usd').toLowerCase();
+  const months = Math.max(1, parseInt(b.months, 10) || 12);
   if (!org || !email) return r(400, { error: 'Which organization, and which billing email?' });
-  if (!price) return r(503, { error: 'No plan has been set up yet.' });
+  if (!Number.isFinite(cents) || cents <= 0) return r(400, { error: 'What is the agreed price per seat? e.g. perSeat: 72' });
 
   try {
     // One customer per organization, found by email so re-running never forks it.
@@ -32,10 +37,15 @@ exports.handler = async function (event) {
       collection_method: 'send_invoice',
       days_until_due: Number.isFinite(+b.daysUntilDue) ? +b.daysUntilDue : 30,
       auto_advance: false,
-      description: `Co·labr — ${seats} seat${seats === 1 ? '' : 's'} for ${org}`,
-      metadata: { colabr_org: org, seats: String(seats) }
+      currency,
+      description: `Co·labr — ${seats} seat${seats === 1 ? '' : 's'} for ${org}, ${months} month${months === 1 ? '' : 's'}`,
+      metadata: { colabr_org: org, seats: String(seats), months: String(months) }
     });
-    await s.invoiceItems.create({ customer: customer.id, invoice: invoice.id, price, quantity: seats });
+    await s.invoiceItems.create({
+      customer: customer.id, invoice: invoice.id, quantity: seats, currency,
+      description: `Co·labr seat — ${months} month${months === 1 ? '' : 's'}`,
+      unit_amount_decimal: String(cents)
+    });
 
     // Drafted, not sent. Someone reads it first.
     if (b.send === true) {
