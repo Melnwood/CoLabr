@@ -676,6 +676,7 @@ function maybeTour(){
 let ISLOCKED=false;
 function renderLocked(raw){
   ISLOCKED=true;   // nothing below may un-hide content on a locked wall
+  if(raw&&raw.paused) return renderPaused(raw);
   try{ applyStyle(raw.style||'Field Notes'); }catch(_){}
   document.body.classList.add('ready');   // reveal the page — the landing is the content
   const boot=document.getElementById('boot'); if(boot)boot.style.display='none';
@@ -692,6 +693,24 @@ function renderLocked(raw){
     '<p style="font-size:12px;color:#8a8580;margin:16px 0 0;line-height:1.6">Already following? Open any update email from '+esc(first)+' and tap through — that link signs you in automatically.</p>';
   if(s){ s.style.display='block'; s.innerHTML=''; s.appendChild(lock); }
   const b=document.getElementById('lockfollow'); if(b)b.addEventListener('click',()=>{ const f=document.getElementById('followBtn'); if(f)f.click(); });
+}
+// The page is up but paused. Supporters should not be asked to "follow" something
+// nobody can publish to, and they should not be told why — that is between the
+// missionary and us.
+function renderPaused(raw){
+  try{ applyStyle((raw&&raw.style)||'Field Notes'); }catch(_){}
+  document.body.classList.add('ready');
+  const boot=document.getElementById('boot'); if(boot)boot.style.display='none';
+  ['hero','meta'].forEach(id=>{const el=document.getElementById(id); if(el)el.style.display='none';});
+  document.querySelectorAll('.tools,.jvrail,.yearrow,#monthrow,#typerow,.foot').forEach(el=>el.style.display='none');
+  const who=(raw&&raw.page&&(raw.page.first||raw.page.name))||'This page';
+  const s=document.getElementById('stream');
+  const box=document.createElement('div');
+  box.style.cssText='max-width:520px;margin:40px auto 70px;background:#fff;border:1px solid #e7e0d6;border-radius:16px;padding:32px 28px;text-align:center;box-shadow:0 10px 30px rgba(60,40,20,.10)';
+  box.innerHTML='<div style="margin-bottom:12px;opacity:.65">'+licon('heart',38)+'</div>'+
+    '<h2 style="margin:0 0 10px;font-size:20px;font-weight:800">'+esc(who)+'\u2019s page is paused</h2>'+
+    '<p style="font-size:14px;color:#7a756f;line-height:1.65;margin:0">Their updates aren\u2019t available just now. Nothing has been lost — if you know them, do drop them a line.</p>';
+  if(s){ s.style.display='block'; s.innerHTML=''; s.appendChild(box); }
 }
 async function load(){
   try{

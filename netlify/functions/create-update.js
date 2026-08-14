@@ -3,6 +3,7 @@
 // Uses AIRTABLE_TOKEN (must have data.records:write scope on the base).
 
 const { sessionFromEvent } = require('./_auth');
+const { blockWrite } = require('./_billing');
 const { fireNotify } = require('./_notify');
 const { missByEmail } = require('./_shares');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
@@ -21,6 +22,8 @@ exports.handler = async function (event) {
   const session = sessionFromEvent(event);
   if (!session && !(editKey && b.key === editKey)) return resp(401, { error: 'Please sign in.' });
   if (!b.title || !b.title.trim()) return resp(400, { error: 'A title is required.' });
+  // Trial over and unpaid: the wall stays up for supporters, but writing stops here.
+  if (session) { const blocked = await blockWrite(token, session.email); if (blocked) return blocked; }
 
   // Tag the update to the signed-in member's OWN page. No page, no publishing —
   // the old fallback silently posted to the Ellenwoods' site.

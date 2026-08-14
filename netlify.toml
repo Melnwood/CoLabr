@@ -17,3 +17,9 @@
 # requests + anything answered into a DRAFT update and tells the missionary.
 [functions."prayer-monthly"]
   schedule = "0 6 1 * *"
+
+# The trial clock: warn, freeze, hide, and (only after two months dark, with the
+# archive already delivered) delete. Inert until "Billing enforcement" is ticked
+# in Platform Settings — see netlify/functions/_billing.js.
+[functions."billing-sweep"]
+  schedule = "0 7 * * *"

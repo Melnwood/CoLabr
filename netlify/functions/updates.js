@@ -91,6 +91,24 @@ exports.handler = async function (event) {
   if (viewer && viewer.staff && ['international', 'national', 'both'].includes(asLens)) {
     viewer = { staff: true, preview: true, audience: asLens.charAt(0).toUpperCase() + asLens.slice(1) };
   }
+  // A page that has gone dark returns nothing at all — no updates, no identity
+  // beyond the name on the link. It is paused, not deleted, and it comes back the
+  // moment somebody pays. The owner still gets in, so they can see their own work.
+  try {
+    const bill = require('./_billing');
+    const auth2 = { Authorization: 'Bearer ' + token };
+    if (await bill.enforcing(auth2)) {
+      const rr = await fetch(`https://api.airtable.com/v0/${BASE}/${bill.MISS}?maxRecords=1&filterByFormula=${encodeURIComponent(`{Name}='${nameEsc}'`)}`, { headers: auth2 });
+      if (rr.ok) {
+        const rec = (((await rr.json()).records) || [])[0];
+        const st = rec ? bill.stateOf(rec.fields) : null;
+        if (st && !st.canRead && !(viewer && viewer.staff)) {
+          return json(200, { paused: true, locked: true, page: { name: missionary }, updates: [] });
+        }
+      }
+    }
+  } catch (e) { /* never let a billing wobble take a wall down */ }
+
   // Default page: this missionary OR legacy untagged updates. Teammate page: exact match only.
   const formula = isDefault
     ? `AND({Status}='Published', OR(LEN(ARRAYJOIN({Missionary}))=0, FIND('${nameEsc}', ARRAYJOIN({Missionary}))>0))`

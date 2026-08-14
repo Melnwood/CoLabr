@@ -12,6 +12,7 @@
 // Sends in small batches (the browser loops) so we never hit the function timeout.
 const crypto = require('crypto');
 const { sessionFromEvent } = require('./_auth');
+const { blockWrite } = require('./_billing');
 const { sendMail, esc } = require('./_mail');
 const { missByEmail } = require('./_shares');
 const MAX = 25;
@@ -26,6 +27,7 @@ exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') return r(405, { error: 'Method not allowed' });
   const session = sessionFromEvent(event);
   if (!session) return r(401, { error: 'Please sign in.' });
+  { const blocked = await blockWrite(process.env.AIRTABLE_TOKEN, session.email); if (blocked) return blocked; }
   let b; try { b = JSON.parse(event.body || '{}'); } catch { return r(400, { error: 'Bad request.' }); }
 
   const subject = (b.subject || '').toString().trim().slice(0, 160) || 'Come follow our journey';

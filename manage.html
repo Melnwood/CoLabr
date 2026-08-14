@@ -293,6 +293,7 @@
     <div class="detailrow" id="detailrow"></div>
     <div class="zmain">
     <div class="zcol">
+      <div class="panel" id="billPanel" style="display:none"></div>
       <div class="panel" id="convoPanel">
         <h2>Conversations <a href="messages.html" style="color:var(--acc);font-weight:700">Open &rarr;</a></h2>
         <div class="cstats" id="cstats"><div class="state" style="padding:6px 0">Counting…</div></div>
@@ -708,6 +709,41 @@ document.addEventListener('click',e=>{
   if(e.target.id==='ipClose'||e.target.id==='ipop') pop.classList.remove('on');
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const p=document.getElementById('ipop'); if(p)p.classList.remove('on'); } });
+/* ---- Where they stand on the trial. Silent while there is nothing to say. ---- */
+async function loadBilling(){
+  const box=document.getElementById('billPanel'); if(!box)return;
+  try{
+    const r=await fetch('/.netlify/functions/billing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'mine'})});
+    if(!r.ok)return; const d=await r.json();
+    // Covered by an organisation, or simply not switched on yet: say nothing at all.
+    if(!d.armed||d.state==='covered'||d.state==='none')return;
+    let tone='#f0f7ff', edge='#cfe0f5', ink='#1f5b9e', title='', body='', cta='Set up billing';
+    if(d.state==='paid'){ return; }
+    if(d.state==='trial'){
+      if(d.daysLeft>7) return;              // early days: leave them alone
+      title=d.daysLeft===0?'Your trial ends today':`${d.daysLeft} day${d.daysLeft===1?'':'s'} left on your trial`;
+      body='When it ends your wall stays up — your supporters keep reading, praying and giving. Writing and sending pause until a subscription is active.';
+      tone='#fff8ee'; edge='#f0dcbc'; ink='#95651a';
+    } else if(d.state==='frozen'||d.state==='due-hide'){
+      title='Your trial has ended';
+      body='Your wall is still up and your supporters can still read, pray and give. Publishing and sending start again as soon as a subscription is active.';
+      tone='#fff3ef'; edge='#f3cec1'; ink='#b0432b'; cta='Start writing again';
+    } else if(d.state==='hidden'||d.state==='due-delete'){
+      title='Your page is paused';
+      body='Nothing has been deleted — every update, photo and supporter is exactly where you left it, and one payment brings it all back.'
+        + (d.deleteOn?` If nothing changes it will be removed on ${esc(d.deleteOn)}.`:'');
+      tone='#fdecea'; edge='#f5c6c0'; ink='#a3271c'; cta='Restore my page';
+    }
+    box.style.display='';
+    box.innerHTML=`<div style="background:${tone};border:1px solid ${edge};border-radius:12px;padding:15px 17px">
+      <div style="font-size:15px;font-weight:800;color:${ink};margin-bottom:5px">${esc(title)}</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#4a443e">${body}</div>
+      <div style="margin-top:12px;display:flex;gap:9px;flex-wrap:wrap">
+        <a href="pricing.html" style="background:var(--acc);color:#fff;font-weight:700;font-size:13px;text-decoration:none;border-radius:9px;padding:9px 16px">${esc(cta)}</a>
+        ${d.archive?`<a href="${esc(d.archive)}" style="font-size:13px;font-weight:700;color:${ink};text-decoration:none;border:1px solid ${edge};border-radius:9px;padding:9px 16px">Download my archive</a>`:''}
+      </div></div>`;
+  }catch(e){}
+}
 /* ---- Prayer requests: the answer to "do you have any prayer requests?" ---- */
 const PRCATS=['Mission & vision','Our work','Family','Personal & spiritual'];
 let PRITEMS=[];
@@ -786,6 +822,7 @@ function prRender(){
     }catch(e){ m.className='savenote err'; m.textContent=e.message||'Could not save.'; }
   });
 }
+loadBilling();
 async function loadPrayerProfile(){
   try{
     const r=await fetch('/.netlify/functions/prayer-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'mine'})});

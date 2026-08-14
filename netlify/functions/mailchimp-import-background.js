@@ -7,6 +7,7 @@
 //    re-send someone's old newsletters
 //  - the API key lives only inside this one invocation
 const { sessionFromEvent } = require('./_auth');
+const { blockWrite } = require('./_billing');
 const { missByEmail } = require('./_shares');
 const { htmlToBlocks } = require('./_htmlblocks');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
@@ -20,6 +21,7 @@ exports.handler = async function (event) {
     if (!sess) return;
     const token = process.env.AIRTABLE_TOKEN;
     if (!token) return;
+    if (await blockWrite(token, sess.email)) return;   // frozen: no importing
     const auth = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
 
     let b; try { b = JSON.parse(event.body || '{}'); } catch { return; }
