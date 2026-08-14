@@ -25,8 +25,14 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
 .mname{font-size:16px;font-weight:800;line-height:1.15}
 .morg{font-size:12.5px;color:var(--acc);font-weight:700;margin-top:3px}
 .mloc{font-size:12.5px;color:var(--muted);margin-top:2px}
-.mlatest{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.4}
+.pwall{font-size:12.5px;font-weight:700;color:var(--acc);text-decoration:none;white-space:nowrap;margin-left:auto}
+.pwall:hover{text-decoration:underline}
+.mlatest{display:block;font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.4;text-decoration:none}
 .mlatest b{color:var(--text);font-weight:600}
+.mlatest .go{display:block;font-size:11.5px;font-weight:700;color:var(--acc);margin-top:4px;opacity:0;transition:opacity .15s}
+.mcard:hover .mlatest .go{opacity:1}
+.mlatest:hover b{color:var(--acc)}
+@media(hover:none){.mlatest .go{opacity:1}}
 .back{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--acc);cursor:pointer;margin:24px 0 4px}
 .phead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:6px 0 20px}
 .phead h2{font-size:26px;font-weight:800;margin:0}
@@ -127,7 +133,7 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:26px 0 6px}
     </div>
     <div id="pageview" style="display:none">
       <div class="back" id="back">← All teammates</div>
-      <div class="phead"><h2 id="pname"></h2><span class="porg" id="porg"></span></div>
+      <div class="phead"><h2 id="pname"></h2><span class="porg" id="porg"></span><a class="pwall" id="pwall" style="display:none">Open their wall &rarr;</a></div>
       <div class="ulist" id="ulist"><div class="state">Loading updates…</div></div>
     </div>
   </div>
@@ -205,10 +211,13 @@ function renderDir(){
     html+=`<div class="mcard" data-i="${i}">
       <div class="mcov"${m.latest&&m.latest.cover?` style="background-image:url('${esc(m.latest.cover)}');background-position:${esc((m.latest.focus||'50% 35%'))}"`:''}><span class="mcount">${m.count} update${m.count===1?'':'s'}</span></div>
       <div class="mbody"><div class="mnamerow">${m.photo?`<div class="mav" style="background-image:url('${esc(m.photo)}')"></div>`:`<div class="mav">${esc((m.name||'?').trim().charAt(0).toUpperCase())}</div>`}<div class="mname">${esc(m.name)}</div></div>${m.org?`<div class="morg">${esc(m.org)}</div>`:''}${m.location?`<div class="mloc">${esc(m.location)}</div>`:''}
-      ${m.latest?`<div class="mlatest">Latest: <b>${esc(m.latest.title)}</b>${m.latest.date?` <span style="color:var(--muted);font-weight:400">· ${esc(m.latest.date)}</span>`:''}</div>`:''}</div></div>`;
+      ${m.latest?`<a class="mlatest" href="index.html?m=${encodeURIComponent(m.name)}${m.latest.id?'&u='+encodeURIComponent(m.latest.id):''}">Latest: <b>${esc(m.latest.title)}</b>${m.latest.date?` <span style="color:var(--muted);font-weight:400">· ${esc(m.latest.date)}</span>`:''}<span class="go">Open on their wall &rarr;</span></a>`:''}</div></div>`;
   });
   el.innerHTML=html;
-  el.querySelectorAll('[data-i]').forEach(c=>c.addEventListener('click',()=>openTeammate(window._ms[+c.dataset.i])));
+  el.querySelectorAll('[data-i]').forEach(c=>c.addEventListener('click',e=>{
+    if(e.target.closest('.mlatest')) return;   // the latest line is its own door, to their wall
+    openTeammate(window._ms[+c.dataset.i]);
+  }));
 }
 
 async function openTeammate(m){
@@ -217,6 +226,8 @@ async function openTeammate(m){
   document.getElementById('pageview').style.display='';
   document.getElementById('pname').textContent=m.name;
   document.getElementById('porg').textContent=[m.org,m.location].filter(Boolean).join(' · ');
+  const wl=document.getElementById('pwall');
+  if(wl){ wl.href='index.html?m='+encodeURIComponent(m.name); wl.style.display=''; }
   const list=document.getElementById('ulist'); list.innerHTML='<div class="state">Loading updates…</div>';
   window.scrollTo(0,0);
   try{

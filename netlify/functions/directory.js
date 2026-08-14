@@ -29,7 +29,7 @@ exports.handler = async function (event) {
       (d.records || []).forEach(rec => {
         const f = rec.fields || {}; const title = f[U_TITLE]; if (!title) return;
         const date = f[U_DATE] || '', cover = f[U_COVER] || '', focus = f[U_FOCUS] || '';
-        (f[U_MISS] || []).forEach(mid => { const m = map[mid]; if (!m) return; m.count++; if (!m.latest || date > m.latest.date) m.latest = { title, cover, date, focus }; });
+        (f[U_MISS] || []).forEach(mid => { const m = map[mid]; if (!m) return; m.count++; if (!m.latest || date > m.latest.date) m.latest = { id: rec.id, title, cover, date, focus }; });
       });
       url = d.offset ? `${base}&offset=${d.offset}` : '';
     }
