@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="/favicon.png">
-<title>Co·labr — Pricing</title>
+<title>Co·labr: Pricing</title>
 <meta name="description" content="Co·labr is in its testing season. Join the waitlist and we'll email you when it opens.">
 <style>
   :root{--acc:#FF6B5B;--acc-soft:#fff0ee;--teal:#00C2B3;--ink:#0D1B2A;--body:#3d4a5c;--muted:#7d8794;--line:#e4e8ec;--soft:#F1F3F5;--serif:Georgia,'Times New Roman',serif}
@@ -54,20 +54,20 @@
   <div class="hero">
     <span class="badge">Testing season</span>
     <h1>One plan. $15 a month.</h1>
-    <p>Fourteen days free to try it properly — write, bring your supporters across, publish, and see what comes back. Co·labr is still being tested with a small group of missionary families at Josiah Venture, so if something isn't right yet we want to hear it.</p>
+    <p>Fourteen days free to try it properly. Write, bring your supporters across, publish, and see what comes back. Co·labr is still being tested with a small group of missionary families at Josiah Venture, so if something isn't right yet we want to hear it.</p>
   </div>
 
   <div class="card price">
     <div class="amount"><b>$15</b><span>per month</span></div>
-    <p class="trial"><b>14 days free.</b> No card to begin — start writing, bring your people over, publish, and decide afterwards.</p>
+    <p class="trial"><b>14 days free.</b> No card to begin. Start writing, bring your people over, publish, and decide afterwards.</p>
     <p><b>One plan.</b> Everything is in it: the composer, translation, video subtitles, your supporter list, the prayer loop, and a private wall your people actually visit. No tiers to decode, no per-email math, no charge for more supporters.</p>
-    <p><b>It replaces what you're paying for now</b> — and costs less than the newsletter tool you're leaving.</p>
+    <p><b>It replaces what you're paying for now</b>, and costs less than the newsletter tool you're leaving.</p>
     <p><b>Serving with Josiah Venture?</b> Your organization covers this. You'll never see a bill or a trial countdown.</p>
   </div>
 
   <div class="card">
     <h2>If you decide it isn't for you</h2>
-    <p>Your writing is yours, and leaving shouldn't cost you it. Before anything is ever paused we email you <b>your whole archive as a single file</b> — every update, photo, prayer and sign-off, in the order you wrote them.</p>
+    <p>Your writing is yours, and leaving shouldn't cost you it. Before anything is ever paused we email you <b>your whole archive as a single file</b>, holding every update, photo, prayer and sign-off in the order you wrote them.</p>
     <p>It opens in any browser, works offline, and needs no account and no Co·labr. Keep it forever, whatever you decide.</p>
   </div>
 
@@ -79,7 +79,7 @@
 
   <div class="card join">
     <h2>Interested? Get in line.</h2>
-    <p>When Co·labr opens past the testing group, we'll send you one email to say it's ready — that's the whole deal. No newsletter, no drip campaign, just the door opening.</p>
+    <p>When Co·labr opens past the testing group, we'll send you one email to say it's ready. That's the whole deal. No newsletter, no drip campaign, just the door opening.</p>
     <div class="row">
       <input id="wname" placeholder="Your name (optional)" autocomplete="name">
       <input id="wemail" type="email" placeholder="you@anywhere.org" autocomplete="email">
@@ -103,11 +103,11 @@ async function joinWaitlist(){
   try{
     const r=await fetch('/.netlify/functions/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name})});
     const d=await r.json();
-    if(!r.ok){ msg.className='msg err'; msg.textContent=d.error||'Could not save — try again.'; btn.disabled=false; return; }
+    if(!r.ok){ msg.className='msg err'; msg.textContent=d.error||'Could not save. Please try again.'; btn.disabled=false; return; }
     msg.className='msg ok';
-    msg.textContent=d.already?'You’re already on the list — we haven’t forgotten you.':'You’re on the list. One email, the day the doors open.';
+    msg.textContent=d.already?'You’re already on the list. We haven’t forgotten you.':'You’re on the list. One email, the day the doors open.';
     btn.textContent='✓ You’re in line';
-  }catch(_){ msg.className='msg err'; msg.textContent='Could not reach the server — try again.'; btn.disabled=false; }
+  }catch(_){ msg.className='msg err'; msg.textContent='Could not reach the server. Please try again.'; btn.disabled=false; }
 }
 document.getElementById('wgo').addEventListener('click',joinWaitlist);
 document.getElementById('wemail').addEventListener('keydown',e=>{if(e.key==='Enter')joinWaitlist();});

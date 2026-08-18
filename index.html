@@ -1412,7 +1412,10 @@ var READERLANG='';
   const sel=document.getElementById('langsel'); if(!sel) return;
   let saved=''; try{ saved=localStorage.getItem('colabr_lang')||''; }catch(e){}
   const nav=(navigator.language||'en').slice(0,2).toLowerCase();
-  READERLANG = saved || (RLANGS.includes(nav)?nav:'en');
+  // ?lang=cs wins over everything, so a link can be sent in the language its
+  // reader actually speaks rather than hoping their browser is set right.
+  const asked=(new URLSearchParams(location.search).get('lang')||'').slice(0,2).toLowerCase();
+  READERLANG = (RLANGS.includes(asked)&&asked) || saved || (RLANGS.includes(nav)?nav:'en');
   sel.innerHTML=RLANGS.map(l=>`<option value="${l}"${l===READERLANG?' selected':''}>${langName(l)}</option>`).join('');
   sel.addEventListener('change',()=>{ READERLANG=sel.value; try{localStorage.setItem('colabr_lang',READERLANG);}catch(e){} setMasthead(); refreshBrand();
     if(typeof U!=='undefined'&&U.length){ applyLangTitles(); computeTop10(); renderHero(); render(); renderHighlights(); }
