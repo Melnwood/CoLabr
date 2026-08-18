@@ -481,8 +481,7 @@
       <div class="prefopts">
         <label><input type="radio" name="pref" value="Full email" checked><div class="po"><b>Email me each update</b><i>The full update in your inbox</i></div></label>
         <label><input type="radio" name="pref" value="Link email"><div class="po"><b>A heads-up with a link</b><i>A short email — read it here</i></div></label>
-        <label><input type="radio" name="pref" value="Monthly digest"><div class="po"><b>Monthly summary</b><i>One roundup email a month</i></div></label>
-        <label><input type="radio" name="pref" value="Text"><div class="po"><b>Text me</b><i>A text when there's news</i></div></label>
+        <label><input type="radio" name="pref" value="Site only"><div class="po"><b>No emails</b><i>I’ll visit the wall myself</i></div></label>
       </div>
       <button class="subbtn" id="subSend">Subscribe</button>
       <div class="submsg" id="submsg"></div>
@@ -1442,7 +1441,9 @@ document.getElementById('subSend').addEventListener('click',async()=>{
     const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not subscribe.');
     document.getElementById('subform').style.display='none';
     document.getElementById('subdone').style.display='block';
-    document.getElementById('subdonemsg').textContent = pref==='Text'?'We’ll text you when there’s news.':(pref==='Full email'?'We’ll email you each update.':pref==='Monthly digest'?'We’ll send a monthly summary.':'We’ll email a heads-up with a link each time.');
+    document.getElementById('subdonemsg').textContent = pref==='Full email'?'We’ll email you each update.'
+      : pref==='Site only'?'Nothing will land in your inbox. The wall is here whenever you want it.'
+      : 'We’ll email a heads-up with a link each time.';
     if(d.manageUrl)document.getElementById('submanage').href=d.manageUrl;
   }catch(e){btn.disabled=false;msg.className='submsg err';msg.textContent=e.message;}
 });
