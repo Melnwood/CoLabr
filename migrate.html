@@ -47,8 +47,17 @@
   <h1>Bring your history</h1>
   <p class="lede">Pull every newsletter you've ever sent through Mailchimp onto your Co·labr wall — titles, photos, text, dates, and open counts. Your words land in Co·labr's clean design (email layouts don't survive anywhere), and <b>nothing is ever re-emailed to anyone</b>.</p>
 
+  <div class="step" id="stz">
+    <h2><span class="snum">A</span>The easy way — your Mailchimp export file</h2>
+    <p>No API key, no settings to hunt for. In Mailchimp: profile picture → <b>Account &amp; billing</b> → <b>Settings</b> → <b>Export account data</b>. Mailchimp emails you a <code>.zip</code> when it&rsquo;s ready — drop it in below.</p>
+    <p class="note" style="margin:0 0 12px">The file is big (often over a gigabyte) but <b>it never leaves your computer</b>. Your browser opens it here, reads just the newsletter text, and sends only that — a few megabytes. This also works if you&rsquo;ve already lost access to the Mailchimp account.</p>
+    <div class="krow"><input type="file" id="zip" accept=".zip" style="flex:1;font-size:13.5px"><button class="btn" id="zgo">Read my export</button></div>
+    <div class="msg" id="mz"></div>
+    <div class="bigbar" id="zbarwrap" style="display:none;margin-top:12px"><i id="zbar"></i></div>
+  </div>
+
   <div class="step" id="st1">
-    <h2><span class="snum">1</span>Connect your Mailchimp</h2>
+    <h2><span class="snum">B</span>Or connect with an API key</h2>
     <p>Co·labr needs a read key from your Mailchimp account. It takes one minute and the key is used only for this import — never stored:</p>
     <ol>
       <li>In Mailchimp, click your profile picture → <b>Account &amp; billing</b></li>
@@ -148,6 +157,148 @@ async function watch(ids){
 }
 (async()=>{ try{ const r=await fetch('/.netlify/functions/me'); if(!r.ok) location.href='login.html?next=migrate.html'; }catch(_){} })();
 </script>
-<script src="help.js"></script>
+<script src="help.js">
+/* ---------- Reading a Mailchimp export in the browser ----------------------
+   A full export runs to well over a gigabyte, nearly all of it media we do not
+   need. So we never read the file as a whole: we seek to the zip's central
+   directory, pick out the ~200 entries that hold the newsletters, and inflate
+   only those. Everything below is plain browser APIs — no library, nothing
+   fetched from anywhere. ------------------------------------------------------ */
+const ZSIG={EOCD:0x06054b50,CEN:0x02014b50,LOC:0x04034b50};
+const zbuf=(f,start,end)=>f.slice(start,end).arrayBuffer();
+
+async function zipIndex(file){
+  // The end-of-central-directory record lives in the last 64KB, after a comment
+  // of unknown length, so we scan backwards for its signature.
+  const tailLen=Math.min(65557,file.size);
+  const tail=new DataView(await zbuf(file,file.size-tailLen,file.size));
+  let eocd=-1;
+  for(let i=tail.byteLength-22;i>=0;i--){ if(tail.getUint32(i,true)===ZSIG.EOCD){ eocd=i; break; } }
+  if(eocd<0) throw new Error('That doesn’t look like a .zip file.');
+  const count=tail.getUint16(eocd+10,true);
+  const cenSize=tail.getUint32(eocd+12,true);
+  const cenOff=tail.getUint32(eocd+16,true);
+  if(cenOff===0xFFFFFFFF||cenSize===0xFFFFFFFF||count===0xFFFF)
+    throw new Error('This export uses ZIP64, which this reader can’t open yet — use the API key method below.');
+
+  const cen=new DataView(await zbuf(file,cenOff,cenOff+cenSize));
+  const dec=new TextDecoder();
+  const out=[]; let p=0;
+  for(let n=0;n<count&&p+46<=cen.byteLength;n++){
+    if(cen.getUint32(p,true)!==ZSIG.CEN) break;
+    const method=cen.getUint16(p+10,true);
+    const csize=cen.getUint32(p+20,true);
+    const nameLen=cen.getUint16(p+28,true);
+    const extraLen=cen.getUint16(p+30,true);
+    const cmtLen=cen.getUint16(p+32,true);
+    const local=cen.getUint32(p+42,true);
+    const name=dec.decode(new Uint8Array(cen.buffer,cen.byteOffset+p+46,nameLen));
+    out.push({name,method,csize,local});
+    p+=46+nameLen+extraLen+cmtLen;
+  }
+  return out;
+}
+
+async function zipRead(file,entry){
+  // The central directory's name/extra lengths can differ from the local header's,
+  // so the data offset must be taken from the local header itself.
+  const head=new DataView(await zbuf(file,entry.local,entry.local+30));
+  if(head.getUint32(0,true)!==ZSIG.LOC) throw new Error('Damaged zip entry.');
+  const start=entry.local+30+head.getUint16(26,true)+head.getUint16(28,true);
+  const raw=await zbuf(file,start,start+entry.csize);
+  if(entry.method===0) return new TextDecoder().decode(new Uint8Array(raw));
+  const stream=new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Response(stream).text();
+}
+
+// Mailchimp's own campaigns.csv, quoted fields and all.
+function csvRows(text){
+  const rows=[]; let row=[],cell='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=''; }
+    else if(c==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; }
+    else if(c!=='\r') cell+=c;
+  }
+  if(cell||row.length){ row.push(cell); rows.push(row); }
+  const head=rows.shift()||[];
+  return rows.filter(r=>r.length>1).map(r=>Object.fromEntries(head.map((k,i)=>[k,r[i]||''])));
+}
+const mcDate=s=>{ const d=new Date(String(s||'').replace(/(\d)(am|pm)/i,'$1 $2')); return isNaN(d)?'':d.toISOString().slice(0,10); };
+
+document.getElementById('zgo').addEventListener('click',async()=>{
+  const inp=document.getElementById('zip'), msg=document.getElementById('mz');
+  const wrap=document.getElementById('zbarwrap'), bar=document.getElementById('zbar');
+  const file=inp.files&&inp.files[0];
+  if(!file){ msg.className='msg err'; msg.textContent='Choose your export .zip first.'; return; }
+  const btn=document.getElementById('zgo'); btn.disabled=true;
+  msg.className='msg'; msg.textContent='Opening the archive…';
+  try{
+    const entries=await zipIndex(file);
+    const idx=entries.find(e=>/campaigns\.csv$/i.test(e.name));
+    if(!idx) throw new Error('No campaigns.csv inside — is this the whole account export?');
+
+    const content={};
+    entries.forEach(e=>{ const m=e.name.match(/campaigns_content\/(.+)\.html$/i); if(m) content[m[1]]=e; });
+    const rows=csvRows(await zipRead(file,idx));
+    msg.textContent=`Found ${rows.length} newsletters and ${Object.keys(content).length} saved copies. Reading…`;
+    wrap.style.display='';
+
+    // Matching a csv row to its saved copy is the whole trick, and it is fiddlier
+    // than it looks: Mailchimp's own file naming changed over the years — the same
+    // apostrophe became "hayley-update" in 2012 and "hannah-s-..." in 2020, a "?"
+    // becomes a trailing hyphen, a "#" a leading one. No slug rule reproduces all
+    // of that. Reducing BOTH sides to letters and digits does, exactly.
+    const flat=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    // Web ids climb over time, so file order is chronological — that breaks ties
+    // when a title was reused ("Hayley's Update" went out three times).
+    const files=Object.keys(content).map(k=>({key:k,id:parseInt(k,10)||0,flat:flat(k.replace(/^\d+_/,''))}))
+      .sort((a,b)=>a.id-b.id);
+    const used=new Set();
+
+    const dated=rows.map(r=>({r,t:Date.parse(String(r['Send Date']||'').replace(/(\d)(am|pm)/i,'$1 $2'))||0}))
+      .sort((a,b)=>a.t-b.t);
+
+    const batch=[]; let matched=0;
+    dated.forEach(({r},rank)=>{
+      const title=(r['Title']||r['Subject']||'').trim();
+      const ft=flat(title), fsub=flat(r['Subject']);
+      const cands=files.filter(f=>!used.has(f.key)&&(f.flat===ft||f.flat===fsub));
+      if(!cands.length) return;
+      cands.sort((a,b)=>Math.abs(files.indexOf(a)-rank)-Math.abs(files.indexOf(b)-rank));
+      const key=cands[0].key; used.add(key);
+      batch.push({key:key.split('_')[0],title:(r['Subject']||title).trim(),date:mcDate(r['Send Date']),
+        opens:parseInt(String(r['Unique Opens']||'0').replace(/[^0-9]/g,''),10)||0,entry:content[key]});
+      matched++;
+    });
+    if(!matched) throw new Error('Couldn’t match any newsletters to their saved copies.');
+    if(matched<rows.length) console.log('import-zip: matched '+matched+' of '+rows.length);
+
+    let created=0,skipped=0,failed=0,done=0;
+    for(let i=0;i<batch.length;i+=5){
+      const slice=batch.slice(i,i+5);
+      const campaigns=[];
+      for(const c of slice){
+        try{ campaigns.push({key:c.key,title:c.title,date:c.date,opens:c.opens,html:await zipRead(file,c.entry)}); }
+        catch(e){ failed++; }
+      }
+      if(campaigns.length){
+        const rr=await fetch('/.netlify/functions/import-zip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({campaigns})});
+        const dd=await rr.json().catch(()=>({}));
+        if(rr.ok){ created+=dd.created||0; skipped+=dd.skipped||0; failed+=dd.failed||0; }
+        else { failed+=campaigns.length; if(rr.status===402){ msg.className='msg err'; msg.textContent=dd.error; break; } }
+      }
+      done+=slice.length;
+      bar.style.width=Math.round(done/batch.length*100)+'%';
+      msg.textContent=`${done} of ${batch.length} read — ${created} added, ${skipped} already there.`;
+    }
+    msg.className='msg ok';
+    msg.innerHTML=`<b>Done.</b> ${created} newsletter${created===1?'':'s'} added, ${skipped} already on your wall${failed?`, ${failed} couldn’t be read`:''}. <a href="index.html">See your wall →</a>`;
+  }catch(e){ msg.className='msg err'; msg.textContent=e.message||'Could not read that file.'; }
+  finally{ btn.disabled=false; }
+});
+</script>
 </body>
 </html>
