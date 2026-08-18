@@ -93,6 +93,10 @@
   .nav a.acc{background:#241f1b;color:#fff;border-color:#241f1b;box-shadow:0 2px 8px rgba(36,31,27,.22)}
   .nav a.acc:hover{background:#000;box-shadow:0 8px 18px rgba(36,31,27,.28)}
   .nav a.acc:active{background:#241f1b}
+  .logospec{background:var(--card2,#f4f1ec);border:1px dashed var(--line);border-radius:12px;padding:14px 17px;margin:0 0 18px;max-width:70ch}
+  .logospec b{font-size:13px}
+  .logospec ul{margin:8px 0 6px;padding-left:20px;font-size:13px;line-height:1.7;color:#4a443e}
+  .logospec span{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -102,7 +106,17 @@
       <div class="nav"><a href="manage.html">My Dashboard</a><a href="index.html">My Page</a><a href="admin.html">Super admin</a><a href="/.netlify/functions/logout">Sign out</a></div>
     </div>
     <h1>National org branding</h1>
-    <p class="lede">Add each Josiah Venture national organization's logo and colors here. These become the brand a missionary's supporter page (and other Co·labr apps) can wear automatically — so a KAM worker's page looks like KAM, a Polish worker's like Poland.</p>
+    <p class="lede">Add each Josiah Venture national organization's logo and colors here. These become the brand a missionary's supporter page (and other Co&middot;labr apps) wear automatically, so a KAM worker's page looks like KAM and a Polish worker's like Poland.</p>
+    <div class="logospec">
+      <b>What to ask an organization for</b>
+      <ul>
+        <li><b>A horizontal lockup</b>, the name written out. Roughly between 3:1 and 7:1 wide. A square badge or a stacked logo still works, but it sits in a much smaller box beside the name, so it reads far weaker.</li>
+        <li><b>PNG with a transparent background</b>, and trimmed tight. Empty space baked into the file shrinks the mark, because the file is scaled, not the ink inside it.</li>
+        <li><b>At least 400px tall</b> so it stays sharp on a retina screen. Bigger is fine.</li>
+        <li><b>A dark version.</b> The masthead sits on a light background.</li>
+      </ul>
+      <span>It is drawn at up to 34px tall and 190px wide, whichever it reaches first.</span>
+    </div>
     <button class="addbtn" id="add"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg> Add national org</button>
     <div class="grid" id="grid"><div class="state">Loading…</div></div>
   </div>
