@@ -22,6 +22,33 @@
   .hero p{font-size:15px;color:var(--body);max-width:540px;margin:0 auto;line-height:1.6}
   .stop{display:grid;grid-template-columns:1fr 1.1fr;gap:34px;align-items:center;padding:44px 0;border-bottom:1px solid var(--line)}
   .stop:nth-child(even of .stop){direction:rtl}
+  /* --- magazine rhythm: not every beat is the same size --- */
+  .stop.lead{grid-template-columns:1fr;gap:16px;padding:34px 0 40px;text-align:center;border-bottom:none}
+  .stop.lead h2{font-size:clamp(28px,4.4vw,38px);max-width:20ch;margin-inline:auto}
+  .stop.lead p{font-size:16px;max-width:60ch;margin-inline:auto}
+  .stop.quiet{grid-template-columns:1.25fr 1fr;gap:26px;padding:30px 0}
+  .stop.quiet h2{font-size:20px}
+  .stop.quiet p{font-size:13.5px}
+  .kicker{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);text-align:center;margin-bottom:10px}
+  /* --- the feature spread: one update, two readers --- */
+  .feature{padding:52px 0;border-bottom:1px solid var(--line)}
+  .feature h2{font-family:var(--serif);font-size:clamp(26px,4vw,34px);font-weight:600;margin:0 auto 10px;text-align:center;max-width:22ch}
+  .feature .sub{font-size:15px;line-height:1.7;color:var(--body);text-align:center;max-width:62ch;margin:0 auto 30px}
+  .spread{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:720px){.spread{grid-template-columns:1fr}}
+  .pane{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 8px 26px rgba(13,27,42,.07)}
+  .pane .top{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);background:#FCFCFD}
+  .pane .who{font-size:12.5px;font-weight:800;letter-spacing:-.01em}
+  .pane .who i{font-style:normal;font-weight:500;color:var(--muted)}
+  .pane .lang{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:20px;padding:4px 10px;background:#F1F3F5;color:var(--body)}
+  .pane .body{padding:18px 18px 20px}
+  .pane .lu{font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;border-radius:4px;padding:3px 7px;display:inline-block;margin-bottom:9px;color:#fff}
+  .pane h3{font-size:19px;line-height:1.22;margin:0 0 8px;font-weight:750;letter-spacing:-.02em}
+  .pane p{font-size:13px;line-height:1.6;color:var(--body);margin:0 0 12px}
+  .pane .ask{font-size:12.5px;line-height:1.55;border-left:3px solid;padding:7px 0 7px 11px;color:#3d4a5c}
+  .pane.jv .lu{background:#FF6B5B} .pane.jv .ask{border-color:#FF6B5B}
+  .pane.kam .lu{background:#C6362F} .pane.kam .ask{border-color:#C6362F}
+  .caption{font-size:12.5px;color:var(--muted);text-align:center;margin:18px auto 0;max-width:64ch;line-height:1.6}
   .stop:nth-child(even of .stop)>*{direction:ltr}
   @media(max-width:720px){.stop{grid-template-columns:1fr;gap:20px}.stop:nth-child(even of .stop){direction:ltr}}
   .num{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:8px}
@@ -79,9 +106,9 @@
     <p>Co·labr looks like a beautiful wall of updates — but the magic is everything behind it. Here's the tour, front stage and back.</p>
   </div>
 
-  <div class="stop">
+  <div class="stop lead">
     <div>
-      <div class="num">Stop 1 · The composer</div>
+      <div class="kicker">Stop 1 · The composer</div>
       <h2>Write once, and it looks like you hired a designer</h2>
       <p>Build each update from blocks — <b>banner photo, story, pictures, video, key numbers, prayer &amp; praise, giving, your personal sign-off</b>. Your organization's real brand colors are built in, a live preview shows exactly what supporters will see, and AI suggests titles people actually open.</p>
     </div>
@@ -93,18 +120,33 @@
     </div>
   </div>
 
-  <div class="stop">
-    <div>
-      <div class="num">Stop 2 · Every heart language</div>
-      <h2>You write in one language. They read in theirs.</h2>
-      <p>Every published update reaches every supporter <b>in English</b>, and your national team <b>in their own language</b> — and videos get subtitles in all of them, generated before the update even appears. A Czech staff member's grandmother in Brno and their donor in Texas read the very same story, each in the language of their heart.</p>
+  <div class="feature">
+    <div class="kicker">Stop 2 · Every heart language</div>
+    <h2>You write in your heart language. They read in theirs.</h2>
+    <p class="sub">Petra wrote this once, in Czech, on a Tuesday evening in Ostrava. Her team read it in Czech. Her supporters in Texas read it in English. Nobody pressed translate, and nobody got a worse version of the story.</p>
+    <div class="spread">
+      <div class="pane kam">
+        <div class="top"><div class="who">Petra &amp; Tomáš Novák <i>· KAM, Ostrava</i></div><div class="lang">Čeština</div></div>
+        <div class="body">
+          <span class="lu">Nejnovější</span>
+          <h3>Tábor skončil, ale něco teprve začalo</h3>
+          <p>Poslední ráno tábora seděl Honza na schodech před jídelnou. Byl to ten kluk, který celý týden stál kousek stranou — smál se s ostatními, ale nikdy nešel blíž.</p>
+          <p>Sedli jsme si vedle něj. Dlouho mlčel. Pak řekl: „Nevěděl jsem, že Bůh může mít rád i takového, jaký jsem.“</p>
+          <div class="ask"><b>Modlete se</b> za Honzu a dalších jedenáct mladých, kteří letos v létě poprvé slyšeli o Ježíši.</div>
+        </div>
+      </div>
+      <div class="pane jv">
+        <div class="top"><div class="who">Petra &amp; Tomáš Novák <i>· Josiah Venture, Czechia</i></div><div class="lang">English</div></div>
+        <div class="body">
+          <span class="lu">Latest update</span>
+          <h3>Camp ended, but something had only just begun</h3>
+          <p>On the last morning of camp, Honza sat on the steps outside the dining hall. He was the boy who stood a little apart all week — laughing along with everyone, never quite coming closer.</p>
+          <p>We sat down next to him. He was quiet for a long time. Then he said: “I didn’t know God could love someone like me.”</p>
+          <div class="ask"><b>Please pray</b> for Honza and eleven other young people who heard about Jesus for the first time this summer.</div>
+        </div>
+      </div>
     </div>
-    <div class="vis">
-      <div class="blk"><span class="lchip">CZ</span> „A ráno jsem odvezla taťku do nemocnice…"</div>
-      <div class="blk"><span class="lchip">EN</span> "And this morning I took my dad to the hospital…"</div>
-      <div class="blk"><span class="lchip">PL</span> „A rano zawiozłam tatę do szpitala…"</div>
-      <div class="blk"><span class="chip t">English + your language</span> <span class="chip ghost">video subtitles too</span></div>
-    </div>
+    <p class="caption">Same update, same photo, same person — the wall even wears her own organisation's colours for her team, and the Josiah Venture mark for her supporters abroad. Videos carry subtitles the same way, ready before the update appears.</p>
   </div>
 
   <div class="stop">
@@ -147,7 +189,7 @@
     </div>
   </div>
 
-  <div class="stop">
+  <div class="stop quiet">
     <div>
       <div class="num">Stop 6 · Your people, in one place</div>
       <h2>Invite, import, and actually know your list</h2>
@@ -161,7 +203,7 @@
     </div>
   </div>
 
-  <div class="stop">
+  <div class="stop quiet">
     <div>
       <div class="num">Stop 7 · Safe by default</div>
       <h2>Nothing sends until you say so</h2>
