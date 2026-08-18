@@ -609,11 +609,24 @@ function applyBrand(b){
   if(hexOk(b.ink)){ r.setProperty('--text',b.ink); r.setProperty('--ink',b.ink); }
   if(hexOk(b.accent)){ r.setProperty('--acc',b.accent); r.setProperty('--acc-text', lumin(b.accent)>.5?'#241f1b':'#fff'); }
   if(hexOk(b.bg)){ r.setProperty('--soft',b.bg); r.setProperty('--paper',b.bg); }
+  // Colours alone still left the Josiah Venture wordmark up top, which is not
+  // their organisation. Wear the org's own mark for their own people.
+  setMark(b.logo || '', b.name || '');
+}
+// The masthead logo, swapped and swapped back. The JV original is kept the first
+// time we touch it, so resetBrand can always put it back exactly.
+var JVMARK='', JVALT='';
+function setMark(url, alt){
+  const img=document.querySelector('.jvhome .jvlogo'); if(!img) return;
+  if(!JVMARK){ JVMARK=img.getAttribute('src')||''; JVALT=img.getAttribute('alt')||'Josiah Venture'; }
+  if(url){ img.src=url; img.alt=alt||'Our organisation'; }
+  else if(JVMARK){ img.src=JVMARK; img.alt=JVALT; }
 }
 // Drop every override so the stylesheet's JV defaults take back over.
 function resetBrand(){
   const r=document.documentElement.style;
   ['--text','--ink','--acc','--acc-text','--soft','--paper'].forEach(v=>r.removeProperty(v));
+  setMark('');   // back to Josiah Venture
 }
 // The rule: on a national page, a native-language reader sees the org's own brand; an English
 // reader sees JV branding + a "Josiah Venture | <country>" co-brand mark. Everyone else = JV.

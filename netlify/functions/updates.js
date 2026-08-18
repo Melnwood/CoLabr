@@ -17,6 +17,7 @@ const ORGS_TABLE = 'tbl152sVfqGyrqpJQ';        // National Orgs (brand)
 const ORG_CODE = 'fldYMMDdsP2DgNzmZ', ORG_NAME = 'fldsyU3dpzLdkXI7t';
 const ORG_INK = 'fldhe4BdqqpM37Hod', ORG_ACCENT = 'fldqjEmVMB9lVTOzG', ORG_BG = 'fldpgLMC8jv9YHtxm', ORG_TEXTON = 'fldufCKMaSCYUh3xt';
 const ORG_COUNTRY = 'fldsJCCbZgD5wcamY';
+const ORG_LOGO = 'fldBJzji3j5ML7DHd';          // the national org's own wordmark
 const ORG_GIVE = 'fldxLnwhxtFv88MGn';           // the org's general fund — used when a missionary has no link of their own           // Country (for the "Josiah Venture | <country>" co-brand mark)
 const DEFAULT_MISSIONARY = process.env.SITE_MISSIONARY || 'The Ellenwood Family';
 const { sessionFromEvent } = require('./_auth');
@@ -190,7 +191,7 @@ exports.handler = async function (event) {
           if (orec) {
             const of2 = orec.fields || {};
             const t = of2[ORG_TEXTON];
-            brand = { ink: of2[ORG_INK] || '', accent: of2[ORG_ACCENT] || '', bg: of2[ORG_BG] || '', textOn: (t && t.name) ? t.name : (t || 'Light') };
+            brand = { ink: of2[ORG_INK] || '', accent: of2[ORG_ACCENT] || '', bg: of2[ORG_BG] || '', logo: of2[ORG_LOGO] || '', textOn: (t && t.name) ? t.name : (t || 'Light') };
             page.country = of2[ORG_COUNTRY] || '';
             page.orgName = of2[ORG_NAME] || '';
             page.orgGive = of2[ORG_GIVE] || '';
