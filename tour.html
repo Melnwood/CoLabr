@@ -15,7 +15,7 @@
   .mark a{text-decoration:none}
   .mark .d{display:inline-block;width:.34em;height:.34em;background:var(--acc);border-radius:50%;margin:0 .13em;vertical-align:.06em}
   header nav{margin-left:auto}
-  header nav a{font-size:13.5px;font-weight:600;text-decoration:none;border:1px solid var(--line);border-radius:22px;padding:9px 16px;margin-left:8px}
+  header nav a{white-space:nowrap;font-size:13.5px;font-weight:600;text-decoration:none;border:1px solid var(--line);border-radius:22px;padding:9px 16px;margin-left:8px}
   header nav a.acc{background:var(--acc);color:#fff;border-color:var(--acc)}
   .hero{text-align:center;padding:30px 0 14px}
   .hero h1{font-family:var(--serif);font-size:clamp(28px,5vw,40px);font-weight:600;margin:0 0 10px}
@@ -99,6 +99,12 @@
     .cta{page-break-before:avoid;padding:16px 0 0;text-align:left}
     a[href]:after{content:none}
   }
+  @media(max-width:640px){
+    header{flex-wrap:wrap;row-gap:12px;padding:16px 0}
+    header nav{margin-left:0;width:100%;flex-wrap:wrap;gap:7px}
+    header nav a{font-size:12.5px;padding:8px 13px}
+  }
+  html,body{overflow-x:hidden}
 </style>
 </head>
 <body>

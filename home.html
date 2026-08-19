@@ -20,11 +20,11 @@
   a{color:inherit}
   .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
   header{display:flex;align-items:center;gap:12px;padding:22px 0}
-  .mark{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--ink);letter-spacing:.01em}
+  .mark{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--ink);letter-spacing:.01em;white-space:nowrap}
   .mark .d{display:inline-block;width:.34em;height:.34em;background:var(--acc);border-radius:50%;margin:0 .13em;vertical-align:.06em}
-  .tagline{font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--teal)}
+  .tagline{font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--teal);white-space:nowrap}
   header nav{margin-left:auto;display:flex;gap:10px;align-items:center}
-  header nav a{font-size:13.5px;font-weight:600;text-decoration:none;color:var(--ink);border:1px solid var(--line);background:var(--white);border-radius:22px;padding:9px 16px}
+  header nav a{font-size:13.5px;font-weight:600;text-decoration:none;color:var(--ink);border:1px solid var(--line);background:var(--white);border-radius:22px;padding:9px 16px;white-space:nowrap}
   header nav a.acc{background:var(--acc);color:#fff;border-color:var(--acc)}
 
   .hero{display:grid;grid-template-columns:1fr 1.05fr;gap:44px;align-items:center;padding:44px 0 60px}
@@ -88,6 +88,14 @@
   .tovname .tv-g{color:#789577}
   .tovname i{font-style:normal;font-size:9.5px;font-weight:600;letter-spacing:.12em;vertical-align:1px}
   .tovtag{display:block;font-size:12px;color:#789577;margin-top:5px;letter-spacing:.01em}
+  @media(max-width:640px){
+    header{flex-wrap:wrap;row-gap:12px;padding:16px 0}
+    header nav{margin-left:0;width:100%;flex-wrap:wrap;gap:7px}
+    header nav a{font-size:12.5px;padding:8px 13px}
+    .steps{max-width:none}
+    .creed{padding:40px 0}
+  }
+  html,body{overflow-x:hidden}
 </style>
 </head>
 <body>
