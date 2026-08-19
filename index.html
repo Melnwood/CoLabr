@@ -559,7 +559,7 @@ function renderMonthRow(){
 function buildYears(){
   const yrs=[...new Set(U.map(u=>u.y).filter(Boolean))].sort((a,b)=>b-a);
   const sel=document.getElementById('yearsel');
-  sel.innerHTML='<option value="all">All years</option>'+yrs.map(y=>`<option value="${y}">${y}</option>`).join('');
+  sel.innerHTML=`<option value="all">${t('years')}</option>`+yrs.map(y=>`<option value="${y}">${y}</option>`).join('');
 }
 function applyStyle(name){
   const valid=['fieldnotes','grid','timeline','wall','pano'];
@@ -1433,6 +1433,7 @@ function applyUI(){
   document.querySelectorAll('.herobadge').forEach(function(e){ e.textContent=t('latest'); });
   document.querySelectorAll('.give').forEach(function(e){ e.textContent=t('give'); });
   var f=document.getElementById('followBtn'); if(f) f.textContent=t('follow');
+  var d=document.getElementById('homechip'); if(d && /dashboard/i.test(d.textContent||'')) d.textContent=t('dash');
 }
 var READERLANG='';
 (function setupLang(){
