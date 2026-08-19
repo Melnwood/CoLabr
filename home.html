@@ -53,7 +53,10 @@
   .f p{font-size:13px;color:var(--body);line-height:1.6;margin:0}
 
   .how{padding:56px 0}
-  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:14px;counter-reset:step}
+  .steps{display:grid;grid-template-columns:1fr;gap:14px;counter-reset:step;max-width:720px;margin:0 auto}
+  .s{display:grid;grid-template-columns:auto 1fr;column-gap:18px;align-items:start}
+  .snum{grid-row:1/span 9;width:30px;height:30px;border-radius:50%;background:var(--acc,#FF6B5B);color:#fff;font-size:14px;font-weight:800;display:grid;place-items:center;margin-top:4px}
+  .s>*:not(.snum){grid-column:2}
   .s{border:1px solid var(--line);border-radius:16px;padding:22px;position:relative}
   .s:before{counter-increment:step;content:counter(step);position:absolute;top:-14px;left:18px;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center;border:3px solid var(--white)}
   .s b{display:block;font-size:15px;margin:6px 0 6px}
@@ -153,10 +156,12 @@
     <h2 style="font-family:var(--serif);font-size:26px;font-weight:600;letter-spacing:-.01em;margin:0 0 30px">Two steps, no surprises</h2>
     <div class="steps">
       <div class="s">
+        <span class="snum">1</span>
         <b>Create your page</b>
         <p>Sign in with Google, then answer a few questions. In two minutes, your wall exists.</p>
       </div>
       <div class="s">
+        <span class="snum">2</span>
         <b>Build and bring your people</b>
         <p>Write your first update, import supporters from a CSV or invite them personally. Each one gets a private link, and <b>they</b> choose how they follow:</p>
         <ul class="picks">

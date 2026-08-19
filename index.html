@@ -840,6 +840,7 @@ function renderHero(){
   document.getElementById('heroex').textContent=latest.excerpt||'';
   const idx=U.indexOf(latest);
   document.getElementById('heroread').onclick=()=>openReader(idx);
+  try{ applyUI(); }catch(e){}
   h.style.display='';
 }
 function buildMeta(){
@@ -1408,6 +1409,31 @@ function closeSub(){document.getElementById('subov').classList.remove('open');do
 // ---- reader language ----
 var TRBASE='https://storage.googleapis.com/colabr-photos-jv';
 var RLANGS=['en','cs','pl','uk','sk','ro','bg','sl','lv','et','hu','sr','de','es'];
+
+// The wall's own words, so a national team reads their page entirely in their
+// language. Falls back to English for anything not yet translated, which is most
+// of them: these are added as each national team comes on.
+var UI = {
+  cs:{latest:'Nejnovější',read:'Přečíst',search:'Hledat starší novinky…',newest:'Nejnovější',oldest:'Nejstarší',years:'Všechny roky',give:'Darovat',follow:'Odebírat novinky',praying:'Modlím se',dash:'Můj Co·labr'},
+  pl:{latest:'Najnowsze',read:'Przeczytaj',search:'Szukaj starszych aktualizacji…',newest:'Najnowsze',oldest:'Najstarsze',years:'Wszystkie lata',give:'Wesprzyj',follow:'Otrzymuj aktualizacje',praying:'Modlę się',dash:'Mój Co·labr'},
+  sk:{latest:'Najnovšie',read:'Prečítať',search:'Hľadať staršie novinky…',newest:'Najnovšie',oldest:'Najstaršie',years:'Všetky roky',give:'Darovať',follow:'Odoberať novinky',praying:'Modlím sa',dash:'Môj Co·labr'}
+};
+var EN = {latest:'Latest update',read:'Read the update →',search:'Search past updates…',newest:'Newest',oldest:'Oldest',years:'All years',give:'Give',follow:'Get updates',praying:'I’m praying',dash:'My Co·labr Dashboard'};
+function t(k){ var L=(typeof READERLANG!=='undefined'&&READERLANG)?UI[READERLANG]:null; return (L&&L[k])||EN[k]; }
+// Repaint the chrome whenever the reader picks a language.
+function applyUI(){
+  var set=function(sel,val,attr){ var el=document.querySelector(sel); if(!el)return;
+    if(attr==='ph') el.placeholder=val; else el.textContent=val; };
+  set('#heroread', t('read'));
+  set('#q', t('search'), 'ph');
+  var seg=document.querySelectorAll('#sortseg button');
+  if(seg[0]) seg[0].textContent=t('newest');
+  if(seg[1]) seg[1].textContent=t('oldest');
+  var y=document.querySelector('#yearsel option[value="all"]'); if(y) y.textContent=t('years');
+  document.querySelectorAll('.herobadge').forEach(function(e){ e.textContent=t('latest'); });
+  document.querySelectorAll('.give').forEach(function(e){ e.textContent=t('give'); });
+  var f=document.getElementById('followBtn'); if(f) f.textContent=t('follow');
+}
 var READERLANG='';
 (function setupLang(){
   const sel=document.getElementById('langsel'); if(!sel) return;
@@ -1418,7 +1444,8 @@ var READERLANG='';
   const asked=(new URLSearchParams(location.search).get('lang')||'').slice(0,2).toLowerCase();
   READERLANG = (RLANGS.includes(asked)&&asked) || saved || (RLANGS.includes(nav)?nav:'en');
   sel.innerHTML=RLANGS.map(l=>`<option value="${l}"${l===READERLANG?' selected':''}>${langName(l)}</option>`).join('');
-  sel.addEventListener('change',()=>{ READERLANG=sel.value; try{localStorage.setItem('colabr_lang',READERLANG);}catch(e){} setMasthead(); refreshBrand();
+  applyUI();
+  sel.addEventListener('change',()=>{ READERLANG=sel.value; try{localStorage.setItem('colabr_lang',READERLANG);}catch(e){} setMasthead(); refreshBrand(); applyUI();
     if(typeof U!=='undefined'&&U.length){ applyLangTitles(); computeTop10(); renderHero(); render(); renderHighlights(); }
     if(curU){ const idx=U.indexOf(curU); if(idx>=0) openReader(idx); } });
 })();
