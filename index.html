@@ -88,7 +88,7 @@
   .jvrs{font-size:13px;color:var(--muted)}
   /* Cards sit centered in the rail when they fit — the auto margins collapse to zero
      once cards overflow, so scrolling still starts at the first card everywhere. */
-  .jvrailrow{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .jvrailrow{display:flex;width:100%;gap:14px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
   .jvrailrow>:first-child{margin-left:auto}
   .jvrailrow>:last-child{margin-right:auto}
   .jvrailrow::-webkit-scrollbar{height:6px}.jvrailrow::-webkit-scrollbar-thumb{background:#d8cdb6;border-radius:6px}
