@@ -376,3 +376,143 @@ create table care_followups (
 -- then subscribers, then the page, in three separate calls with no transaction:
 -- fail in the middle and the leftovers are invisible to everything.
 -- ---------------------------------------------------------------------------
+
+
+-- ============================================================================
+-- TENANCY — organisations, independent missionaries, and who can see whom
+--
+-- This is the part that decides whether Co·labr is a Josiah Venture tool or a
+-- platform. Today there is one kind of admin: an address in an environment
+-- variable, checked by hand in twenty-two functions, who sees everything. A
+-- second organisation breaks that on day one, because KAM's director either
+-- sees all of Josiah Venture or sees nothing.
+--
+-- Three kinds of actor, and only three:
+--
+--   platform admin   Tov-ell. Sees everything. Two people, by name.
+--   org admin        A national director. Sees only their own organisation.
+--   page owner       A missionary. Sees only their own page.
+--
+-- A missionary with no organisation is not a lesser case. It is the ordinary
+-- case for anybody who finds Co·labr on their own and pays $15. org_id is null
+-- for them and every org-scoped feature simply has nothing to show, rather than
+-- showing them somebody else's team.
+-- ============================================================================
+
+create table org_members (
+  org_id      uuid not null references orgs(id) on delete cascade,
+  email       citext not null,
+  role        text not null default 'admin' check (role in ('admin','leader')),
+  -- admin  : manage seats, branding, billing for the organisation
+  -- leader : the care and partnership dashboards, read only
+  added_at    timestamptz not null default now(),
+  primary key (org_id, email)
+);
+
+-- Tov-ell. Deliberately a table and not an environment variable, so that adding
+-- or removing a platform admin is an audited row rather than a redeploy.
+create table platform_admins (
+  email       citext primary key,
+  added_at    timestamptz not null default now(),
+  added_by    citext
+);
+
+-- Which organisation is asking, derived from the signed-in address. Used by
+-- every policy below so the rules are written once, not twenty-two times.
+create or replace function auth_email() returns citext language sql stable as $$
+  select nullif(current_setting('request.jwt.claims', true)::json->>'email','')::citext
+$$;
+
+create or replace function is_platform_admin() returns boolean language sql stable as $$
+  select exists (select 1 from platform_admins where email = auth_email())
+$$;
+
+create or replace function my_org_ids() returns setof uuid language sql stable as $$
+  select org_id from org_members where email = auth_email()
+$$;
+
+create or replace function my_page_ids() returns setof uuid language sql stable as $$
+  select page_id from page_members where email = auth_email()
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- ROW LEVEL SECURITY
+--
+-- The isolation lives in the database, not in the functions. This is the whole
+-- argument for the move: today a single forgotten isAdmin() check in one of
+-- twenty-two files leaks one organisation's people to another. Under these
+-- policies the database refuses, whatever the code does or forgets to do.
+--
+-- Written for two people to operate: one policy per table, readable in full,
+-- no framework in between.
+-- ---------------------------------------------------------------------------
+alter table pages          enable row level security;
+alter table updates        enable row level security;
+alter table responses      enable row level security;
+alter table follows        enable row level security;
+alter table page_billing   enable row level security;
+alter table org_members    enable row level security;
+
+-- A missionary reaches their own page. An org admin reaches their org's pages.
+-- Tov-ell reaches everything.
+create policy pages_read on pages for select using (
+      is_platform_admin()
+   or id in (select my_page_ids())
+   or (org_id is not null and org_id in (select my_org_ids()))
+);
+create policy pages_write on pages for update using (
+      is_platform_admin()
+   or id in (select my_page_ids())
+);
+
+create policy updates_all on updates for all using (
+      is_platform_admin()
+   or page_id in (select my_page_ids())
+   or page_id in (select id from pages where org_id in (select my_org_ids()))
+);
+
+-- Deliberately narrower than the others, and the narrowness is the point.
+-- What a supporter writes to a missionary is between the two of them. A
+-- national director can see that their people are being written to; they
+-- cannot read the letters. Care radar reads published updates, which the
+-- missionary chose to publish. It has never read private notes and must not
+-- start by accident.
+create policy responses_own on responses for all using (
+      is_platform_admin()
+   or page_id in (select my_page_ids())
+);
+
+create policy follows_own on follows for all using (
+      is_platform_admin()
+   or page_id in (select my_page_ids())
+);
+
+create policy billing_own on page_billing for all using (
+      is_platform_admin()
+   or page_id in (select my_page_ids())
+   or page_id in (select id from pages where org_id in (select my_org_ids()))
+);
+
+-- The public wall is served by a function holding the service key, checking the
+-- supporter's token itself. It does not go through these policies, which is why
+-- the token check in updates.js stays exactly where it is.
+
+
+-- ---------------------------------------------------------------------------
+-- WHAT AN INDEPENDENT MISSIONARY GETS, AND DOES NOT
+--
+--   has     their wall, their supporters, conversations, prayer loop,
+--           translation into English, giving through their own link,
+--           the archive, everything they pay $15 for
+--   has not the team-picks rail, the directory, care and partnership
+--           dashboards. All of these are org features and all of them
+--           are empty rather than broken when org_id is null.
+--
+-- The one that needs a product decision rather than a schema: giving. A JV
+-- missionary's Give button routes to their organisation's designated fund,
+-- with receipting and accountability behind it. An independent missionary has
+-- no such fund. Either they supply their own link and Co·labr never touches
+-- the money, or Co·labr becomes a payment processor for donations, which is a
+-- different company with different obligations. The schema assumes the first.
+-- ============================================================================
