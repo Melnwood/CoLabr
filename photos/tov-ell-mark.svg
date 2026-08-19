@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="523 150 447 285" role="img" aria-label="Tov-ell">
+  <!-- The symbol from the master lockup, cropped to its own ink so it can sit at
+       any size in a footer. The wordmark is set as live text alongside it, because
+       the master relies on Manrope and a footer should not gamble on a webfont. -->
+  <path d="M548 175 H670 Q730 175 730 235 V410"
+        fill="none" stroke="#0C2946" stroke-width="50"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="795" y1="175" x2="945" y2="175"
+        stroke="#789577" stroke-width="50" stroke-linecap="round"/>
+</svg>
