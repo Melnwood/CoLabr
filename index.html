@@ -814,6 +814,7 @@ function renderHighlights(){
     <div class="jvcov"${x.u.cover?` style="background-image:url('${esc(x.u.cover)}')"`:''}></div>
     <div class="jvbody"><div class="jvtitle">${esc(x.u.title)}</div><div class="jvex">${esc(x.u.excerpt||'')}</div></div></div>`).join('');
   document.querySelectorAll('#hlrailrow [data-hi]').forEach(el=>el.addEventListener('click',()=>openReader(+el.dataset.hi)));
+  try{ applyUI(); }catch(e){}
   rail.style.display='block';
 }
 // The wall browses in the reader's language too: every update carries compact inline
@@ -1414,11 +1415,11 @@ var RLANGS=['en','cs','pl','uk','sk','ro','bg','sl','lv','et','hu','sr','de','es
 // language. Falls back to English for anything not yet translated, which is most
 // of them: these are added as each national team comes on.
 var UI = {
-  cs:{latest:'Nejnovější',read:'Přečíst',search:'Hledat starší novinky…',newest:'Nejnovější',oldest:'Nejstarší',years:'Všechny roky',give:'Darovat',follow:'Odebírat novinky',praying:'Modlím se',dash:'Můj Co·labr'},
-  pl:{latest:'Najnowsze',read:'Przeczytaj',search:'Szukaj starszych aktualizacji…',newest:'Najnowsze',oldest:'Najstarsze',years:'Wszystkie lata',give:'Wesprzyj',follow:'Otrzymuj aktualizacje',praying:'Modlę się',dash:'Mój Co·labr'},
-  sk:{latest:'Najnovšie',read:'Prečítať',search:'Hľadať staršie novinky…',newest:'Najnovšie',oldest:'Najstaršie',years:'Všetky roky',give:'Darovať',follow:'Odoberať novinky',praying:'Modlím sa',dash:'Môj Co·labr'}
+  cs:{hl:'V\u00fdb\u011br',latest:'Nejnovější',read:'Přečíst',search:'Hledat starší novinky…',newest:'Nejnovější',oldest:'Nejstarší',years:'Všechny roky',give:'Darovat',follow:'Odebírat novinky',praying:'Modlím se',dash:'Můj Co·labr'},
+  pl:{hl:'Wyb\u00f3r',latest:'Najnowsze',read:'Przeczytaj',search:'Szukaj starszych aktualizacji…',newest:'Najnowsze',oldest:'Najstarsze',years:'Wszystkie lata',give:'Wesprzyj',follow:'Otrzymuj aktualizacje',praying:'Modlę się',dash:'Mój Co·labr'},
+  sk:{hl:'V\u00fdber',latest:'Najnovšie',read:'Prečítať',search:'Hľadať staršie novinky…',newest:'Najnovšie',oldest:'Najstaršie',years:'Všetky roky',give:'Darovať',follow:'Odoberať novinky',praying:'Modlím sa',dash:'Môj Co·labr'}
 };
-var EN = {latest:'Latest update',read:'Read the update →',search:'Search past updates…',newest:'Newest',oldest:'Oldest',years:'All years',give:'Give',follow:'Get updates',praying:'I’m praying',dash:'My Co·labr Dashboard'};
+var EN = {hl:'',latest:'Latest update',read:'Read the update →',search:'Search past updates…',newest:'Newest',oldest:'Oldest',years:'All years',give:'Give',follow:'Get updates',praying:'I’m praying',dash:'My Co·labr Dashboard'};
 function t(k){ var L=(typeof READERLANG!=='undefined'&&READERLANG)?UI[READERLANG]:null; return (L&&L[k])||EN[k]; }
 // Repaint the chrome whenever the reader picks a language.
 function applyUI(){
@@ -1434,6 +1435,7 @@ function applyUI(){
   document.querySelectorAll('.give').forEach(function(e){ e.textContent=t('give'); });
   var f=document.getElementById('followBtn'); if(f) f.textContent=t('follow');
   var d=document.getElementById('homechip'); if(d && /dashboard/i.test(d.textContent||'')) d.textContent=t('dash');
+  var hr=document.getElementById('hlrt'); if(hr && t('hl')) hr.textContent=t('hl');
 }
 var READERLANG='';
 (function setupLang(){
