@@ -1,6 +1,39 @@
 -- ============================================================================
 -- Co·labr — Postgres schema (Supabase)
 --
+-- ---------------------------------------------------------------------------
+-- THE BOUNDARY: Co·labr never processes a gift.
+--
+-- Not "not yet". Never. Money from a supporter to a missionary does not pass
+-- through this platform, is not recorded in this database, and is not reconciled
+-- by this company. A Give button is a link out to the organisation that already
+-- holds the charitable relationship, and the click is the last thing Co·labr
+-- knows about it.
+--
+-- Everything follows from that:
+--   · Stripe exists here for one purpose, a missionary paying for their own
+--     seat. It is never pointed at a donation.
+--   · There is no gifts table, no donor table, no amount column anywhere. Not
+--     because they are unbuilt, but because their absence is the design.
+--   · events records that somebody pressed Give. Interest, not a transaction,
+--     and it holds no amount because it never sees one.
+--   · An independent missionary with no organisation must supply their own
+--     giving link. If they have nowhere for money to go, Co·labr is not the
+--     answer to that problem.
+--
+-- The cost of crossing this line is not technical. It is donor receipting, tax
+-- treatment in every country a supporter lives in, charity registration, and
+-- holding other people's money. That is a different company.
+--
+-- NOTE FOR MIGRATION: the Airtable base still carries Gifts and Entity Accounts
+-- tables, and Missionaries still carries Fund ID, Monthly Goal USD, Support
+-- Received USD, % Funded and Giving Doors. Nothing in Co·labr reads any of them;
+-- only the generic backup job touches those tables. They are the remains of an
+-- earlier idea and they do not migrate. They are listed here so that their
+-- absence is a decision on the record rather than an oversight somebody later
+-- tries to correct.
+-- ---------------------------------------------------------------------------
+--
 -- Written to be read. Every table says what it is for, and every constraint
 -- exists because something went wrong without it. Where a rule encodes a
 -- product decision rather than a technical one, the comment says which.
@@ -54,6 +87,11 @@ create table pages (
   id              uuid primary key default gen_random_uuid(),
   slug            citext not null unique,            -- stable, used in URLs
   name            text not null,                     -- display name, may change
+  -- Null means no organisation: either somebody who found Co·labr on their own,
+  -- or somebody who has left one. Either way the page falls back to Co·labr's
+  -- own quiet branding rather than keeping a mark it is no longer entitled to.
+  -- "on delete set null" is doing real work here: if an organisation is ever
+  -- removed, its people keep their pages and lose only the badge.
   org_id          uuid references orgs(id) on delete set null,
   location        text,
   photo_url       text,
@@ -509,10 +547,17 @@ create policy billing_own on page_billing for all using (
 --           dashboards. All of these are org features and all of them
 --           are empty rather than broken when org_id is null.
 --
--- The one that needs a product decision rather than a schema: giving. A JV
--- missionary's Give button routes to their organisation's designated fund,
--- with receipting and accountability behind it. An independent missionary has
--- no such fund. Either they supply their own link and Co·labr never touches
--- the money, or Co·labr becomes a payment processor for donations, which is a
--- different company with different obligations. The schema assumes the first.
+-- Giving, settled: they supply their own link and Co·labr never touches the
+-- money. See THE BOUNDARY at the top of this file.
+--
+-- Leaving an organisation, settled: org_id goes null and the page reverts to
+-- Co·labr's own branding. It does not break, it does not go dark, and it does
+-- not keep flying a flag it is no longer under. Their supporters, updates,
+-- conversations and archive are theirs and are untouched by the change, because
+-- none of those things ever belonged to the organisation. What they lose is the
+-- logo, the co-brand mark, the team rail and the directory listing.
+--
+-- This is the same state as somebody who never had an organisation at all,
+-- which is deliberate: one code path, not two, and no way for a page to end up
+-- half-attached to an org that no longer claims it.
 -- ============================================================================
