@@ -9,8 +9,6 @@ const crypto = require('crypto');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLES = {
   'Missionaries':    'tbli1L8AO0JUDL7Wl',
-  'Entity Accounts': 'tblkP1sgm5dx11Uf0',
-  'Gifts':           'tblWCp3JAZX7GsJ8m',
   'Updates':         'tbl7aVErl35Qw36QZ',
   'National Orgs':   'tbl152sVfqGyrqpJQ',
   'Responses':       'tblVNMG5VnOnFFeto',
