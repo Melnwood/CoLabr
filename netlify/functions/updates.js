@@ -7,6 +7,7 @@ const TABLE = 'tbl7aVErl35Qw36QZ';
 const MIS_TABLE = 'tbli1L8AO0JUDL7Wl';         // Missionaries
 const MIS_STYLE = 'fldvLZXckaQVUbD7F';          // Style (single select)
 const MIS_NAME = 'fldPYSQwxoQJGb0Zd';
+const MIS_SAMPLE = 'fldBxmwcHoJtsgrq4';        // demonstration page, not a real missionary
 const MIS_LOC = 'fld0mx3Sp4JnNnIfc';
 const MIS_ORG = 'fldCQ8c1Eu6SXmY98';
 const MIS_PHOTO = 'fldiXSCuELTQiiT08';
@@ -173,6 +174,7 @@ exports.handler = async function (event) {
         const soLines = (mfields[MIS_SIGN] || '').split('\n').map(l => l.trim()).filter(Boolean);
         const soFirst = (soLines.find(l => !/[,，:]$/.test(l)) || soLines[0] || '').trim();
         page = { name: mfields[MIS_NAME] || missionary, location: mfields[MIS_LOC] || '', org: mfields[MIS_ORG] || '', photo: mfields[MIS_PHOTO] || '', give: mfields[MIS_GIVE] || '', first: soFirst, country: '', orgName: '', native,
+          sample: !!mfields[MIS_SAMPLE],
           rails: { hl: !mfields['fldhuobGXx9rv3vaO'], picks: !mfields['fldviqu0XW23doCM2'] } };
       }
     } catch (e) { /* fall back */ }

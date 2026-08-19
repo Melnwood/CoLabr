@@ -636,6 +636,14 @@ function refreshBrand(){
   if(el) el.style.display = show ? '' : 'none';
   if(c) c.textContent = ORGCOUNTRY||'';
 }
+function showSampleNotice(){
+  if(document.getElementById('samplebar')) return;
+  const b=document.createElement('div');
+  b.id='samplebar';
+  b.style.cssText='background:#241f1b;color:#fff;font-size:13px;line-height:1.5;padding:9px 18px;text-align:center;position:relative;z-index:60';
+  b.innerHTML='<b>Sample page.</b> Petra &amp; Tom\u00e1\u0161 Nov\u00e1k are not a real family. This wall exists to show how Co\u00b7labr looks for a national team, using real photographs from Josiah Venture events.';
+  document.body.insertBefore(b, document.body.firstChild);
+}
 function setPageAvatar(photo){
   const a=document.getElementById('mavatar'); if(!a||!photo)return;
   a.style.backgroundImage=`url('${String(photo).replace(/'/g,"%27")}')`; a.style.display='';
@@ -651,6 +659,9 @@ function applyPageIdentity(page){
   // The personal voice: first names from the sign-off ("Mel and Amy") wherever the
   // page speaks person-to-person; the full family name stays on the masthead title.
   PAGE_FIRST=(page.first||'').trim()||page.name||'';
+  // A demonstration wall says so, plainly and at the top. Real people's faces sit
+  // on this page and none of them should be mistaken for somebody's real account.
+  if(page.sample) showSampleNotice();
   const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+(PAGE_FIRST||page.name)+' have shared — live from Co·labr. Share it with anyone who wants to follow along.';
   const t=document.getElementById('mtitle'); if(t&&page.name) t.textContent=page.name;
   const l=document.getElementById('mloctext'); if(l&&page.location) l.textContent=page.location;
