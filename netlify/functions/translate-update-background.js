@@ -45,7 +45,19 @@ exports.handler = async function (event) {
     // Progress is saved after EVERY language, so a timed-out run loses nothing.
     // NOTE the field is named "TR" — reading the wrong name here silently broke
     // resume for weeks and let a dead-API run overwrite good work with nothing.
-    const hash = crypto.createHash('sha1').update(strings.join('␞')).digest('hex').slice(0, 12);
+    // The writer's own English, if they opened the English panel and reworded anything.
+    // It lives inside the update's own blocks (bk.en[field] = {v, h}), so it travels with
+    // the update and needs no extra field. It is NEVER regenerated and NEVER overwritten:
+    // that promise is the only reason a busy person edits their English a second time.
+    let handTitle = '';
+    for (const bk of blocks) { const t = bk && bk.en && bk.en.__title; if (t && String(t.v || '').trim()) { handTitle = String(t.v); break; } }
+    const hand = [handTitle];
+    items.forEach(it => { const h = (blocks[it.i] || {}).en; const v = h && h[it.f]; hand.push(v && String(v.v || '').trim() ? String(v.v) : ''); });
+
+    // Hand text is part of the content hash. Without it, rewording ONLY the English
+    // leaves the source hash unchanged, the "already done" check short-circuits, and
+    // the writer's edit never reaches the published page.
+    const hash = crypto.createHash('sha1').update(strings.join('␞') + '⟂' + hand.join('␞')).digest('hex').slice(0, 12);
     let src = '', prevTr = null;
     try {
       const prev = JSON.parse(c['TR'] || '{}');
@@ -74,12 +86,24 @@ exports.handler = async function (event) {
       let outStrings;
       if (lang === src) { outStrings = strings; }                 // source language = original text
       else {
-        try { outStrings = await translateAll(key, strings, lang); } catch (e) { outStrings = null; }
-        if (!outStrings || outStrings.length !== strings.length) { failed++; continue; }  // skip a language that failed
-        newDone++;
+        // Only English can carry hand-written text; every other language is machine work.
+        const handHere = (lang === 'en') ? hand : hand.map(() => '');
+        const needIdx = [], need = [];
+        strings.forEach((str, k) => { if (!handHere[k]) { needIdx.push(k); need.push(str); } });
+        if (!need.length) {
+          outStrings = handHere.slice();       // the writer wrote every line themselves
+        } else {
+          let got;
+          try { got = await translateAll(key, need, lang); } catch (e) { got = null; }
+          if (!got || got.length !== need.length) { failed++; continue; }  // skip a language that failed
+          outStrings = handHere.slice();
+          needIdx.forEach((at, k) => { outStrings[at] = got[k]; });
+          newDone++;
+        }
       }
       // Rebuild blocks with translated text.
       const tb = JSON.parse(JSON.stringify(blocks));
+      tb.forEach(x => { if (x && x.en) delete x.en; });   // composer bookkeeping, not public content
       items.forEach((it, idx) => { if (tb[it.i]) tb[it.i][it.f] = outStrings[idx + 1]; });
       const payload = { lang, title: outStrings[0], blocks: tb };
       const okUp = await putJson(gcsToken, bucket, `translations/${b.recordId}/${lang}.json`, payload);

@@ -113,6 +113,19 @@
   .nav a.acc{background:#241f1b;color:#fff;border-color:#241f1b;box-shadow:0 2px 8px rgba(36,31,27,.22)}
   .nav a.acc:hover{background:#000;box-shadow:0 8px 18px rgba(36,31,27,.28)}
   .nav a.acc:active{background:#241f1b}
+
+  /* "Your English" panel — the writer's own words in their other language. */
+  .enov{display:none;position:fixed;inset:0;background:rgba(20,15,10,.55);z-index:140;overflow:auto;padding:26px 14px}
+  .ensheet{max-width:760px;margin:0 auto;background:#fff;border-radius:16px;padding:22px 22px 16px;box-shadow:0 30px 80px rgba(24,20,16,.35)}
+  .enrow{border:1px solid #eee9e2;border-radius:12px;padding:11px 12px 12px;margin-bottom:10px;background:#fdfcfa}
+  .enrow.stale{border-color:#f3c9a6;background:#fffaf4}
+  .enlab{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9a938a;margin-bottom:6px}
+  .enmine{background:#eaf6ef;color:#1f7a48;border-radius:10px;padding:1px 7px;font-size:9.5px;letter-spacing:.04em}
+  .enstale{font-size:12px;color:#8a5a2b;line-height:1.5;margin:0 0 7px}
+  .ensrc{font-size:13px;color:#8a837b;line-height:1.55;white-space:pre-wrap;margin-bottom:7px}
+  .enrow textarea{width:100%;border:1px solid #e3ded6;border-radius:9px;padding:9px 10px;font:inherit;font-size:14.5px;line-height:1.55;color:#241f1b;resize:none;overflow:hidden;background:#fff}
+  .enrow textarea:focus{outline:2px solid #241f1b;outline-offset:1px}
+  .enbar{position:sticky;bottom:0;background:#fff;padding:12px 0 2px;display:flex;gap:9px;align-items:center;flex-wrap:wrap;border-top:1px solid #f0ece6;margin-top:4px}
 </style>
 </head>
 <body>
@@ -198,7 +211,7 @@
       </div>
 
       <div class="actions">
-        <button class="btn draft" id="previewBtn" type="button"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Preview</button>
+        <button class="btn draft" id="previewBtn" type="button"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Preview</button><button class="btn draft" id="enBtn" type="button" style="display:none"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21M12 3C9.5 5.6 8.2 8.7 8.2 12s1.3 6.4 3.8 9"/></svg> Your English</button>
         <a class="btn draft" id="wallBtn" href="index.html?notour=1" target="_blank" rel="noopener" style="display:none;text-decoration:none"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg> My Page — as supporters see it</a>
         <button class="btn draft" id="saveDraft">Save draft</button>
         <button class="btn pub" id="publish">Publish now</button>
@@ -430,6 +443,19 @@
     <div class="pvsheet" id="pvsheet"></div>
   </div>
 
+  <div class="enov" id="enov">
+    <div class="ensheet">
+      <h3 style="font-size:19px;font-weight:800;letter-spacing:-.01em;margin:0 0 6px">Your update in English</h3>
+      <p id="ensub" style="font-size:13px;color:#7a756f;line-height:1.55;margin:0 0 16px"></p>
+      <div id="enrows"></div>
+      <div class="enbar">
+        <button type="button" id="ensave" style="background:#2f9e63;color:#fff;font-weight:800;font-size:14px;border:none;border-radius:10px;padding:12px 22px;cursor:pointer">Save my English</button>
+        <button type="button" id="enclose" style="background:none;border:1px solid #e7e4e0;color:#241f1b;font-weight:600;font-size:13px;border-radius:10px;padding:11px 16px;cursor:pointer">Close</button>
+        <span style="font-size:12px;color:#7a756f">Nothing publishes until you hit Publish.</span>
+      </div>
+    </div>
+  </div>
+
 <script>
 async function guard(){
   try{
@@ -443,6 +469,10 @@ async function guard(){
     // Personal sign-off default: the missionary's chosen first names, or a best guess.
     // Their saved sign-off, verbatim — no words are ever added around it.
     MYSIGN=((me.miss&&me.miss.signoff)||'').replace(/\r/g,'').trim();
+    // Whether to offer the English panel at all. A writer whose own language IS English
+    // never sees the door, because for them there is nothing behind it.
+    NATLANG=CLANG[String((me.miss&&me.miss.country)||'').trim().toLowerCase()]||'';
+    if(NATLANG){ const eb=document.getElementById('enBtn'); if(eb) eb.style.display=''; }
     if(MYSIGN) DEF.signoff.text=MYSIGN;
     // Give blocks default to this missionary's own designated fund when they have one.
     if(me.miss&&me.miss.give) DEF.give.url=me.miss.give;
@@ -1389,6 +1419,7 @@ async function submit(publish){
   const msg=document.getElementById('msg'); msg.className='msg';
   const title=document.getElementById('title').value.trim();
   if(!title){show('err','Please add a title.');return;}
+  if(publish&&NATLANG&&!(await enStaleWarn())) return;
   const clean=blocks.map(b=>{const o={type:b.type};for(const k in b){if(k!=='id'&&k!=='type')o[k]=(typeof b[k]==='string')?b[k].trim():b[k];}return o;})
     .filter(b=> b.type==='divider' || b.type==='give' || Object.keys(b).some(k=>k!=='type' && b[k] && (Array.isArray(b[k])?b[k].length:String(b[k]).length)));
   if(publish&&!clean.some(b=>b.type==='hero'&&b.url)){show('err','Add a banner photo up top — it becomes the main picture on your wall.');return;}
@@ -1582,6 +1613,146 @@ document.getElementById('previewBtn').addEventListener('click',()=>{
 });
 function pvClose(){document.getElementById('pvov').classList.remove('open');document.body.style.overflow='';}
 document.getElementById('pvov').addEventListener('click',e=>{if(e.target.id==='pvov')pvClose();});
+
+
+/* ---------- "Your English" — the writer's own words, in their other language ----------
+   Optional on purpose. The door is quiet and never nags: a national who is happy with
+   the automatic English simply never opens it, and nothing on screen suggests they
+   should have. What they save here is never regenerated and never overwritten by the
+   background translator — see the `hand` handling in translate-update-background.js.
+   Only lines they actually touched are stored, so unedited machine text stays free to
+   improve later instead of being frozen the moment somebody glanced at it. */
+var CLANG={'czechia':'cs','czech republic':'cs','poland':'pl','ukraine':'uk','slovakia':'sk','romania':'ro','bulgaria':'bg','slovenia':'sl','latvia':'lv','estonia':'et','hungary':'hu','montenegro':'sr','serbia':'sr','germany':'de','spain':'es'};
+var LNAMES={cs:'Čeština',pl:'Polski',uk:'Українська',sk:'Slovenčina',ro:'Română',bg:'Български',sl:'Slovenščina',lv:'Latviešu',et:'Eesti',hu:'Magyar',sr:'Srpski',de:'Deutsch',es:'Español'};
+var NATLANG='';
+const ENFIELDS={text:['text'],heading:['text'],quote:['text','by'],prayer:['text'],praise:['text'],signoff:['text'],hero:['heading','sub'],photo:['caption'],numbers:['al','bl','cl'],give:['label'],button:['label']};
+const ENLABEL={text:'Text',heading:'Heading',quote:'Quote',prayer:'Prayer request',praise:'Praise',signoff:'Sign-off',hero:'Banner',photo:'Photo caption',numbers:'Number label',give:'Give button',button:'Button'};
+const ENCACHE={};                 // source hash -> machine English, so reopening costs nothing
+let EN=null;
+
+function enLangName(){ return LNAMES[NATLANG]||'your own language'; }
+
+// Same algorithm the server uses, so a hash written here means the same thing there.
+async function srcHash(t){
+  const b=await crypto.subtle.digest('SHA-1',new TextEncoder().encode(String(t==null?'':t)));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,12);
+}
+
+// Rows point at the live block objects, so English rides with its block when the
+// writer reorders things instead of being stranded at an old position.
+function enRows(){
+  const rows=[];
+  const t=document.getElementById('title').value.trim();
+  if(t) rows.push({key:'__title',host:null,field:'__title',label:'Title',src:t});
+  blocks.forEach(b=>{(ENFIELDS[b.type]||[]).forEach(f=>{
+    const v=String(b[f]==null?'':b[f]).trim();
+    if(v) rows.push({key:'b',host:b,field:f,label:ENLABEL[b.type]||b.type,src:v});
+  });});
+  return rows;
+}
+function enGet(row){
+  if(row.key==='__title'){ const h=blocks.find(b=>b&&b.en&&b.en.__title); return h?h.en.__title:null; }
+  return (row.host&&row.host.en&&row.host.en[row.field])||null;
+}
+function enPut(row,v,h){
+  let host=row.host, f=row.field;
+  if(row.key==='__title'){ host=blocks.find(b=>b.type==='hero')||blocks[0]; f='__title'; }
+  if(!host) return;
+  if(String(v==null?'':v).trim()){ if(!host.en) host.en={}; host.en[f]={v:String(v),h:h}; }
+  else if(host.en){ delete host.en[f]; if(!Object.keys(host.en).length) delete host.en; }
+}
+
+async function openEnPanel(){
+  syncFromDOM();
+  const rows=enRows();
+  if(!rows.length){ show('err','Write something first, then your English is one tap away.'); return; }
+  for(const r of rows){
+    r.h=await srcHash(r.src);
+    const cur=enGet(r);
+    r.en=cur?cur.v:''; r.was=cur?cur.h:''; r.hand=!!cur; r.machine=null;
+  }
+  EN={rows:rows,busy:false,err:''};
+  document.getElementById('ensub').textContent='This is what your English speaking supporters will read. Anything you’d rather say differently, change it here.';
+  document.getElementById('enov').style.display='block';
+  document.body.style.overflow='hidden';
+  renderEn();
+  enTranslate();
+}
+
+async function enTranslate(){
+  const missing=EN.rows.filter(r=>!r.en);
+  if(!missing.length){ renderEn(); return; }
+  const fresh=[];
+  missing.forEach(r=>{ const c=ENCACHE[r.h]; if(c){ r.en=c; r.machine=c; } else fresh.push(r); });
+  if(!fresh.length){ renderEn(); return; }
+  EN.busy=true; EN.err=''; renderEn();
+  try{
+    const res=await fetch('/.netlify/functions/translate-draft',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({lang:'en',strings:fresh.map(x=>x.src)})});
+    const d=await res.json().catch(()=>({}));
+    if(!res.ok||!d.ok) throw new Error(d.error||'Could not translate right now.');
+    (d.out||[]).forEach((t,i)=>{ const r=fresh[i]; if(r&&!r.hand){ r.en=t; r.machine=t; ENCACHE[r.h]=t; } });
+  }catch(e){ EN.err=String((e&&e.message)||e); }
+  EN.busy=false; renderEn();
+}
+
+function renderEn(){
+  const box=document.getElementById('enrows');
+  const head=EN.busy?'<div style="text-align:center;color:#7a756f;font-size:14px;padding:20px 0">Putting your update into English…</div>':'';
+  const err=EN.err?'<div style="color:#b0342b;font-size:13px;line-height:1.5;margin:0 0 12px">'+esc(EN.err)+' You can still write the English yourself below.</div>':'';
+  box.innerHTML=err+head+EN.rows.map((r,i)=>{
+    const stale=r.hand&&r.was&&r.was!==r.h;
+    return '<div class="enrow'+(stale?' stale':'')+'">'
+      +'<div class="enlab">'+esc(r.label)+(r.hand?' <span class="enmine">your words</span>':'')+'</div>'
+      +(stale?'<div class="enstale">You changed the '+esc(enLangName())+' here. The English still says what it said before.</div>':'')
+      +'<div class="ensrc">'+esc(r.src)+'</div>'
+      +'<textarea data-ei="'+i+'" rows="1">'+esc(r.en||'')+'</textarea>'
+      +'</div>';
+  }).join('');
+  box.querySelectorAll('textarea').forEach(ta=>{
+    const fit=()=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';};
+    fit();
+    ta.addEventListener('input',()=>{
+      fit();
+      const r=EN.rows[+ta.dataset.ei];
+      // Touching a line is what makes it theirs. Merely looking at it does not.
+      if(r){ r.en=ta.value; r.hand=true; }
+    });
+  });
+}
+
+function enCapture(){
+  if(!EN) return;
+  document.querySelectorAll('#enrows textarea').forEach(ta=>{
+    const r=EN.rows[+ta.dataset.ei]; if(r) r.en=ta.value;
+  });
+}
+function enClose(){ document.getElementById('enov').style.display='none'; document.body.style.overflow=''; EN=null; }
+
+async function enSave(){
+  if(!EN) return;
+  enCapture();
+  let kept=0;
+  for(const r of EN.rows){ if(r.hand){ enPut(r,r.en,r.h); kept++; } }
+  enClose();
+  try{ if(typeof scheduleStash==='function') scheduleStash(); }catch(_){}
+  try{ if(typeof scheduleAutosave==='function') scheduleAutosave(); }catch(_){}
+  show('ok',kept?'Saved. Your English stays exactly as you wrote it.':'Nothing changed, so nothing was saved.');
+}
+
+// At publish time, say plainly when the source moved under English they had made
+// their own. A statement of fact, not a warning, and never a blocker.
+async function enStaleWarn(){
+  const rows=enRows(); let n=0;
+  for(const r of rows){ const cur=enGet(r); if(cur&&cur.h&&cur.h!==await srcHash(r.src)) n++; }
+  if(!n) return true;
+  return confirm('You changed the '+enLangName()+' in '+n+' place'+(n>1?'s':'')+'. Your English still says what it said before.\n\nPublish anyway?');
+}
+
+document.getElementById('enBtn').addEventListener('click',openEnPanel);
+document.getElementById('ensave').addEventListener('click',enSave);
+document.getElementById('enclose').addEventListener('click',enClose);
+document.getElementById('enov').addEventListener('click',e=>{ if(e.target.id==='enov') enClose(); });
 
 /* ---------- Templates ---------- */
 let ME_ADMIN=false, TPLS={personal:[],shared:[]};
