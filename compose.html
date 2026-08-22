@@ -927,12 +927,12 @@ async function askPrayers(){
         <button type="button" class="yes" data-p="Answered">God answered</button>
         <button type="button" data-p="Went another way">It went another way</button>
         <button type="button" data-p="Still praying">Still praying</button>
-        <button type="button" class="pray-skip" data-p="skip">not now</button>
+        
       </div>
       <div class="pray-tell" id="ptell">
         <textarea id="ptext" placeholder="Say what happened, in your own words. This goes only to the people who prayed."></textarea>
         <button type="button" class="send" id="psend">Send to the ${it.prayed||0} who prayed</button>
-        <button type="button" class="pray-skip" id="pquiet">just close it quietly</button>
+        
       </div>
     </div>`;
     let choice='';
@@ -943,8 +943,12 @@ async function askPrayers(){
         const rr=await fetch('/.netlify/functions/prayers',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({action:'resolve',key:it.key,status,outcome:outcome||'',text:it.text,notify:!!notify})});
         const dd=await rr.json();
-        if(notify&&dd.told) done(`Told ${dd.told} ${dd.told===1?'person':'people'} who prayed. Thank you.`);
-        else done('Closed. We won\u2019t ask about this one again.');
+        // Say what really happened. "Still praying" is not closed, and telling
+        // someone it was would be a small lie the next update exposes.
+        const open = (status==='Still praying');
+        const who = (notify&&dd.told) ? `Told ${dd.told} ${dd.told===1?'person':'people'} who prayed. ` : '';
+        done(who + (open ? 'Still open, so we will ask again next time you write.'
+                         : (who ? 'Thank you.' : 'Closed. We will not ask about this one again.')));
       }catch(e){ done('Saved.'); }
     };
     // The words are the point; the three answers only say which KIND of news this is.
@@ -965,7 +969,6 @@ async function askPrayers(){
         : (it.prayed ? `Send to the ${it.prayed} ${it.prayed===1?'person':'people'} who prayed` : 'Save what happened');
     }
     box.querySelectorAll('[data-p]').forEach(btn=>btn.addEventListener('click',()=>{
-      if(btn.dataset.p==='skip'){ const c=document.getElementById('pcard'); if(c)c.remove(); return; }   // asked once; gone for now
       choice=btn.dataset.p;
       box.querySelectorAll('.pray-btns [data-p]').forEach(b=>b.classList.toggle('on', b===btn));
       const t=ptext(); t.placeholder=PROMPT[choice]||t.placeholder; t.focus();
@@ -978,12 +981,7 @@ async function askPrayers(){
       ps.disabled=true; ps.textContent='Sending…';
       save(choice||'Answered',t,true);
     });
-    const pq=document.getElementById('pquiet'); if(pq)pq.addEventListener('click',()=>{
-      // Closing quietly must never invent an outcome. With nothing chosen this is
-      // simply "not now", and the request stays open for another sitting.
-      if(!choice){ const c=document.getElementById('pcard'); if(c)c.remove(); return; }
-      save(choice,(document.getElementById('ptext').value||'').trim(),false);
-    });
+    
   }catch(e){}
 }
 // Tags: free words, but tidied — trimmed, title-cased, de-duped — so a supporter's

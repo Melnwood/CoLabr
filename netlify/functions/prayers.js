@@ -38,7 +38,16 @@ exports.handler = async function (event) {
     const doneKeys = new Set();
     try {
       const pr = await fetch(`https://api.airtable.com/v0/${BASE}/${PRAYERS}?pageSize=100&filterByFormula=${encodeURIComponent(`{Missionary}='${nameEsc}'`)}`, { headers: auth });
-      if (pr.ok) ((await pr.json()).records || []).forEach(rec => { const k = (rec.fields || {})['Key']; if (k) doneKeys.add(k); });
+      // Only an ENDING closes a request. "Still praying" is the opposite of an
+      // ending: it says this is unfinished, so the request keeps coming back every
+      // time they sit down to write, until there is something to tell people.
+      // Mel, 2026-08-22: "All the other ones should again come up each time that
+      // they write an update until they're answered."
+      if (pr.ok) ((await pr.json()).records || []).forEach(rec => {
+        const f = rec.fields || {};
+        const st = (f['Status'] && f['Status'].name) ? f['Status'].name : f['Status'];
+        if (f['Key'] && st !== 'Still praying') doneKeys.add(f['Key']);
+      });
     } catch (e) {}
 
     if (b.action === 'open') {
