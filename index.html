@@ -203,6 +203,24 @@
   body.pano .jvrail{margin-top:26px}
   body.pano .yearrow{display:none}
   /* Masthead over the dark canvas: light ink, readable strapline, soft logo chip */
+  /* ---- JV house style: the black banner from josiahventure.com ----
+     A skin, not a layout: it sits on top of the Field Notes structure and only
+     restyles the chrome, so every wall feature keeps working underneath. Preview
+     any wall with ?style=jv before it is ever set on a page. */
+  body.jv{background:#faf8f5}
+  body.jv .top{background:#000;border-bottom:none;border-radius:0;padding:14px 20px;
+    position:sticky;top:0;z-index:60;box-shadow:0 2px 14px rgba(0,0,0,.28)}
+  /* The wordmark ships as dark ink on light, which would vanish on black, so it is
+     knocked out to solid white until a proper reversed asset exists. */
+  body.jv .top .jvlogo{filter:brightness(0) invert(1);opacity:.96}
+  body.jv .top .langsel{background-color:#141414;color:#e8e4de;border-color:#3a3a3a}
+  body.jv .top .follow{background:transparent;color:#fff;border:1.5px solid #4a4a4a}
+  body.jv .top .follow:hover{border-color:#FF6600;color:#FF6600}
+  body.jv .top .give{background:#FF6600;border-color:#FF6600;color:#fff}
+  body.jv .masthead{padding-top:34px}
+  body.jv .mh-l h1{letter-spacing:-.025em}
+  body.jv .mrule{background:#FF6600}
+  body.jv .mmission{font-weight:700}
   body.pano .mh-l h1{color:#f7f3ec}
   body.pano .mloc{color:#c9c0b4}
   body.pano .mh-r b,body.pano .mh-r{color:#e7e0d6}
@@ -567,7 +585,7 @@ function buildYears(){
   sel.innerHTML=`<option value="all">${t('years')}</option>`+yrs.map(y=>`<option value="${y}">${y}</option>`).join('');
 }
 function applyStyle(name){
-  const valid=['fieldnotes','grid','timeline','wall','pano'];
+  const valid=['fieldnotes','grid','timeline','wall','pano','jv'];
   let s=STYLE_MAP[name]||(valid.includes(name)?name:'fieldnotes');
   if(urlStyle){ s=STYLE_MAP[urlStyle]||(valid.includes(urlStyle)?urlStyle:s); }  // ?style= preview override
   STYLE=s;
