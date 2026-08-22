@@ -221,8 +221,13 @@ function renderDir(){
   });
   el.innerHTML=html;
   el.querySelectorAll('[data-i]').forEach(c=>c.addEventListener('click',e=>{
-    if(e.target.closest('.mlatest')) return;   // the latest line is its own door, to their wall
-    openTeammate(window._ms[+c.dataset.i]);
+    if(e.target.closest('.mlatest')) return;   // the latest line is already a door to their wall
+    const m=window._ms[+c.dataset.i]; if(!m) return;
+    // The count badge is the way through to everything they have written, which is where
+    // "Feature on my wall" lives. The card itself goes where you would expect it to go:
+    // their wall, opened at their latest update.
+    if(e.target.closest('.mcount')){ openTeammate(m); return; }
+    location.href='index.html?m='+encodeURIComponent(m.name)+((m.latest&&m.latest.id)?'&u='+encodeURIComponent(m.latest.id):'');
   }));
 }
 
@@ -245,10 +250,16 @@ async function openTeammate(m){
       return `<div class="uitem" data-open="${i}">${u.cover?`<div class="uthumb" style="background-image:url('${esc(u.cover)}');background-position:${cfocus(u)}"></div>`:''}
       <div class="ub"><div class="udate">${fmtDate(u.rawdate)}</div><div class="ut">${esc(disp.title)}</div>
       <div class="ux">${esc(firstText(disp.blocks)||u.excerpt||'')}</div>
-      <div class="uact"><button data-read="${i}">Read Now</button><button class="feat" data-feat="${i}">${licon('globe')} Feature on my wall</button></div></div></div>`;
+      <div class="uact"><button data-read="${i}">Read on their wall</button><button class="feat" data-feat="${i}">${licon('globe')} Feature on my wall</button></div></div></div>`;
     }).join('');
     // The whole card opens the update — only the Feature button does its own thing.
-    list.querySelectorAll('[data-open]').forEach(c=>c.addEventListener('click',e=>{ if(e.target.closest('.feat'))return; openReader(+c.dataset.open); }));
+    list.querySelectorAll('[data-open]').forEach(c=>c.addEventListener('click',e=>{
+      if(e.target.closest('.feat')) return;
+      const u=CUR[+c.dataset.open]; if(!u) return;
+      // An update opens where it actually lives, on their wall, rather than in a reader
+      // here. Featuring is the one action that stays on this page.
+      location.href='index.html?m='+encodeURIComponent(m.name)+(u.id?'&u='+encodeURIComponent(u.id):'');
+    }));
     list.querySelectorAll('[data-feat]').forEach(b=>b.addEventListener('click',()=>feature(CUR[+b.dataset.feat])));
   }catch(e){ list.innerHTML='<div class="state">Could not load updates.</div>'; }
 }
@@ -279,7 +290,6 @@ function firstText(blocks){ const b=(blocks||[]).find(x=>x&&(x.type==='text'||x.
 function cfocus(u){ const b=((u&&u.blocks)||[]).find(x=>x&&(x.type==='hero'||x.type==='photo')&&x.url===u.cover); return (b&&(b.fx!=null||b.fy!=null))?`${b.fx!=null?+b.fx:50}% ${b.fy!=null?+b.fy:50}%`:'50% 35%'; }
 function fmtDate(s){ if(!s)return''; const p=s.split('-'); const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${M[(+p[1]||1)-1]} ${+p[2]||''}, ${p[0]}`; }
 
-function openReader(i){ const n=document.getElementById('pname').textContent; openReaderU(CUR[i], n, n); }
 async function openReaderU(u, label, mname){
   if(!u)return; const disp=await viewFull(u);
   const body=(disp.blocks||[]).map(bk=>{
