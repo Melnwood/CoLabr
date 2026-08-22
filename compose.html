@@ -471,7 +471,7 @@ async function guard(){
     MYSIGN=((me.miss&&me.miss.signoff)||'').replace(/\r/g,'').trim();
     // Whether to offer the English panel at all. A writer whose own language IS English
     // never sees the door, because for them there is nothing behind it.
-    NATLANG=CLANG[String((me.miss&&me.miss.country)||'').trim().toLowerCase()]||'';
+    (function(){ var mi=me.miss||{}; /* Field Location reads "Ostrava, Czechia", so the country is after the last comma. The National staff flag is what actually decides this: someone sent from the US to Czechia lives in Czechia but still writes in English. */ var where=String(mi.country||'').trim().toLowerCase(); var tail=where.split(',').pop().trim(); NATLANG = mi.native ? (CLANG[tail]||CLANG[where]||'') : ''; })();
     if(NATLANG){ const eb=document.getElementById('enBtn'); if(eb) eb.style.display=''; }
     if(MYSIGN) DEF.signoff.text=MYSIGN;
     // Give blocks default to this missionary's own designated fund when they have one.
