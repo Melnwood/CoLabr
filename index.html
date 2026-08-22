@@ -212,7 +212,10 @@
     position:sticky;top:0;z-index:60;box-shadow:0 2px 14px rgba(0,0,0,.28)}
   /* The wordmark ships as dark ink on light, which would vanish on black, so it is
      knocked out to solid white until a proper reversed asset exists. */
-  body.jv .top .jvlogo{filter:brightness(0) invert(1);opacity:.96}
+  /* The shipped wordmark is orange "josiah" plus BLACK "venture", so on a black bar
+     half of it disappears. This is the same artwork with the black knocked out to
+     white and the orange left alone, which is how JV sets it on dark. */
+  body.jv .top .jvlogo{content:url('/photos/jv-logo-reverse.png');max-height:40px;max-width:190px}
   body.jv .top .langsel{background-color:#141414;color:#e8e4de;border-color:#3a3a3a}
   body.jv .top .follow{background:transparent;color:#fff;border:1.5px solid #4a4a4a}
   body.jv .top .follow:hover{border-color:#FF6600;color:#FF6600}
