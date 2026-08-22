@@ -208,9 +208,11 @@
      chrome, so every wall feature keeps working underneath. Preview any wall with
      ?style=jv before it is ever set on a page. */
   body.jv{background:#faf8f5}
-  /* The band reaches past this column, so the column must not clip it away.
-     overflow-x:clip rather than hidden, because hidden would kill the sticky. */
-  body.jv .paper{overflow-x:clip}
+  /* The clip belongs on the full-width body, never on the centred column: clipping
+     at .paper trims the band back to the column and undoes the whole effect. Here it
+     only swallows the sliver of scrollbar that 50vw over-counts. clip, not hidden,
+     because hidden would make this a scroll container and kill the sticky. */
+  body.jv{overflow-x:clip}
 
   /* A band across the whole window, with its contents still on the page's own
      column. The negative margin pulls both edges out to the viewport; the matching
@@ -230,6 +232,11 @@
   body.jv .topcta > a,body.jv .topcta > button{
     background:transparent;color:#f2efe9;border:1px solid rgba(255,255,255,.26);box-shadow:none}
   body.jv .topcta > a:hover,body.jv .topcta > button:hover{border-color:#FF6600;color:#FF6600}
+  /* The dashboard chip is built in script with its colours written inline, and inline
+     styles outrank every selector, so this is the one place !important is the honest
+     tool rather than a shortcut. */
+  body.jv #homechip{background:transparent!important;color:#f2efe9!important;border-color:rgba(255,255,255,.26)!important}
+  body.jv #homechip:hover{border-color:#FF6600!important;color:#FF6600!important}
   body.jv .top .give,body.jv .top .give:hover{background:#FF6600;border-color:#FF6600;color:#fff}
 
   /* A native select paints its own light chrome whatever background it is given, so
