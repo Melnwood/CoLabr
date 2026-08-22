@@ -102,6 +102,13 @@ exports.handler = async function (event) {
       const status = ['Answered', 'Still praying', 'Went another way'].includes(b.status) ? b.status : null;
       if (!status) return r(400, { error: 'Unknown outcome.' });
       const outcome = String(b.outcome || '').trim().slice(0, 900);
+      // A tag on its own never resolves anything. What closes a request is the
+      // combination of the tag AND what was written, because "answered" with no
+      // account of how is nothing a supporter can receive. The composer already
+      // refuses to send without words; this is the same rule where it cannot be
+      // got around. Mel, 2026-08-22: "that is what shuts it down, the combination
+      // of the tag and the text."
+      if (!outcome) return r(400, { error: 'Say what happened before this one is put to rest.' });
 
       // Who prayed on that update — the people this news belongs to.
       let people = [];
