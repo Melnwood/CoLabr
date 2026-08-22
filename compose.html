@@ -315,9 +315,11 @@
     .pray-card .pm{font-size:11.5px;color:#8a7550}
     .pray-btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
     .pray-btns button{font-size:12.5px;font-weight:700;border-radius:18px;padding:8px 14px;cursor:pointer;font-family:inherit;border:1px solid #e0cfa4;background:#fff;color:#6b5a35}
-    .pray-btns button.yes{background:#2f9e63;border-color:#2f9e63;color:#fff}
+    .pray-btns button.on{background:#4a3f2a;border-color:#4a3f2a;color:#fff}
+  .pray-btns button.yes.on{background:#2f9e63;border-color:#2f9e63}
+  .pray-tell .send:disabled{opacity:.45;cursor:default}
     .pray-btns button:hover{border-color:#c9a44a;color:#4a3f2a}
-    .pray-tell{margin-top:11px;display:none}
+    .pray-tell{margin-top:11px}
     .pray-tell.on{display:block}
     .pray-tell textarea{width:100%;box-sizing:border-box;border:1px solid #e0cfa4;border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;min-height:70px;resize:vertical;background:#fff}
     .pray-tell .send{margin-top:8px;background:var(--acc);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
@@ -918,7 +920,7 @@ async function askPrayers(){
     const it=(d.items||[])[0]; if(!it)return;                  // nothing open — say nothing
     sessionStorage.setItem('prayasked','1');
     box.innerHTML=`<div class="pray-card" id="pcard">
-      <div class="pk">Before you write — how did this turn out?</div>
+      <div class="pk">Before you write: how did this turn out?</div>
       <div class="pq">${esc(it.text)}</div>
       <div class="pm">You asked in ${esc(it.title)}${it.prayed?` · ${it.prayed} ${it.prayed===1?'person':'people'} prayed`:''}</div>
       <div class="pray-btns">
@@ -928,7 +930,7 @@ async function askPrayers(){
         <button type="button" class="pray-skip" data-p="skip">not now</button>
       </div>
       <div class="pray-tell" id="ptell">
-        <textarea id="ptext" placeholder="Tell them what happened — this goes only to the people who prayed."></textarea>
+        <textarea id="ptext" placeholder="Say what happened, in your own words. This goes only to the people who prayed."></textarea>
         <button type="button" class="send" id="psend">Send to the ${it.prayed||0} who prayed</button>
         <button type="button" class="pray-skip" id="pquiet">just close it quietly</button>
       </div>
@@ -945,21 +947,43 @@ async function askPrayers(){
         else done('Closed. We won\u2019t ask about this one again.');
       }catch(e){ done('Saved.'); }
     };
+    // The words are the point; the three answers only say which KIND of news this is.
+    // "Still praying" used to save on the tap with nothing written and nobody told,
+    // which is exactly what made this feel like a gimmick.
+    const PROMPT={
+      'Answered':'What did God do? This goes only to the people who prayed.',
+      'Went another way':'Tell them how it actually turned out. This goes only to the people who prayed.',
+      'Still praying':'Say why it is still unfinished, and how they can keep praying with you.'
+    };
+    const psend=()=>document.getElementById('psend');
+    const ptext=()=>document.getElementById('ptext');
+    function refreshSend(){
+      const b=psend(); if(!b) return;
+      const ready=!!choice && !!(ptext().value||'').trim();
+      b.disabled=!ready;
+      b.textContent = !choice ? 'Send to the people who prayed'
+        : (it.prayed ? `Send to the ${it.prayed} ${it.prayed===1?'person':'people'} who prayed` : 'Save what happened');
+    }
     box.querySelectorAll('[data-p]').forEach(btn=>btn.addEventListener('click',()=>{
+      if(btn.dataset.p==='skip'){ const c=document.getElementById('pcard'); if(c)c.remove(); return; }   // asked once; gone for now
       choice=btn.dataset.p;
-      if(choice==='skip'){ const c=document.getElementById('pcard'); if(c)c.remove(); return; }   // asked once; gone for now
-      if(choice==='Still praying'){ save('Still praying','',false); return; }
-      document.getElementById('ptell').classList.add('on');
-      document.getElementById('ptext').focus();
-      document.getElementById('psend').textContent=(it.prayed?`Send to the ${it.prayed} who prayed`:'Save what happened');
+      box.querySelectorAll('.pray-btns [data-p]').forEach(b=>b.classList.toggle('on', b===btn));
+      const t=ptext(); t.placeholder=PROMPT[choice]||t.placeholder; t.focus();
+      refreshSend();
     }));
+    ptext().addEventListener('input',refreshSend); refreshSend();
     const ps=document.getElementById('psend'); if(ps)ps.addEventListener('click',()=>{
       const t=(document.getElementById('ptext').value||'').trim();
       if(!t){ document.getElementById('ptext').focus(); return; }
       ps.disabled=true; ps.textContent='Sending…';
       save(choice||'Answered',t,true);
     });
-    const pq=document.getElementById('pquiet'); if(pq)pq.addEventListener('click',()=>save(choice||'Answered','',false));
+    const pq=document.getElementById('pquiet'); if(pq)pq.addEventListener('click',()=>{
+      // Closing quietly must never invent an outcome. With nothing chosen this is
+      // simply "not now", and the request stays open for another sitting.
+      if(!choice){ const c=document.getElementById('pcard'); if(c)c.remove(); return; }
+      save(choice,(document.getElementById('ptext').value||'').trim(),false);
+    });
   }catch(e){}
 }
 // Tags: free words, but tidied — trimmed, title-cased, de-duped — so a supporter's
