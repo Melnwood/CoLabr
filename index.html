@@ -204,23 +204,48 @@
   body.pano .yearrow{display:none}
   /* Masthead over the dark canvas: light ink, readable strapline, soft logo chip */
   /* ---- JV house style: the black banner from josiahventure.com ----
-     A skin, not a layout: it sits on top of the Field Notes structure and only
-     restyles the chrome, so every wall feature keeps working underneath. Preview
-     any wall with ?style=jv before it is ever set on a page. */
+     A skin, not a layout. It sits on the Field Notes structure and restyles only the
+     chrome, so every wall feature keeps working underneath. Preview any wall with
+     ?style=jv before it is ever set on a page. */
   body.jv{background:#faf8f5}
-  body.jv .top{background:#000;border-bottom:none;border-radius:0;padding:14px 20px;
-    position:sticky;top:0;z-index:60;box-shadow:0 2px 14px rgba(0,0,0,.28)}
-  /* The wordmark ships as dark ink on light, which would vanish on black, so it is
-     knocked out to solid white until a proper reversed asset exists. */
-  /* The shipped wordmark is orange "josiah" plus BLACK "venture", so on a black bar
-     half of it disappears. This is the same artwork with the black knocked out to
-     white and the orange left alone, which is how JV sets it on dark. */
-  body.jv .top .jvlogo{content:url('/photos/jv-logo-reverse.png');max-height:40px;max-width:190px}
-  body.jv .top .langsel{background-color:#141414;color:#e8e4de;border-color:#3a3a3a}
-  body.jv .top .follow{background:transparent;color:#fff;border:1.5px solid #4a4a4a}
-  body.jv .top .follow:hover{border-color:#FF6600;color:#FF6600}
-  body.jv .top .give{background:#FF6600;border-color:#FF6600;color:#fff}
-  body.jv .masthead{padding-top:34px}
+  /* The band reaches past this column, so the column must not clip it away.
+     overflow-x:clip rather than hidden, because hidden would kill the sticky. */
+  body.jv .paper{overflow-x:clip}
+
+  /* A band across the whole window, with its contents still on the page's own
+     column. The negative margin pulls both edges out to the viewport; the matching
+     padding puts the logo back in line with the name in the masthead below it. */
+  body.jv .top{
+    background:#000;border-bottom:none;border-radius:0;
+    position:sticky;top:0;z-index:60;
+    margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+    padding:12px calc(50vw - 50%);
+    box-shadow:0 1px 0 rgba(255,255,255,.06),0 6px 20px rgba(0,0,0,.30)}
+  body.jv .top .jvlogo{content:url('/photos/jv-logo-reverse.png');max-height:34px;max-width:180px}
+
+  /* One filled control, and only one. Give is the action, so it keeps the orange;
+     everything beside it steps back to a ghost. If the dashboard link stays a solid
+     white pill it shouts louder than the thing people came to do. */
+  body.jv .topcta{gap:9px}
+  body.jv .topcta > a,body.jv .topcta > button{
+    background:transparent;color:#f2efe9;border:1px solid rgba(255,255,255,.26);box-shadow:none}
+  body.jv .topcta > a:hover,body.jv .topcta > button:hover{border-color:#FF6600;color:#FF6600}
+  body.jv .top .give,body.jv .top .give:hover{background:#FF6600;border-color:#FF6600;color:#fff}
+
+  /* A native select paints its own light chrome whatever background it is given, so
+     it has to be taken over outright: appearance off, then the globe and the chevron
+     drawn back in at a weight that reads on black. */
+  body.jv .langsel{
+    -webkit-appearance:none;appearance:none;
+    background-color:transparent;color:#f2efe9;border-color:rgba(255,255,255,.26);
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="%23f2efe9" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.6 3 14.4 0 18M12 3c-3 3.6-3 14.4 0 18"/></svg>'),url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="%23bdb6ad" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>');
+    background-repeat:no-repeat,no-repeat;
+    background-position:9px center,right 9px center;
+    background-size:15px,13px;
+    padding:6px 28px 6px 30px}
+  body.jv .langsel option{background:#141414;color:#f2efe9}
+
+  body.jv .masthead{padding-top:32px}
   body.jv .mh-l h1{letter-spacing:-.025em}
   body.jv .mrule{background:#FF6600}
   body.jv .mmission{font-weight:700}
