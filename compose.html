@@ -95,10 +95,34 @@
   .drop .dprev{max-width:100%;border-radius:9px;margin:0 auto 8px;display:block}
   .urlin{margin-top:9px}
   .hint{font-size:11.5px;color:#6a6f75;margin-top:6px}
-  .actions{display:flex;gap:12px;margin-top:26px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 26%);padding:16px 0 6px}
-  .btn{flex:1;font-weight:700;font-size:15px;padding:15px;border-radius:12px;border:none;cursor:pointer}
-  .btn.pub{background:var(--acc);color:#fff}.btn.draft{background:var(--card);color:var(--text);border:1px solid var(--line)}
-  .btn:disabled{opacity:.55}
+    /* ---- Action row -----------------------------------------------------------
+     Reads left to right the way the work runs: ways of LOOKING at the update on
+     the left, ways of COMMITTING to it on the right, with real air between them.
+     Every button sizes to its own words. flex:1 used to hand all six an identical
+     share of the row, which is what folded one label onto four lines and made the
+     whole thing look shoved together. */
+  .actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:26px;
+    position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 26%);padding:16px 0 8px}
+  .btn{flex:0 0 auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;
+    gap:7px;font-family:inherit;font-weight:700;font-size:14.5px;line-height:1;
+    padding:12px 16px;border-radius:11px;border:1px solid transparent;cursor:pointer;
+    transition:background .12s,border-color .12s,color .12s}
+  /* Looking at your own work should not shout; these stay quiet until reached for. */
+  .btn.draft{order:1;background:transparent;color:var(--muted)}
+  .btn.tpl{order:2;margin-left:auto;background:transparent;color:var(--muted)}
+  .btn.draft:hover,.btn.tpl:hover{background:var(--card,#fff);border-color:var(--line);color:var(--text)}
+  /* Saving is real but undoable, so it is solid without being loud. */
+  .btn.save{order:3;background:var(--card,#fff);color:var(--text);border-color:var(--line)}
+  .btn.save:hover{border-color:#d8cdb6}
+  /* Exactly one button here can reach real people. Only it gets the colour. */
+  .btn.pub{order:4;background:var(--acc);color:#fff;padding:12px 20px;box-shadow:0 6px 16px rgba(255,102,0,.26)}
+  .btn.pub:hover{filter:brightness(1.04)}
+  .btn:disabled{opacity:.5;cursor:default;box-shadow:none}
+  @media(max-width:640px){
+    /* No room to split the row on a phone, so the primary takes its own line, last. */
+    .btn.tpl{margin-left:0}
+    .btn.pub{flex:1 1 100%}
+  }
   .msg{margin-top:14px;padding:14px 16px;border-radius:11px;font-size:13.5px;line-height:1.5;display:none}
   .msg.ok{display:block;background:#eafaf1;color:#1f7a48;border:1px solid #cdeeda}
   .msg.err{display:block;background:#fdecea;color:#b0342b;border:1px solid #f5c6c0}
@@ -228,8 +252,8 @@
 
       <div class="actions">
         <button class="btn draft" id="previewBtn" type="button"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Preview</button><button class="btn draft" id="enBtn" type="button" style="display:none"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21M12 3C9.5 5.6 8.2 8.7 8.2 12s1.3 6.4 3.8 9"/></svg> Your English</button>
-        <a class="btn draft" id="wallBtn" href="index.html?notour=1" target="_blank" rel="noopener" style="display:none;text-decoration:none"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg> My Page — as supporters see it</a>
-        <button class="btn draft" id="saveDraft">Save draft</button>
+        <a class="btn draft" id="wallBtn" href="index.html?notour=1" target="_blank" rel="noopener" title="Your live wall, exactly as supporters see it" style="display:none;text-decoration:none"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg> My page</a>
+        <button class="btn save" id="saveDraft">Save draft</button>
         <button class="btn pub" id="publish">Publish now</button>
         <button class="btn tpl" id="saveTpl" type="button">Save as template</button>
       </div>
@@ -331,7 +355,6 @@
     .tplstart{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);color:var(--text);font-family:inherit;font-size:13.5px;font-weight:700;padding:9px 15px;border-radius:22px;cursor:pointer;margin:2px 0 6px}
     .tplstart:hover{border-color:var(--acc);color:var(--acc)}
     .tplstart svg{color:var(--acc)}
-    .btn.tpl{background:var(--card,#fff);color:var(--text);border:1px solid var(--line)}
     .tov{position:fixed;inset:0;background:rgba(20,15,10,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
     .tov.open{display:flex}
     .tcard{background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:86vh;overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(30,20,10,.3)}
@@ -360,7 +383,7 @@
     .topt b{font-size:14px}.topt span{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
     .topt.disabled{opacity:.5;cursor:not-allowed}
     .trow{display:flex;gap:10px;margin-top:8px}
-    .trow .btn{flex:1;justify-content:center;display:flex;align-items:center}
+    .trow 
 
     /* ---- Preview overlay: mirrors the supporter page reader ---- */
     .pvov{position:fixed;inset:0;z-index:70;background:rgba(20,15,10,.55);backdrop-filter:blur(3px);display:none;overflow-y:auto;padding:24px 14px 60px}
