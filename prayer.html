@@ -38,13 +38,25 @@
     .tools,.note,.said{display:none}
     li{break-inside:avoid;border-color:#ddd}
   }
+  /* Every page carries whoever sent this person. A supporter should never land
+     somewhere that could be anybody's. */
+  .brandbar{max-width:760px;margin:0 auto;padding:16px 20px 0;display:flex;align-items:center}
+  .orgmark{height:auto;width:auto;max-height:30px;max-width:170px;display:block;object-fit:contain}
+  @media print{.brandbar{padding-top:0}}
 </style>
 </head>
 <body>
+  <div class="brandbar"><img id="orgmark" class="orgmark" src="/photos/jv-logo.png" alt="Josiah Venture"></div>
 <div class="wrap" id="wrap"><div class="state">Loading prayer requests…</div></div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const M=(new URLSearchParams(location.search)).get('m')||'';
+function setOrgMark(page){
+  // National staff carry their own org's mark; everyone else keeps Josiah Venture.
+  const img=document.getElementById('orgmark');
+  if(!img||!page||!page.orgLogo) return;
+  img.src=page.orgLogo; img.alt=page.orgName||page.org||'Our organisation';
+}
 function fd(s){ if(!s)return''; try{ return new Date(s+'T12:00:00').toLocaleDateString(undefined,{month:'long',year:'numeric'}); }catch(_){ return s; } }
 function plain(d){
   const L=[`Prayer requests — ${d.page.name}${d.page.location?` (${d.page.location})`:''}`,''];
@@ -68,7 +80,8 @@ function plain(d){
     if(!r.ok||!d.ok){ wrap.innerHTML='<div class="state">'+esc((d&&d.error)||'Could not load these prayer requests.')+'</div>'; return; }
     if(!d.standing.length&&!d.recent.length){
       wrap.innerHTML='<div class="state">'+esc(d.page.name)+' hasn’t written their prayer requests yet.</div>'; return; }
-    let html=`<div class="who">${d.page.photo?`<div class="av" style="background-image:url('${esc(d.page.photo)}')"></div>`:'<div class="av"></div>'}
+    setOrgMark(d.page);
+  let html=`<div class="who">${d.page.photo?`<div class="av" style="background-image:url('${esc(d.page.photo)}')"></div>`:'<div class="av"></div>'}
       <div><h1>How to pray for ${esc(d.page.name)}</h1>${d.page.location?`<div class="loc">${esc(d.page.location)}${d.page.org?' · '+esc(d.page.org):''}</div>`:''}</div></div>
       <p class="lede">Thank you for asking. These are the things we would most love you to carry to God on our behalf.</p>`;
     d.cats.forEach(c=>{

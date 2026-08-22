@@ -31,7 +31,21 @@ exports.handler = async function (event) {
         const mr = await fetch(`https://api.airtable.com/v0/${BASE}/${MISS}?maxRecords=1&filterByFormula=${encodeURIComponent(`{Name}='${nameEsc}'`)}`, { headers: auth });
         if (mr.ok) { const rec = (((await mr.json()).records) || [])[0];
           if (rec) { const f = rec.fields || {};
-            page = { name: f['Name'] || name, location: f['Field Location'] || '', photo: f['Photo'] || '', org: f['National Org'] || '' }; } }
+            page = { name: f['Name'] || name, location: f['Field Location'] || '', photo: f['Photo'] || '', org: f['National Org'] || '' };
+        // A prayer page wears whoever sent them. National staff carry their own
+        // org's mark; everyone else carries Josiah Venture, which the page falls
+        // back to when no logo comes through.
+        try {
+          if (page.org) {
+            const oe = String(page.org).replace(/'/g, "\\'");
+            const ourl = `https://api.airtable.com/v0/${BASE}/tbl152sVfqGyrqpJQ?maxRecords=1&returnFieldsByFieldId=true&filterByFormula=${encodeURIComponent(`OR({Code}='${oe}',{Name}='${oe}')`)}`;
+            const orr = await fetch(ourl, { headers: auth });
+            if (orr.ok) {
+              const orec = (((await orr.json()).records) || [])[0];
+              if (orec) { const of2 = orec.fields || {}; page.orgLogo = of2['fldBJzji3j5ML7DHd'] || ''; page.orgName = of2['fldsyU3dpzLdkXI7t'] || page.org; }
+            }
+          }
+        } catch (e) {}; } }
       } catch (e) {}
 
       const standing = await readProfile(auth, nameEsc);
