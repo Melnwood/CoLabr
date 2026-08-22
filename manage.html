@@ -285,6 +285,30 @@
   .nav a.acc{background:var(--acc,#FF6600);color:#fff;border-color:var(--acc,#FF6600);box-shadow:0 2px 8px rgba(255,102,0,.28)}
   .nav a.acc:hover{filter:brightness(.92);box-shadow:0 8px 18px rgba(255,102,0,.34)}
   .nav a.acc:active{background:var(--acc,#FF6600)}
+
+  /* Circular photo cropper. The circle is only a window: the picture moves under it. */
+  #avcrop{display:none;position:fixed;inset:0;z-index:240;background:rgba(20,15,10,.62);
+    align-items:center;justify-content:center;padding:16px}
+  #avcrop .avcard{background:#fff;border-radius:16px;padding:18px;width:100%;max-width:390px;
+    box-shadow:0 30px 80px rgba(24,20,16,.35)}
+  #avcrop h3{margin:0 0 4px;font-size:17px;font-weight:800;letter-spacing:-.01em}
+  #avcrop .avhint{margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5}
+  #avstage{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;border-radius:14px;
+    background:#1a1613;touch-action:none;cursor:grab;user-select:none}
+  #avstage:active{cursor:grabbing}
+  #avimg{position:absolute;top:0;left:0;transform-origin:0 0;max-width:none;pointer-events:none;
+    -webkit-user-drag:none}
+  /* Everything outside the circle is dimmed, so what you see is what gets saved. */
+  #avmask{position:absolute;inset:0;pointer-events:none;
+    background:rgba(20,15,10,.55);
+    -webkit-mask:radial-gradient(circle at 50% 50%,transparent 0 49.5%,#000 50%);
+    mask:radial-gradient(circle at 50% 50%,transparent 0 49.5%,#000 50%)}
+  #avring{position:absolute;inset:0;pointer-events:none;border-radius:14px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+  #avzoomrow{display:flex;align-items:center;gap:10px;margin:14px 0 4px}
+  #avzoomrow span{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  #avzoom{flex:1;accent-color:var(--acc)}
+  #avbtns{display:flex;gap:9px;justify-content:flex-end;margin-top:12px}
 </style>
 </head>
 <body>
@@ -966,14 +990,93 @@ document.getElementById('pgnameSave').addEventListener('click',async()=>{
     const vs=document.querySelector('.nav a[href^="index.html"]'); if(vs) vs.href='index.html?m='+encodeURIComponent(d.name);
   }catch(e){ msg.className='savenote err'; msg.textContent=e.message; }
 });
+
+/* ---- Circular photo cropper -------------------------------------------------
+   What gets uploaded IS the crop: a square image, already framed. That way the
+   wall, the emails and the team page all show the same face with no focus data
+   to store and nothing for an email client to fail at. */
+function openAvatarCrop(file){
+  return new Promise(resolve=>{
+    const ov=document.getElementById('avcrop'), stage=document.getElementById('avstage'),
+          img=document.getElementById('avimg'), zoom=document.getElementById('avzoom');
+    const url=URL.createObjectURL(file);
+    let nw=0,nh=0,base=1,sc=1,tx=0,ty=0,drag=null,done=false;
+    const S=()=>stage.clientWidth;
+    function draw(){
+      const s=S(), dw=nw*sc, dh=nh*sc;
+      // The picture may never pull away from the frame it is filling.
+      tx=Math.min(0,Math.max(s-dw,tx));
+      ty=Math.min(0,Math.max(s-dh,ty));
+      img.style.width=dw+'px'; img.style.height=dh+'px';
+      img.style.transform='translate('+tx+'px,'+ty+'px)';
+    }
+    img.onload=()=>{
+      nw=img.naturalWidth; nh=img.naturalHeight;
+      const s=S();
+      base=Math.max(s/nw,s/nh);            // start filling the frame exactly
+      sc=base; zoom.value='1';
+      tx=(s-nw*sc)/2; ty=(s-nh*sc)/2;      // and centred
+      draw();
+    };
+    img.src=url;
+    ov.style.display='flex'; document.body.style.overflow='hidden';
+
+    function onZoom(){
+      const s=S(), prev=sc;
+      sc=base*parseFloat(zoom.value||'1');
+      // Zoom about the middle of the frame, so it grows around what you are looking
+      // at rather than crawling away from it.
+      const cx=(s/2-tx)/prev, cy=(s/2-ty)/prev;
+      tx=s/2-cx*sc; ty=s/2-cy*sc;
+      draw();
+    }
+    function down(e){ drag={x:e.clientX,y:e.clientY,tx:tx,ty:ty}; try{stage.setPointerCapture(e.pointerId);}catch(_){} }
+    function move(e){ if(!drag)return; tx=drag.tx+(e.clientX-drag.x); ty=drag.ty+(e.clientY-drag.y); draw(); }
+    function up(){ drag=null; }
+    function key(e){ if(e.key==='Escape') finish(null); }
+
+    function finish(val){
+      if(done) return; done=true;
+      zoom.removeEventListener('input',onZoom);
+      stage.removeEventListener('pointerdown',down);
+      stage.removeEventListener('pointermove',move);
+      stage.removeEventListener('pointerup',up);
+      stage.removeEventListener('pointercancel',up);
+      document.removeEventListener('keydown',key);
+      document.getElementById('avuse').onclick=null;
+      document.getElementById('avcancel').onclick=null;
+      ov.style.display='none'; document.body.style.overflow='';
+      img.removeAttribute('src'); URL.revokeObjectURL(url);
+      resolve(val);
+    }
+    zoom.addEventListener('input',onZoom);
+    stage.addEventListener('pointerdown',down);
+    stage.addEventListener('pointermove',move);
+    stage.addEventListener('pointerup',up);
+    stage.addEventListener('pointercancel',up);
+    document.addEventListener('keydown',key);
+    document.getElementById('avcancel').onclick=()=>finish(null);
+    document.getElementById('avuse').onclick=()=>{
+      const s=S(), OUT=512;
+      const c=document.createElement('canvas'); c.width=OUT; c.height=OUT;
+      const g=c.getContext('2d');
+      // A transparent PNG would otherwise come out black behind the face.
+      g.fillStyle='#fff'; g.fillRect(0,0,OUT,OUT);
+      g.drawImage(img, -tx/sc, -ty/sc, s/sc, s/sc, 0, 0, OUT, OUT);
+      finish(c.toDataURL('image/jpeg',0.9));
+    };
+  });
+}
 document.getElementById('photoBtn').addEventListener('click',()=>document.getElementById('photoFile').click());
 document.getElementById('photoFile').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f)return; const msg=document.getElementById('photoMsg');
   if(f.size>4*1024*1024){ msg.className='savenote err'; msg.textContent='That photo is over 4 MB — please use a smaller one.'; return; }
-  msg.className='savenote'; msg.textContent='Uploading…';
+  msg.className='savenote'; msg.textContent='';
   try{
-    const data=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>res(rd.result);rd.onerror=rej;rd.readAsDataURL(f);});
-    const r=await fetch('/.netlify/functions/upload-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:data.split(',')[1],type:f.type,folder:'profile'})});
+    const cropped=await openAvatarCrop(f);
+    if(!cropped) return;                       // they backed out; nothing changes
+    msg.textContent='Uploading…';
+    const r=await fetch('/.netlify/functions/upload-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:cropped.split(',')[1],type:'image/jpeg',folder:'profile'})});
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'Upload failed.');
     await api('setPhoto',{photo:d.url});
     const av=document.getElementById('photoAv'); av.style.backgroundImage=`url('${d.url}')`; av.textContent='';
@@ -994,5 +1097,22 @@ document.getElementById('photoFile').addEventListener('change',async e=>{
   </div>
   <button class="ipclose" id="ipClose">Got it</button>
 </div></div>
+
+<div id="avcrop">
+  <div class="avcard">
+    <h3>Position your photo</h3>
+    <p class="avhint">Drag the picture to move it, and use the slider to zoom. Whatever sits inside the circle is what your supporters will see.</p>
+    <div id="avstage">
+      <img id="avimg" alt="">
+      <div id="avmask"></div>
+      <div id="avring"></div>
+    </div>
+    <div id="avzoomrow"><span>Zoom</span><input type="range" id="avzoom" min="1" max="3" step="0.01" value="1"></div>
+    <div id="avbtns">
+      <button type="button" class="photobtn" id="avcancel">Cancel</button>
+      <button type="button" class="photobtn" id="avuse" style="background:var(--acc);color:#fff;border-color:var(--acc)">Use this photo</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
