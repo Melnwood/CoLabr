@@ -434,7 +434,7 @@
         <div class="mavatar" id="mavatar" style="display:none"></div>
         <div class="mh-lt">
           <h1 id="mtitle">The Ellenwoods</h1>
-          <div class="mloc"><svg viewBox="0 0 24 24" fill="none" stroke="#7a756f" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="mloctext">Frýdek-Místek, Czechia</span></div>
+          <div class="mloc" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="#7a756f" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="mloctext"></span></div>
         </div>
       </div>
       <div class="mh-r">
@@ -669,7 +669,7 @@ function applyPageIdentity(page){
   if(page.sample) showSampleNotice();
   const ft=document.querySelector('.foot'); if(ft&&page.name) ft.firstChild.textContent='Every update '+(PAGE_FIRST||page.name)+' have shared — live from Co·labr. Share it with anyone who wants to follow along.';
   const t=document.getElementById('mtitle'); if(t&&page.name) t.textContent=page.name;
-  const l=document.getElementById('mloctext'); if(l&&page.location) l.textContent=page.location;
+  const l=document.getElementById('mloctext'); if(l){ const loc=String(page.location||'').trim(); l.textContent=loc; const row=l.closest('.mloc'); /* Location is optional. No wall may ever show somebody else's town, so an empty value hides the line rather than falling back to whatever the markup said. */ if(row) row.style.display = loc ? '' : 'none'; }
   const sn=document.getElementById('subctaname'); if(sn&&PAGE_FIRST) sn.textContent=PAGE_FIRST;
   try{ document.title=(page.name||'Updates')+' — Josiah Venture'; }catch(_){}
 }
