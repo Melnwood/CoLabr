@@ -16,6 +16,22 @@
   body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
   svg{display:block}
   .wrap{max-width:680px;margin:0 auto;padding:0 18px 90px}
+  /* ---- The prayer follow-up rides BESIDE the builder, not above it ----
+     Stacked at the top it got scrolled straight past on the way to writing, which
+     is the one thing it must not do: it is a question about a prayer somebody is
+     still carrying. On a wide screen the page opens into two columns and the card
+     becomes a rail that sticks while you work, so the question stays in view for
+     exactly as long as you are answering it. It only engages when a card is
+     actually there, so a normal update is untouched, and narrow screens keep the
+     stacked order, where a rail would only make the scrolling worse. */
+  @media(min-width:1080px){
+    .wrap:has(#prayask .pray-card){max-width:1120px;display:grid;
+      grid-template-columns:minmax(0,1fr) 300px;column-gap:26px;align-items:start}
+    .wrap:has(#prayask .pray-card) > *{grid-column:1;min-width:0}
+    .wrap:has(#prayask .pray-card) > .top{grid-column:1/-1}
+    .wrap:has(#prayask .pray-card) > #prayask{grid-column:2;grid-row:2/span 999;
+      position:sticky;top:16px;align-self:start;margin:0}
+  }
   .top{display:flex;align-items:center;gap:12px;padding:18px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:22px}
   .brand .jvlogo{height:20px;width:auto;display:block;margin-bottom:5px}
   .brand .pg{font-size:11px;color:var(--muted);display:block;margin-top:4px}
