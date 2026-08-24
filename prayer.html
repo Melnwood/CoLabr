@@ -49,16 +49,23 @@
 </style>
 </head>
 <body>
-  <div class="brandbar"><img id="orgmark" class="orgmark" src="/photos/jv-logo.png" alt="Josiah Venture"></div>
+  <div class="brandbar"><a id="orglink" href="https://www.josiahventure.com" target="_blank" rel="noopener" title="Josiah Venture"><img id="orgmark" class="orgmark" src="/photos/jv-logo.png" alt="Josiah Venture"></a></div>
 <div class="wrap" id="wrap"><div class="state">Loading prayer requests…</div></div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const M=(new URLSearchParams(location.search)).get('m')||'';
 function setOrgMark(page){
   // National staff carry their own org's mark; everyone else keeps Josiah Venture.
-  const img=document.getElementById('orgmark');
-  if(!img||!page||!page.orgLogo) return;
-  img.src=page.orgLogo; img.alt=page.orgName||page.org||'Our organisation';
+  // The mark always opens the organisation it belongs to, because a church that
+  // taps a logo is asking who these people are.
+  const img=document.getElementById('orgmark'), a=document.getElementById('orglink');
+  if(!page) return;
+  if(img&&page.orgLogo){ img.src=page.orgLogo; img.alt=page.orgName||page.org||'Our organisation'; }
+  if(a&&page.orgSite){
+    let u=String(page.orgSite).trim();
+    if(!/^https?:\/\//i.test(u)) u='https://'+u;   // a bare domain is not a path
+    a.href=u; a.title=page.orgName||page.org||'Our organisation';
+  }
 }
 function fd(s){ if(!s)return''; try{ return new Date(s+'T12:00:00').toLocaleDateString(undefined,{month:'long',year:'numeric'}); }catch(_){ return s; } }
 function plain(d){

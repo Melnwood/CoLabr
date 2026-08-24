@@ -39,6 +39,12 @@ anything a machine generated. Regenerate around it, flag it, never overwrite it.
 **Confirmations state the consequence in real numbers.** "This will email your 203
 supporters", never "Are you sure?".
 
+**An organisation's mark always opens that organisation.** Wherever a logo appears
+it links to the org's own website, from the Orgs table's Website field, falling back
+to Josiah Venture rather than anywhere invented. A stored value may be a bare domain,
+so normalise it to https or the browser reads it as a path. On working pages open it
+in a new tab: a logo must never cost somebody an unsaved draft.
+
 **Fine-line SVG icons, never emoji.** Mature, not cheeky.
 
 **No em dashes or en dashes anywhere a reader sees.** Commas, full stops, or "and".

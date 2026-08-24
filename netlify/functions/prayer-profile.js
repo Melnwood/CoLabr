@@ -42,7 +42,7 @@ exports.handler = async function (event) {
             const orr = await fetch(ourl, { headers: auth });
             if (orr.ok) {
               const orec = (((await orr.json()).records) || [])[0];
-              if (orec) { const of2 = orec.fields || {}; page.orgLogo = of2['fldBJzji3j5ML7DHd'] || ''; page.orgName = of2['fldsyU3dpzLdkXI7t'] || page.org; }
+              if (orec) { const of2 = orec.fields || {}; page.orgLogo = of2['fldBJzji3j5ML7DHd'] || ''; page.orgName = of2['fldsyU3dpzLdkXI7t'] || page.org; page.orgSite = of2['fldW4oLN6GBcCSNCw'] || ''; }
             }
           }
         } catch (e) {}; } }
