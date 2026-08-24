@@ -28,7 +28,7 @@
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
   @media(max-width:720px){.grid{grid-template-columns:1fr}}
   .ocard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-  .banner{height:78px;display:flex;align-items:center;gap:12px;padding:0 16px;position:relative}
+  .banner{height:78px;display:flex;align-items:center;gap:12px;padding:0 16px;position:relative;border-bottom:1px solid var(--line)}
   .banner img{max-height:34px;max-width:60%;width:auto}
   .banner .code{font-weight:800;font-size:18px;letter-spacing:-.01em}
   .banner .noimg{font-size:12px;opacity:.8;font-style:italic}
@@ -191,11 +191,15 @@ function renderGrid(){
   if(!ORGS.length){ g.innerHTML='<div class="state">No national orgs yet. Click “Add national org” to add your first.</div>'; return; }
   g.innerHTML=ORGS.map(o=>{
     const ink=o.ink||'#241f1b';
-    const logo=o.logo?`<img src="${esc(o.logo)}" alt="" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='inline')"><span class="code" style="display:none;color:#fff">${esc(o.code||o.name)}</span>`
-      :`<span class="code" style="color:#fff">${esc(o.code||o.name)}</span>`;
+    // Preview the mark on the background it actually sits on. These are dark-ink
+    // logos for a light masthead, so painting the org's ink behind them swallowed
+    // KOMA whole and ate half of josiahventure.
+    const strip=o.bg||'#ffffff';
+    const logo=o.logo?`<img src="${esc(o.logo)}" alt="" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='inline')"><span class="code" style="display:none;color:${esc(ink)}">${esc(o.code||o.name)}</span>`
+      :`<span class="code" style="color:${esc(ink)}">${esc(o.code||o.name)}</span>`;
     const sw=(c,lab)=>c?`<span class="sw"><i style="background:${esc(c)}"></i>${esc(c)}</span>`:`<span class="sw" style="opacity:.55">${lab}</span>`;
     return `<div class="ocard">
-      <div class="banner" style="background:${esc(ink)}">${logo}</div>
+      <div class="banner" style="background:${esc(strip)}">${logo}</div>
       <div class="obody">
         <h3>${esc(o.name)}</h3>
         <div class="sub">${[o.code,o.country].filter(Boolean).map(esc).join(' · ')||'&nbsp;'}</div>
