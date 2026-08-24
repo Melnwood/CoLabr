@@ -193,7 +193,7 @@ exports.handler = async function (event) {
           if (orec) {
             const of2 = orec.fields || {};
             const t = of2[ORG_TEXTON];
-            brand = { ink: of2[ORG_INK] || '', accent: of2[ORG_ACCENT] || '', bg: of2[ORG_BG] || '', logo: of2[ORG_LOGO] || '', textOn: (t && t.name) ? t.name : (t || 'Light') };
+            brand = { ink: of2[ORG_INK] || '', accent: of2[ORG_ACCENT] || '', bg: of2[ORG_BG] || '', logo: of2[ORG_LOGO] || '', site: of2['fldW4oLN6GBcCSNCw'] || '', textOn: (t && t.name) ? t.name : (t || 'Light') };
             page.country = of2[ORG_COUNTRY] || '';
             page.orgName = of2[ORG_NAME] || '';
             page.orgGive = of2[ORG_GIVE] || '';
