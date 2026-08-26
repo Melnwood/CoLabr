@@ -3,9 +3,22 @@
 // injects its own styles + markup, talks to /.netlify/functions/support.
 (async function(){
   if(document.getElementById('helpfab')) return;   // page already has it inline
-  // Members only — on public pages (the wall, composer) the bubble appears
-  // solely for signed-in people, never for supporters.
-  try{ const mr=await fetch('/.netlify/functions/me'); if(!mr.ok) return; }catch(_){ return; }
+
+  // An invite link (?sbx=…) names its holder. Keep it, then tidy the address bar.
+  const SQ=new URLSearchParams(location.search);
+  if(SQ.get('sbx')){
+    try{ localStorage.setItem('sbx.token',SQ.get('sbx')); }catch(_){}
+    SQ.delete('sbx');
+    history.replaceState(null,'',location.pathname+(SQ.toString()?'?'+SQ:'')+location.hash);
+  }
+  let SBXTOKEN=''; try{ SBXTOKEN=localStorage.getItem('sbx.token')||''; }catch(_){}
+
+  // Signed-in members get the chat and the report tab. A named tester who is NOT
+  // signed in — a supporter testing from an emailed link — gets the report tab
+  // only. Everyone else gets nothing at all: real supporters never see a bubble.
+  let MEMBER=false;
+  try{ const mr=await fetch('/.netlify/functions/me'); MEMBER=mr.ok; }catch(_){}
+  if(!MEMBER && !SBXTOKEN) return;
 
   const css=`
   #helpfab{position:fixed;right:20px;bottom:20px;z-index:180;width:72px;height:72px;border-radius:50%;background:#fff;border:none;padding:0;cursor:pointer;box-shadow:0 12px 34px rgba(36,31,27,.4);overflow:visible}
@@ -58,6 +71,17 @@
   </div>`;
   while(wrap.firstChild) document.body.appendChild(wrap.firstChild);
 
+  // Report-only: no chat to fall back to, so no tab to switch with either.
+  if(!MEMBER){
+    const box=document.getElementById('helpbox');
+    box.classList.add('fb');
+    document.getElementById('fbtab').style.display='none';
+    document.getElementById('helphead').querySelector('div').innerHTML=
+      'Report a problem<br><span>Goes straight onto the sandbox list</span>';
+    const fab=document.getElementById('helpfab');
+    fab.title='Found a problem? Tell us'; fab.setAttribute('aria-label','Found a problem? Tell us');
+  }
+
   const HHIST=[];
   function hAdd(role,text,cls){
     const m=document.createElement('div'); m.className='hmsg '+(cls||(role==='user'?'me':'bot'));
@@ -70,6 +94,7 @@
     const box=document.getElementById('helpbox');
     box.classList.toggle('on');
     if(box.classList.contains('on')){
+      if(!MEMBER){ document.getElementById('fbnote').focus(); return; }
       if(!document.getElementById('helpmsgs').children.length)
         hAdd('assistant','Hi! I’m the Co·labr helper. Ask me anything, or tell me what’s not working — I’ll help right away, and Mel or Noah will follow up with you personally ASAP.');
       document.getElementById('helpin').focus();
@@ -149,7 +174,7 @@
     btn.disabled=true; out.textContent=FBSHOT?'Sending your report and screenshot…':'Sending…';
     try{
       const r=await fetch('/.netlify/functions/sandbox-report',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'submit',note,page:location.href,context:fbContext(),
+        body:JSON.stringify({action:'submit',note,token:SBXTOKEN,page:location.href,context:fbContext(),
           shot:FBSHOT?FBSHOT.data:'',shotType:FBSHOT?FBSHOT.type:''})});
       const d=await r.json();
       if(!r.ok) throw new Error(d.error||'Could not send.');

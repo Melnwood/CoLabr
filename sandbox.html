@@ -120,9 +120,23 @@ function renderList(){
       <td><div class="chips">${(x.perspectives||[]).map(p=>`<span class="chip">${esc(p)}</span>`).join('')||'—'}</div>${x.notes?`<div style="font-size:11.5px;color:var(--muted);margin-top:5px">${esc(x.notes)}</div>`:''}</td>
       <td>${(x.device||[]).map(esc).join(', ')||'—'}</td>
       <td><span class="st ${esc(x.status)}">${esc(x.status)}</span></td>
-      <td style="white-space:nowrap"><button class="act" data-edit="${x.id}">Edit</button><button class="act del" data-del="${x.id}">Remove</button></td>
+      <td style="white-space:nowrap"><button class="act" data-link="${x.id}">Invite link</button><button class="act" data-edit="${x.id}">Edit</button><button class="act del" data-del="${x.id}">Remove</button></td>
     </tr>`).join('')+`</tbody></table>`;
   el.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>editRow(b.dataset.edit)));
+  // Their name and email are already on this row — no reason to type them again.
+  el.querySelectorAll('[data-link]').forEach(b=>b.addEventListener('click',async()=>{
+    const x=ROWS.find(r=>r.id===b.dataset.link); if(!x)return;
+    const was=b.textContent; b.textContent='…';
+    try{
+      const people=[{name:x.name,email:x.email}];
+      if(x.partner) people.push({name:x.name?x.name+' (partner)':'',email:x.partner});
+      const out=[];
+      for(const p of people){ const d=await api({action:'link',name:p.name,email:p.email}); out.push(p.email+'\n'+d.link); }
+      await navigator.clipboard.writeText(out.join('\n\n'));
+      b.textContent=people.length>1?'Both copied ✓':'Copied ✓';
+    }catch(e){ b.textContent='Failed'; alert(e.message); }
+    setTimeout(()=>{ b.textContent=was; },2000);
+  }));
   el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
     const x=ROWS.find(r=>r.id===b.dataset.del); if(!x)return;
     if(!confirm('Remove '+(x.name||x.email)+' from the sandbox roster?'))return;
