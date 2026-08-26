@@ -4,5 +4,7 @@
   "table": "Sandbox Reports",
   "sessionCookie": "",
   "admins": "",
-  "includeUntagged": false
+  "includeUntagged": false,
+  "desk": false,
+  "guests": {}
 }

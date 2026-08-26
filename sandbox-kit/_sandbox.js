@@ -14,7 +14,8 @@ const DEFAULT_FIELDS = {
   shot: 'Shot',            // multipleAttachments — the screenshot
   shotUrl: 'Screenshot',   // url            — legacy//hosted screenshot, read-only fallback
   context: 'Context',      // multilineText  — browser, screen size, JS errors
-  status: 'Status'         // singleSelect   — New / Working on it / Fixed / Not a bug
+  status: 'Status',        // singleSelect   — New / Working on it / Fixed / Not a bug
+  notes: 'Notes'           // multilineText  — what we decided when we worked it
 };
 const STATUSES = ['New', 'Working on it', 'Fixed', 'Not a bug'];
 
@@ -31,9 +32,22 @@ function cfg() {
     : (FILE[key] != null && FILE[key] !== '') ? FILE[key] : dflt;
   const list = v => (Array.isArray(v) ? v : String(v || '').split(',')).map(s => String(s).trim()).filter(Boolean);
   const flag = v => v === true || /^(1|true|yes)$/i.test(String(v || ''));
+  // Other sites can report into this same list without a backend of their own:
+  // {"https://otherapp.com": {"key":"otherapp","label":"Other App"}}. The project
+  // is decided by which origin the browser came from, never by what it claims.
+  let guests = {};
+  const rawGuests = pick('SANDBOX_GUESTS', 'guests', null);
+  try { guests = typeof rawGuests === 'string' ? JSON.parse(rawGuests || '{}') : (rawGuests || {}); } catch (e) {}
+  const byOrigin = {};
+  Object.keys(guests).forEach(o => {
+    const g = guests[o] || {};
+    byOrigin[String(o).trim().toLowerCase().replace(/\/$/, '')] =
+      { key: String(g.key || '').trim().toLowerCase(), label: String(g.label || g.key || '') };
+  });
   return {
     project: String(pick('SANDBOX_PROJECT', 'project', 'default')).trim().toLowerCase(),
     label: String(pick('SANDBOX_LABEL', 'label', '')),
+    guests: byOrigin,
     base: pick('SANDBOX_AIRTABLE_BASE', 'base', process.env.AIRTABLE_BASE || ''),
     table: pick('SANDBOX_TABLE', 'table', 'Sandbox Reports'),
     token: process.env.SANDBOX_AIRTABLE_TOKEN || process.env.AIRTABLE_TOKEN || '',
@@ -49,6 +63,8 @@ function cfg() {
     from: pick('SANDBOX_FROM', 'from', ''),
     // Reports saved before this module existed have no project stamped on them.
     includeUntagged: flag(pick('SANDBOX_INCLUDE_UNTAGGED', 'includeUntagged', '')),
+    // Only the one deployment you work from reads every app's reports at once.
+    desk: flag(pick('SANDBOX_DESK', 'desk', '')),
     fields
   };
 }
@@ -148,6 +164,7 @@ async function createTable(c, call) {
       { name: f.page, type: 'url' },
       { name: f.shot, type: 'multipleAttachments' },
       { name: f.context, type: 'multilineText' },
+      { name: f.notes, type: 'multilineText' },
       { name: f.status, type: 'singleSelect', options: { choices: STATUSES.map(name => ({ name })) } }
     ]
   };
@@ -158,7 +175,7 @@ async function createTable(c, call) {
 
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
 
-async function save(c, { note, page, context, who, shot, shotType }) {
+async function save(c, { note, page, context, who, shot, shotType, project }) {
   const sch = await schema(c);
   const call = api(c);
   const f = c.fields;
@@ -166,7 +183,7 @@ async function save(c, { note, page, context, who, shot, shotType }) {
   fields[f.note] = note;
   if (has(sch, f.name)) fields[f.name] = who.name || who.email || 'Someone';
   if (has(sch, f.email)) fields[f.email] = who.email || '';
-  if (has(sch, f.project)) fields[f.project] = c.project;
+  if (has(sch, f.project)) fields[f.project] = project || c.project;
   if (has(sch, f.page) && page) fields[f.page] = page;
   if (has(sch, f.context) && context) fields[f.context] = context;
   if (has(sch, f.status)) fields[f.status] = 'New';
@@ -190,13 +207,15 @@ async function save(c, { note, page, context, who, shot, shotType }) {
   return rec.id;
 }
 
+// Pass project:null to read every project at once — that's the daily desk.
 async function list(c, opts) {
   const sch = await schema(c);
   const call = api(c);
   const f = c.fields;
+  const project = (opts && 'project' in opts) ? opts.project : c.project;
   let where = '';
-  if (has(sch, f.project)) {
-    const p = c.project.replace(/'/g, "\\'");
+  if (project && has(sch, f.project)) {
+    const p = String(project).replace(/'/g, "\\'");
     where = c.includeUntagged ? `OR({${f.project}}='${p}',{${f.project}}='')` : `{${f.project}}='${p}'`;
   }
   const rows = [];
@@ -222,6 +241,8 @@ async function list(c, opts) {
         // Attachment URLs from Airtable expire, so the board always reads them fresh.
         shot: (att && (att.url || (att.thumbnails && att.thumbnails.large && att.thumbnails.large.url))) || x[f.shotUrl] || '',
         status: (st && st.name) ? st.name : (st || 'New'),
+        notes: x[f.notes] || '',
+        project: x[f.project] || '',
         created: rec.createdTime || ''
       });
     });
@@ -237,6 +258,44 @@ async function setStatus(c, id, status) {
   const pr = await api(c)(`${c.base}/${sch.id}`, { method: 'PATCH', body: JSON.stringify({ records: [{ id, fields }], typecast: true }) });
   if (!pr.ok) throw new Error('Could not update that report.');
 }
+async function setNotes(c, id, notes) {
+  const sch = await schema(c);
+  if (!has(sch, c.fields.notes)) throw new Error('This table has no Notes field to write into.');
+  const fields = {}; fields[c.fields.notes] = notes;
+  const pr = await api(c)(`${c.base}/${sch.id}`, { method: 'PATCH', body: JSON.stringify({ records: [{ id, fields }], typecast: true }) });
+  if (!pr.ok) throw new Error('Could not save that note.');
+}
+
+/* ------------------------- which app is this report from? ------------------------- */
+// Decided by the browser's Origin header, never by anything the page claims, so one
+// deployment can safely take reports from every other app you've built.
+
+function whichProject(event, c) {
+  const h = event.headers || {};
+  const origin = String(h.origin || h.Origin || '').trim().toLowerCase().replace(/\/$/, '');
+  const self = 'https://' + String(h['x-forwarded-host'] || h.host || '').toLowerCase();
+  if (!origin || origin === self) return { key: c.project, label: c.label || c.project, cross: false, allowed: true };
+  const guest = c.guests[origin];
+  if (!guest || !guest.key) return { key: '', label: '', cross: true, allowed: false, origin };
+  return { key: guest.key, label: guest.label, cross: true, allowed: true, origin };
+}
+function corsHeaders(where) {
+  if (!where.cross || !where.allowed) return {};
+  return {
+    'Access-Control-Allow-Origin': where.origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin'
+  };
+}
+// Every project's name, for the page that reads them all at once.
+function projectLabels(c) {
+  const out = {};
+  out[c.project] = c.label || c.project;
+  Object.keys(c.guests).forEach(o => { const g = c.guests[o]; if (g.key) out[g.key] = g.label || g.key; });
+  return out;
+}
 async function remove(c, id) {
   const sch = await schema(c);
   const dr = await api(c)(`${c.base}/${sch.id}/${id}`, { method: 'DELETE' });
@@ -248,8 +307,9 @@ async function remove(c, id) {
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
-async function announce(c, { note, who, page, boardUrl }) {
-  const title = `${who.name || 'Someone'} found something in ${c.label || c.project}`;
+async function announce(c, { note, who, page, boardUrl, project }) {
+  const app = project || c.label || c.project;
+  const title = `${who.name || 'Someone'} found something in ${app}`;
   if (c.webhook) {
     try {
       await fetch(c.webhook, {
@@ -264,7 +324,7 @@ async function announce(c, { note, who, page, boardUrl }) {
         method: 'POST', headers: { Authorization: 'Bearer ' + c.resendKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from: c.from, to: c.notify, reply_to: who.email || undefined,
-          subject: `Sandbox (${c.label || c.project}): ${note.slice(0, 60)}${note.length > 60 ? '…' : ''}`,
+          subject: `Sandbox (${app}): ${note.slice(0, 60)}${note.length > 60 ? '…' : ''}`,
           html: `<div style="font-family:-apple-system,Arial,sans-serif;max-width:560px;color:#241f1b">
             <p style="font-size:14px"><b>${esc(who.name || 'A tester')}</b> found something${page ? ` on <a href="${esc(page)}">${esc(page.replace(/^https?:\/\/[^/]+/, '')) || 'the site'}</a>` : ''}:</p>
             <blockquote style="border-left:3px solid #FF6600;margin:0 0 14px;padding:6px 0 6px 14px;font-size:14.5px;line-height:1.55;white-space:pre-wrap">${esc(note)}</blockquote>
@@ -280,4 +340,4 @@ function json(statusCode, body, extra) {
   return { statusCode, headers: Object.assign({ 'Content-Type': 'application/json' }, extra || {}), body: JSON.stringify(body) };
 }
 
-module.exports = { cfg, STATUSES, sign, verify, cookies, identify, inviteToken, adminCookie, schema, save, list, setStatus, remove, announce, slug, esc, json };
+module.exports = { cfg, STATUSES, sign, verify, cookies, identify, inviteToken, adminCookie, schema, save, list, setStatus, setNotes, remove, announce, whichProject, corsHeaders, projectLabels, slug, esc, json };

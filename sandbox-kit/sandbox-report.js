@@ -1,24 +1,36 @@
 // Sandbox feedback module — the only endpoint.
-// Testers POST {action:'submit'}; the board POSTs everything else.
+// Testers POST {action:'submit'}; the board and the desk POST everything else.
 // Copy into netlify/functions/ alongside _sandbox.js.
 const S = require('./_sandbox');
 
+// What another app's browser is allowed to ask for. Reading or changing the list
+// is same-origin only, so a guest site can file reports but never read them.
+const GUEST_ACTIONS = ['whoami', 'submit'];
+
 exports.handler = async function (event) {
-  if (event.httpMethod !== 'POST') return S.json(405, { error: 'Method not allowed' });
   const c = S.cfg();
-  let b; try { b = JSON.parse(event.body || '{}'); } catch (e) { return S.json(400, { error: 'Bad request.' }); }
+  const where = S.whichProject(event, c);
+  const cors = S.corsHeaders(where);
+
+  if (event.httpMethod === 'OPTIONS') return { statusCode: where.allowed ? 204 : 403, headers: cors, body: '' };
+  if (event.httpMethod !== 'POST') return S.json(405, { error: 'Method not allowed' });
+  if (!where.allowed) return S.json(403, { error: 'This site is not on the sandbox list. Add its address to "guests" in sandbox.config.json.' });
+
+  let b; try { b = JSON.parse(event.body || '{}'); } catch (e) { return S.json(400, { error: 'Bad request.' }, cors); }
+  if (where.cross && GUEST_ACTIONS.indexOf(b.action) < 0) return S.json(403, { error: 'Reports only from here.' }, cors);
+
   const who = S.identify(event, b, c);
   const site = 'https://' + ((event.headers && (event.headers['x-forwarded-host'] || event.headers.host)) || '');
   const needAdmin = () => who.admin ? null : S.json(403, { error: 'This is the sandbox owner’s list.' });
 
   try {
-    // Who am I, and may I see the list? The widget and the board both open with this.
+    // Who am I, and may I see the list? The widget, the board and the desk all open with this.
     if (b.action === 'whoami') {
       return S.json(200, {
-        ok: true, project: c.project, label: c.label || c.project,
+        ok: true, project: where.key, label: where.label || where.key,
         who: { name: who.name, email: who.email, via: who.via }, admin: who.admin,
-        statuses: S.STATUSES, locked: !!c.adminKey
-      });
+        statuses: S.STATUSES, locked: !!c.adminKey, projects: who.admin ? S.projectLabels(c) : undefined
+      }, cors);
     }
 
     // The board's way in when the project has no accounts of its own.
@@ -31,14 +43,24 @@ exports.handler = async function (event) {
       return S.json(200, { ok: true }, { 'Set-Cookie': S.adminCookie(c) });
     }
 
-    if (b.action === 'list') {
+    // list  → just this project.  everything → every app that reports here.
+    if (b.action === 'list' || b.action === 'everything') {
       const no = needAdmin(); if (no) return no;
-      return S.json(200, { ok: true, rows: await S.list(c, { open: !!b.open }), project: c.project, label: c.label || c.project });
+      const opts = { open: !!b.open };
+      if (b.action === 'everything' && c.desk) opts.project = null;   // the desk sees every app
+      const rows = await S.list(c, opts);
+      return S.json(200, { ok: true, rows, project: where.key, label: where.label || where.key, projects: S.projectLabels(c) });
     }
     if (b.action === 'status') {
       const no = needAdmin(); if (no) return no;
       if (!b.id || !S.STATUSES.includes(b.status)) return S.json(400, { error: 'Missing id or status.' });
       await S.setStatus(c, b.id, b.status);
+      return S.json(200, { ok: true });
+    }
+    if (b.action === 'note') {
+      const no = needAdmin(); if (no) return no;
+      if (!b.id) return S.json(400, { error: 'Missing id.' });
+      await S.setNotes(c, b.id, String(b.notes || '').slice(0, 4000));
       return S.json(200, { ok: true });
     }
     if (b.action === 'remove') {
@@ -54,15 +76,16 @@ exports.handler = async function (event) {
       if (!c.secret) return S.json(400, { error: 'Set SANDBOX_SECRET before minting invite links.' });
       const email = String(b.email || '').trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return S.json(400, { error: 'That email doesn’t look right.' });
+      const base = /^https:\/\/[\w.-]+$/.test(b.site || '') ? b.site : site;
       const path = /^\/[\w\-./]*$/.test(b.path || '') ? b.path : '/';
       const token = S.inviteToken(String(b.name || '').trim().slice(0, 80), email, c);
-      return S.json(200, { ok: true, link: `${site}${path}${path.includes('?') ? '&' : '?'}sbx=${encodeURIComponent(token)}` });
+      return S.json(200, { ok: true, link: `${base}${path}${path.includes('?') ? '&' : '?'}sbx=${encodeURIComponent(token)}` });
     }
 
     /* -------------------------------- filing a report ------------------------------ */
     const note = String(b.note || '').trim().slice(0, 4000);
-    if (!note) return S.json(400, { error: 'Tell us what happened first.' });
-    if (!who.email && !who.name) return S.json(400, { error: 'Add your name so we know who found it.' });
+    if (!note) return S.json(400, { error: 'Tell us what happened first.' }, cors);
+    if (!who.email && !who.name) return S.json(400, { error: 'Add your name so we know who found it.' }, cors);
 
     const page = String(b.page || '').slice(0, 500);
     const context = String(b.context || '').slice(0, 1200);
@@ -70,10 +93,10 @@ exports.handler = async function (event) {
     const shot = /^[A-Za-z0-9+/=\s]+$/.test(b.shot || '') ? String(b.shot).replace(/\s/g, '') : '';
     const shotType = /^image\/(png|jpeg|webp)$/.test(b.shotType || '') ? b.shotType : 'image/jpeg';
 
-    await S.save(c, { note, page, context, who, shot, shotType });
-    await S.announce(c, { note, who, page, boardUrl: `${site}/sandbox-board.html` });
-    return S.json(200, { ok: true });
+    await S.save(c, { note, page, context, who, shot, shotType, project: where.key });
+    await S.announce(c, { note, who, page, boardUrl: `${site}/sandbox-desk.html`, project: where.label || where.key });
+    return S.json(200, { ok: true }, cors);
   } catch (e) {
-    return S.json(502, { error: (e && e.message) || 'Could not reach the server.' });
+    return S.json(502, { error: (e && e.message) || 'Could not reach the server.' }, cors);
   }
 };

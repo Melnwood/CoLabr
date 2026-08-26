@@ -3,40 +3,46 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
-<title>Sandbox list</title>
+<title>Sandbox desk</title>
 <style>
   :root{--acc:#FF6600;--ink:#241f1b;--bg:#f4f1ec;--line:#e7e0d6;--muted:#7a6c58;--red:#c0392b;--green:#2f9e63}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:880px;margin:0 auto;padding:24px 20px 80px}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 20px 80px}
   h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px}
   .lede{font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 18px;max-width:66ch}
-  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
-  .tab{font-size:12.5px;font-weight:700;background:#fff;border:1px solid var(--line);border-radius:20px;padding:8px 15px;cursor:pointer;font-family:inherit;color:var(--ink)}
+  .bar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .tab{font-size:12.5px;font-weight:700;background:#fff;border:1px solid var(--line);border-radius:20px;padding:8px 14px;cursor:pointer;font-family:inherit;color:var(--ink)}
   .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .push{margin-left:auto}
+  .tab .n{opacity:.55;font-weight:600;margin-left:4px}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  #q{flex:1;min-width:190px;border:1px solid var(--line);border-radius:20px;padding:9px 15px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink)}
+  #q:focus{outline:none;border-color:var(--acc)}
   .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
-  .card.closed{opacity:.55}
+  .card.closed{opacity:.5}
   .card img.shot{width:96px;height:72px;object-fit:cover;border-radius:9px;border:1px solid var(--line);flex:none;cursor:zoom-in;background:#faf7f2}
   .grow{flex:1;min-width:0}
+  .app{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:#fff6ee;color:#c25200;border:1px solid #f3d3b6;border-radius:11px;padding:3px 9px;margin-bottom:7px}
   .note{font-size:14px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word}
   .meta{font-size:11.5px;color:var(--muted);margin-top:7px;line-height:1.7}
-  .meta b{color:var(--ink)}
-  .meta a{color:var(--acc);font-weight:700;text-decoration:none}
+  .meta b{color:var(--ink)} .meta a{color:var(--acc);font-weight:700;text-decoration:none}
   .meta .dot{opacity:.45;margin:0 5px}
   details.ctx{margin-top:6px}
   details.ctx summary{font-size:11.5px;color:var(--muted);cursor:pointer;font-weight:700}
   details.ctx pre{font-size:11px;color:var(--muted);background:#faf7f2;border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin:6px 0 0;white-space:pre-wrap;word-wrap:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .jot{width:100%;margin-top:9px;border:1px solid var(--line);border-radius:9px;padding:8px 11px;font:400 12.5px/1.5 inherit;font-family:inherit;background:#fbf9f5;color:var(--ink);resize:vertical;min-height:34px}
+  .jot:focus{outline:none;border-color:var(--acc);background:#fff}
   .side{flex:none;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
   select{font-size:12px;font-family:inherit;border:1px solid var(--line);border-radius:9px;padding:6px 8px;background:#fff;color:var(--ink)}
   .del{background:none;border:none;color:var(--muted);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:2px}
   .del:hover{color:var(--red)}
+  .saved{font-size:11px;color:var(--green);font-weight:700;height:12px}
   .state{color:var(--muted);font-size:14px;padding:36px 0;text-align:center;line-height:1.6}
   .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:22px}
   .panel h2{margin:0 0 4px;font-size:15px;font-weight:800}
   .panel p{font-size:12.5px;color:var(--muted);line-height:1.6;margin:0 0 12px}
   .row{display:flex;gap:8px;flex-wrap:wrap}
-  .row input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit}
+  .row input{flex:1;min-width:150px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit}
   .go{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
   .go.dark{background:var(--ink)}
   .out{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.6;word-break:break-all}
@@ -48,8 +54,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1 id="title">Sandbox list</h1>
-  <p class="lede" id="lede">Everything the testers found, newest first — who saw it, when, and what they were looking at.</p>
+  <h1>Sandbox desk</h1>
+  <p class="lede" id="lede">Everything anyone has reported, across every app, newest first — who saw it, when, and what they were looking at.</p>
 
   <div id="gate" style="display:none">
     <div class="panel">
@@ -61,18 +67,21 @@
   </div>
 
   <div id="main" style="display:none">
-    <div class="bar">
-      <button class="tab on" data-f="open">Still open</button>
-      <button class="tab" data-f="all">Everything</button>
-      <button class="tab push" id="copy">Copy the open list</button>
+    <div class="bar" id="apps"></div>
+    <div class="tools">
+      <input id="q" type="search" placeholder="Search what people wrote…">
+      <button class="tab on" id="fOpen">Still open</button>
+      <button class="tab" id="fAll">Everything</button>
+      <button class="tab" id="copy">Copy for Claude</button>
     </div>
     <div id="list"><div class="state">Loading…</div></div>
 
     <div class="panel">
-      <h2>Invite someone into the sandbox</h2>
-      <p>Send them this link. It carries their name, so every report they file is signed — they never have to make an account.</p>
+      <h2>Invite someone into a sandbox</h2>
+      <p>The link carries their name, signed — every report they file arrives attributed and they never make an account. Leave the address blank for this site.</p>
       <div class="row">
         <input id="iName" placeholder="Their name"><input id="iEmail" type="email" placeholder="their@email.com">
+        <input id="iSite" placeholder="https://theotherapp.com (optional)">
         <button class="go dark" id="invite">Make a link</button>
       </div>
       <div class="out" id="inviteOut"></div>
@@ -85,7 +94,7 @@
 <script>
 const API='/.netlify/functions/sandbox-report';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let ROWS=[], FILTER='open', STATUSES=['New','Working on it','Fixed','Not a bug'], LABEL='';
+let ROWS=[], APPS={}, APP='', OPEN=true, Q='', STATUSES=['New','Working on it','Fixed','Not a bug'], MULTI=false;
 
 async function api(body){
   const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -97,30 +106,51 @@ async function api(body){
 function when(iso){
   if(!iso) return '';
   const t=new Date(iso), now=new Date();
-  const sameYear=t.getFullYear()===now.getFullYear();
-  return t.toLocaleString(undefined,{month:'short',day:'numeric',year:sameYear?undefined:'numeric',hour:'numeric',minute:'2-digit'});
+  return t.toLocaleString(undefined,{month:'short',day:'numeric',year:t.getFullYear()===now.getFullYear()?undefined:'numeric',hour:'numeric',minute:'2-digit'});
 }
-function isClosed(x){ return x.status==='Fixed'||x.status==='Not a bug'; }
+const isClosed=x=>x.status==='Fixed'||x.status==='Not a bug';
+const appName=k=>APPS[k]||k||'Unfiled';
+
+function visible(){
+  return ROWS.filter(x=>
+    (!APP||(x.project||'')===APP) &&
+    (!OPEN||!isClosed(x)) &&
+    (!Q||(x.note+' '+x.name+' '+x.email+' '+(x.notes||'')).toLowerCase().includes(Q))
+  );
+}
+
+function chips(){
+  const el=document.getElementById('apps');
+  if(!MULTI){ el.style.display='none'; return; }
+  const keys=Object.keys(APPS);
+  ROWS.forEach(x=>{ if(!keys.includes(x.project||'')) keys.push(x.project||''); });
+  const count=k=>ROWS.filter(x=>(!k||(x.project||'')===k)&&!isClosed(x)).length;
+  el.innerHTML=`<button class="tab${APP===''?' on':''}" data-app="">All apps<span class="n">${count('')}</span></button>`+
+    keys.map(k=>`<button class="tab${APP===k?' on':''}" data-app="${esc(k)}">${esc(appName(k))}<span class="n">${count(k)}</span></button>`).join('');
+  el.querySelectorAll('[data-app]').forEach(b=>b.addEventListener('click',()=>{ APP=b.dataset.app; chips(); render(); }));
+}
 
 function render(){
-  const el=document.getElementById('list');
-  const rows=FILTER==='open'?ROWS.filter(x=>!isClosed(x)):ROWS;
+  const el=document.getElementById('list'), rows=visible();
   if(!rows.length){
     el.innerHTML='<div class="state">'+(ROWS.length
-      ?'Nothing open — everything reported has been dealt with.'
-      :'Nothing reported yet. Testers file from the <b>Report a problem</b> button on any page.')+'</div>';
+      ?(Q?'Nothing matches that.':'Nothing open here — it’s all been dealt with.')
+      :'Nothing reported yet. Testers file from the <b>Report a problem</b> button on any app.')+'</div>';
     return;
   }
   el.innerHTML=rows.map(x=>`<div class="card${isClosed(x)?' closed':''}">
     ${x.shot?`<img class="shot" src="${esc(x.shot)}" alt="Screenshot" data-zoom="${esc(x.shot)}">`:''}
     <div class="grow">
+      ${MULTI?`<span class="app">${esc(appName(x.project))}</span>`:''}
       <div class="note">${esc(x.note)}</div>
       <div class="meta"><b>${esc(x.name||x.email||'Someone')}</b>${x.email&&x.name?`<span class="dot">·</span>${esc(x.email)}`:''}<span class="dot">·</span>${esc(when(x.created))}
         ${x.page?`<span class="dot">·</span><a href="${esc(x.page)}" target="_blank" rel="noopener">the page they were on</a>`:''}</div>
       ${x.context?`<details class="ctx"><summary>Browser &amp; errors</summary><pre>${esc(x.context)}</pre></details>`:''}
+      <textarea class="jot" data-jot="${esc(x.id)}" rows="1" placeholder="What we decided…">${esc(x.notes||'')}</textarea>
     </div>
     <div class="side">
       <select data-id="${esc(x.id)}">${STATUSES.map(s=>`<option${s===x.status?' selected':''}>${esc(s)}</option>`).join('')}</select>
+      <div class="saved" data-saved="${esc(x.id)}"></div>
       <button class="del" data-del="${esc(x.id)}">Remove</button>
     </div>
   </div>`).join('');
@@ -130,43 +160,62 @@ function render(){
     document.getElementById('zoom').showModal();
   }));
   el.querySelectorAll('select[data-id]').forEach(sel=>sel.addEventListener('change',async()=>{
-    const row=ROWS.find(r=>r.id===sel.dataset.id); const was=row?row.status:'';
-    try{ await api({action:'status',id:sel.dataset.id,status:sel.value}); if(row) row.status=sel.value; render(); }
+    const row=ROWS.find(r=>r.id===sel.dataset.id), was=row?row.status:'';
+    try{ await api({action:'status',id:sel.dataset.id,status:sel.value}); if(row) row.status=sel.value; chips(); render(); }
     catch(e){ sel.value=was; alert(e.message); }
+  }));
+  // Notes save when you click away — no button to remember.
+  el.querySelectorAll('[data-jot]').forEach(t=>t.addEventListener('blur',async()=>{
+    const row=ROWS.find(r=>r.id===t.dataset.jot);
+    if(!row||(row.notes||'')===t.value) return;
+    const flag=el.querySelector('[data-saved="'+CSS.escape(t.dataset.jot)+'"]');
+    try{ await api({action:'note',id:t.dataset.jot,notes:t.value}); row.notes=t.value;
+      if(flag){ flag.textContent='saved'; setTimeout(()=>{ flag.textContent=''; },1600); } }
+    catch(e){ alert(e.message); }
   }));
   el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
     if(!confirm('Remove this report for good?')) return;
-    try{ await api({action:'remove',id:b.dataset.del}); ROWS=ROWS.filter(r=>r.id!==b.dataset.del); render(); }
+    try{ await api({action:'remove',id:b.dataset.del}); ROWS=ROWS.filter(r=>r.id!==b.dataset.del); chips(); render(); }
     catch(e){ alert(e.message); }
   }));
 }
 document.getElementById('zoom').addEventListener('click',e=>{ if(e.target.id==='zoom') e.target.close(); });
 
-document.querySelectorAll('.tab[data-f]').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('.tab[data-f]').forEach(o=>o.classList.toggle('on',o===b));
-  FILTER=b.dataset.f; render();
-}));
+function setFilter(open){
+  OPEN=open;
+  document.getElementById('fOpen').classList.toggle('on',open);
+  document.getElementById('fAll').classList.toggle('on',!open);
+  render();
+}
+document.getElementById('fOpen').addEventListener('click',()=>setFilter(true));
+document.getElementById('fAll').addEventListener('click',()=>setFilter(false));
+document.getElementById('q').addEventListener('input',e=>{ Q=e.target.value.trim().toLowerCase(); render(); });
 
-// One button that turns the open list into something to paste into a working session.
+// Turns whatever you're looking at into something to paste into a working session.
 document.getElementById('copy').addEventListener('click',async e=>{
-  const open=ROWS.filter(x=>!isClosed(x));
-  const text=`# Sandbox: ${LABEL} — ${open.length} open\n\n`+open.map((x,i)=>
-    `## ${i+1}. ${(x.note.split('\n')[0]||'').slice(0,80)}\n`+
+  const rows=visible();
+  const head=`# Sandbox — ${APP?appName(APP):'all apps'} — ${rows.length} ${OPEN?'open':'total'}\n\n`;
+  const text=head+rows.map((x,i)=>
+    `## ${i+1}. [${appName(x.project)}] ${(x.note.split('\n')[0]||'').slice(0,80)}\n`+
     `- Reported by ${x.name||x.email||'someone'} on ${when(x.created)}\n`+
+    `- Status: ${x.status}\n`+
     (x.page?`- Page: ${x.page}\n`:'')+
     (x.shot?`- Screenshot: ${x.shot}\n`:'')+
+    (x.notes?`- Our note: ${x.notes}\n`:'')+
     `\n${x.note}\n`+
     (x.context?`\n<details><summary>Browser</summary>\n\n\`\`\`\n${x.context}\n\`\`\`\n</details>\n`:'')
   ).join('\n');
   try{ await navigator.clipboard.writeText(text); e.target.textContent='Copied ✓'; }
   catch(_){ e.target.textContent='Copy failed'; }
-  setTimeout(()=>{ e.target.textContent='Copy the open list'; },1800);
+  setTimeout(()=>{ e.target.textContent='Copy for Claude'; },1800);
 });
 
 document.getElementById('invite').addEventListener('click',async()=>{
   const out=document.getElementById('inviteOut'); out.className='out'; out.textContent='Making a link…';
   try{
-    const d=await api({action:'invite',name:document.getElementById('iName').value.trim(),email:document.getElementById('iEmail').value.trim()});
+    const site=document.getElementById('iSite').value.trim().replace(/\/$/,'');
+    const d=await api({action:'invite',name:document.getElementById('iName').value.trim(),
+      email:document.getElementById('iEmail').value.trim(),site:site||undefined});
     out.className='out ok'; out.innerHTML='Send them this — it names them on every report:<br><b>'+esc(d.link)+'</b>';
     try{ await navigator.clipboard.writeText(d.link); out.innerHTML+='<br>(copied to your clipboard)'; }catch(_){}
   }catch(e){ out.className='out bad'; out.textContent=e.message; }
@@ -182,20 +231,20 @@ document.getElementById('key').addEventListener('keydown',e=>{ if(e.key==='Enter
 (async function(){
   try{
     const me=await api({action:'whoami'});
-    LABEL=me.label||me.project||''; STATUSES=me.statuses||STATUSES;
-    document.title='Sandbox — '+LABEL;
-    document.getElementById('title').textContent='Sandbox — '+LABEL;
+    STATUSES=me.statuses||STATUSES;
     if(!me.admin){
       document.getElementById('gate').style.display='';
       if(!me.locked) document.getElementById('gateout').textContent='No sandbox key is set on this site, and your account isn’t on the owners list.';
       return;
     }
     document.getElementById('main').style.display='';
-    const d=await api({action:'list'});
-    ROWS=d.rows||[]; render();
+    const d=await api({action:'everything'});
+    ROWS=d.rows||[]; APPS=d.projects||{};
+    MULTI=Object.keys(APPS).length>1||new Set(ROWS.map(x=>x.project||'')).size>1;
+    chips(); render();
   }catch(e){
-    document.getElementById('list').innerHTML='<div class="state">'+esc(e.message)+'</div>';
     document.getElementById('main').style.display='';
+    document.getElementById('list').innerHTML='<div class="state">'+esc(e.message)+'</div>';
   }
 })();
 </script>
