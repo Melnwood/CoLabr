@@ -43,7 +43,7 @@ exports.handler = async function (event) {
 
     // Whose update is this? Resolve the linked missionary — their name keys the subscriber
     // list, their Live flag arms the send, their email is the reply-to.
-    let missName = SITE_MISSIONARY, missFirst = '', replyTo = process.env.GMAIL_SENDER || '', missLive = false;
+    let missName = SITE_MISSIONARY, missFirst = '', replyTo = process.env.GMAIL_SENDER || '', missLive = false, missOrg = '';
     try {
       const link = c['fldpNShY6OSQBSbx0'];
       const missId = Array.isArray(link) && link[0] ? (typeof link[0] === 'string' ? link[0] : link[0].id) : null;
@@ -55,9 +55,31 @@ exports.handler = async function (event) {
           if (mfld['Sign-off']) missFirst = String(mfld['Sign-off']).trim();
           if (mfld['Email']) replyTo = String(mfld['Email']).split(',')[0].trim();
           missLive = !!mfld['Live'];
+          // Everything sends from Co·labr's own domain, so the name in the inbox is
+          // the ONLY thing carrying identity. A Czech supporter should see the org
+          // they know beside the people they know: "Petra & Tomáš Novák · KAM".
+          missOrg = String(mfld['Organization'] || '').trim();
         }
       }
     } catch (e) {}
+
+    // Prefer the org's proper name over whatever shorthand sits on the record:
+    // "JV" reads as an abbreviation, "Josiah Venture" reads as an organisation.
+    // A code that matches no org record simply keeps its own text, and a failure
+    // here leaves the missionary's name standing alone rather than stopping a send.
+    let fromName = missName;
+    if (missOrg) {
+      let orgLabel = missOrg;
+      try {
+        const oe = missOrg.replace(/'/g, "\\'");
+        const our = await fetch(`${api}/tbl152sVfqGyrqpJQ?maxRecords=1&filterByFormula=${encodeURIComponent(`OR({Code}='${oe}',{Name}='${oe}',{Country}='${oe}')`)}`, { headers: auth });
+        if (our.ok) {
+          const orec = (((await our.json()).records) || [])[0];
+          if (orec && orec.fields && orec.fields['Name']) orgLabel = orec.fields['Name'];
+        }
+      } catch (e) {}
+      if (orgLabel && orgLabel.toLowerCase() !== missName.toLowerCase()) fromName = missName + ' · ' + orgLabel;
+    }
 
     // TEST MODE: page not live → publishing emails no one. Sent stays unset so the
     // update can still go out later (e.g. re-published after going live).
@@ -106,7 +128,7 @@ exports.handler = async function (event) {
           <p style="font-size:15px;line-height:1.6;color:#3c3733;margin:0 0 16px">${esc(excerpt)}…</p>
           ${wall ? `<p><a href="${wall}" style="display:inline-block;background:#FF6600;color:#fff;font-weight:700;text-decoration:none;padding:12px 26px;border-radius:10px">Read the full update →</a></p>` : ''}`, site, manage, missName, missFirst);
       }
-      try { await sendMail({ to: email, subject: title, html, replyTo, fromName: missName }); } catch (e) {}
+      try { await sendMail({ to: email, subject: title, html, replyTo, fromName }); } catch (e) {}
     }
     return { statusCode: 200 };
   } catch (e) {

@@ -45,7 +45,7 @@ exports.handler = async function (event) {
       const sent = []; const failed = [];
       for (const to of emails) {
         try {
-          const m = await sendMail({ to, subject: 'Welcome to Co·labr — let’s get your updates online', html: onboardingEmail(o.name.trim(), emails), fromName: 'Josiah Venture · Co·labr' });
+          const m = await sendMail({ to, subject: 'Welcome to Co·labr — let’s get your updates online', html: onboardingEmail(o.name.trim(), emails), fromName: 'Co·labr' });
           (m.ok ? sent : failed).push(to);
         } catch (e) { failed.push(to); }
       }
@@ -66,7 +66,7 @@ exports.handler = async function (event) {
       const f = (await gr.json()).fields || {};
       const emails = String(f[F.email] || '').split(',').map(s => s.trim()).filter(Boolean);
       const sent = []; const failed = [];
-      for (const to of emails) { try { const m = await sendMail({ to, subject: 'Your Co·labr sign-in & setup', html: onboardingEmail(f[F.name] || '', emails), fromName: 'Josiah Venture · Co·labr' }); (m.ok ? sent : failed).push(to); } catch (e) { failed.push(to); } }
+      for (const to of emails) { try { const m = await sendMail({ to, subject: 'Your Co·labr sign-in & setup', html: onboardingEmail(f[F.name] || '', emails), fromName: 'Co·labr' }); (m.ok ? sent : failed).push(to); } catch (e) { failed.push(to); } }
       return resp(200, { ok: true, sent, failed });
     }
 
