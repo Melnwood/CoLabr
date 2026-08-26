@@ -49,6 +49,17 @@ exports.handler = async function (event) {
     <p style="font-size:12px;color:#7d8794;line-height:1.6">You asked to sign in as ${esc(email)}. If this wasn't you, you can safely ignore this email — nothing happens without the link or code.</p>
   </div>`;
   const res = await sendMail({ to: email, subject: 'Your Co·labr sign-in link', html, fromName: 'Co·labr', essential: true });
+  // Record WHICH sender carried it. "Accepted for delivery" and "arrived" are not the
+  // same thing, and without this the only way to tell a Gmail send from a Resend one
+  // is to read Netlify logs after the fact. Never blocks the sign-in.
+  if (token) {
+    try {
+      const auth2 = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+      const note = email + ' via=' + (res.via || 'none') + (res.ok ? '' : ' FAILED: ' + String(res.error || '').slice(0, 90));
+      await fetch(`https://api.airtable.com/v0/${BASE}/${EVENTS}`, { method: 'POST', headers: auth2,
+        body: JSON.stringify({ fields: { 'Kind': 'Auth sent', 'Update ID': note } }) });
+    } catch (_) {}
+  }
   if (!res.ok) return r(502, { error: 'We couldn’t send the email — please try again.' });
   return r(200, { ok: true, ct: codeToken });
 };
