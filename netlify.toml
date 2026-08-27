@@ -44,3 +44,16 @@
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "SAMEORIGIN"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    # ENFORCED: four directives that cannot break a working page and close real holes.
+    # base-uri stops an injected <base> silently repointing every relative URL on the
+    # page. object-src kills plugin embeds. frame-ancestors is clickjacking cover that
+    # actually applies in modern browsers, where X-Frame-Options above is the fallback.
+    # form-action stops an injected form posting somewhere else.
+    Content-Security-Policy = "base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'"
+    # REPORT-ONLY: the real resource policy, watched before it is enforced. Two things
+    # make guessing it dangerous. Every page is built from inline scripts, so script-src
+    # still needs unsafe-inline until those move to nonces, which is why XSS escaping
+    # remains a separate job rather than something this header solves. And imported
+    # Mailchimp history embeds images from hosts nobody has a list of, so img-src stays
+    # broad on purpose rather than breaking fourteen years of somebody's updates.
+    Content-Security-Policy-Report-Only = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https://storage.googleapis.com; connect-src 'self' https://storage.googleapis.com https://nominatim.openstreetmap.org; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; report-uri /.netlify/functions/csp-report"
