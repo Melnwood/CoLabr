@@ -87,7 +87,7 @@ async function load(){
         <td><span class="st ${esc(x.state)}">${esc(LABEL[x.state]||x.state)}</span></td>
         <td>${x.state==='covered'||x.state==='paid'?'—':esc(String(x.day||0))}</td>
         <td>${esc(x.paidUntil||'—')}</td>
-        <td>${x.archive?`<a href="${esc(x.archive)}" target="_blank" rel="noopener" style="color:var(--acc);font-weight:700;text-decoration:none">sent ${esc(x.archiveSent||'')}</a>`:'—'}</td>
+        <td>${x.archive?`<a href="${esc(x.archive)}" target="_blank" rel="noopener noreferrer" style="color:var(--acc);font-weight:700;text-decoration:none">sent ${esc(x.archiveSent||'')}</a>`:'—'}</td>
         <td style="white-space:nowrap">
           ${x.covered?'<button class="act" data-uncover="1">Not org-covered</button>':'<button class="act" data-cover="1">Org-covered</button>'}
           <button class="act" data-pay="1">Mark paid 1 yr</button>

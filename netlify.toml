@@ -30,3 +30,17 @@
   for = "/site.webmanifest"
   [headers.values]
     Content-Type = "application/manifest+json"
+
+# Security headers for every page. Referrer-Policy is the one that matters most
+# here: a wall URL can carry a supporter's access key, and without this it would
+# travel to every outbound link in the Referer header. The key is also stripped
+# from the address bar in index.html; this is the belt to that pair of braces.
+# Content-Security-Policy is deliberately NOT set yet: every page carries inline
+# scripts, so a real policy needs nonces rather than a one-line guess.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"

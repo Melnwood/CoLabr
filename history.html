@@ -105,7 +105,7 @@
 </style>
 </head>
 <body>
-  <div class="bh"><div class="lg">JV</div><div><b>The Ellenwood Family</b><span>Josiah Venture · Frýdek-Místek, Czechia</span></div><a class="give" href="https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969" target="_blank" rel="noopener">Give</a></div>
+  <div class="bh"><div class="lg">JV</div><div><b>The Ellenwood Family</b><span>Josiah Venture · Frýdek-Místek, Czechia</span></div><a class="give" href="https://www.josiahventure.com/give/give-form/?designation=c3c16a55-b527-4490-bb86-3f981460c969" target="_blank" rel="noopener noreferrer">Give</a></div>
 
   <div class="wrap">
     <div class="kick">The Ellenwoods · Ministry Journal</div>
@@ -182,8 +182,8 @@ function openReader(i){
       <h2>${u.title}</h2>
       <div class="rmeta"><span>${u.date}, ${u.y}</span><span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#7a756f" stroke-width="1.9"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>${u.opens.toLocaleString()} opens</span></div>
       <p class="rtext">${u.exc||''}</p>
-      ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
-      <div class="give"><div class="t">Partner with the Ellenwoods</div><div class="d">Stand with us in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener">Give</a></div>
+      ${u.arc?`<a class="rorig" href="${u.arc}" target="_blank" rel="noopener noreferrer">Read the full original newsletter <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg></a>`:''}
+      <div class="give"><div class="t">Partner with the Ellenwoods</div><div class="d">Stand with us in this ministry.</div><a href="${GIVE}" target="_blank" rel="noopener noreferrer">Give</a></div>
     </div>`;
   document.getElementById('reader').classList.add('open');
   document.body.style.overflow='hidden';

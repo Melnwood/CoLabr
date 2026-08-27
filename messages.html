@@ -474,7 +474,7 @@ function openPerson(k){
     html+=`<div class="tstr${s.waiting?' wait':''}" data-si="${si}">
       <button type="button" class="tsh" data-ts="${si}">${s.waiting?'<span class="tsdot" title="Waiting on you"></span>':''}<span class="tslab">${label}</span><span class="tsmeta">${s.msgCount?s.msgCount+' message'+(s.msgCount===1?'':'s'):'prayer'}${s.hasPray&&s.msgCount?' + prayer':''} · ${esc(fmtD(s.lastAt))}</span><span class="tschev">▾</span></button>
       <div class="tsb">
-        ${(u&&u.cover)?`<a class="ucard" href="index.html?m=${encodeURIComponent(p.flip?p.name:(DATA.me||''))}&u=${encodeURIComponent(g.updateId)}&notour=1" target="_blank" rel="noopener" title="Open this update on the wall"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||g.updateTitle)} <span class="uopen">Read →</span></div></a>`:''}
+        ${(u&&u.cover)?`<a class="ucard" href="index.html?m=${encodeURIComponent(p.flip?p.name:(DATA.me||''))}&u=${encodeURIComponent(g.updateId)}&notour=1" target="_blank" rel="noopener noreferrer" title="Open this update on the wall"><div class="ucov" style="background-image:url('${esc(u.cover)}');background-position:${esc(u.focus||'50% 35%')}"></div><div class="ut">${esc(u.title||g.updateTitle)} <span class="uopen">Read →</span></div></a>`:''}
         ${s.entries.map(x=>{
           if(x.kind==='pray')return `<div class="praypill" style="align-self:flex-start;margin:6px 0 2px">${licon('pray')} ${p.flip?'You prayed for this':esc(p.name)+(plural(p.name)?' were':' was')+' praying'} · ${esc(fmtD(x.at))}</div>`;
           const mine=x.f===p.mineF;

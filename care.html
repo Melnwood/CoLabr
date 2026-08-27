@@ -154,7 +154,7 @@ function render(){
     +'<div class="ctitle">'+esc(i.title)+'</div>'
     +'<div class="cnote">'+esc(i.note)+'</div>'
     +(i.quote?'<div class="cquote">\u201c'+esc(i.quote)+'\u201d</div>':'')
-    +'<a class="copen" href="index.html?m='+encodeURIComponent(i.author)+'" target="_blank" rel="noopener">Open '+esc(i.author)+'\u2019s page \u2192</a>'
+    +'<a class="copen" href="index.html?m='+encodeURIComponent(i.author)+'" target="_blank" rel="noopener noreferrer">Open '+esc(i.author)+'\u2019s page \u2192</a>'
     +fupHtml(i)
     +'</div>').join('');
   box.querySelectorAll('[data-mark]').forEach(b=>b.addEventListener('click',()=>mark(b.dataset.mark)));

@@ -313,8 +313,8 @@ async function fbLoad(){
       const when=x.created?new Date(x.created).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'';
       const done=(x.status==='Fixed'||x.status==='Not a bug');
       return `<div class="fbrow${done?' done':''}">
-        ${x.shot?`<a href="${esc(x.shot)}" target="_blank" rel="noopener"><img class="fbshot" src="${esc(x.shot)}" alt=""></a>`:''}
-        <div class="fbnote">${esc(x.note)}<div class="fbmeta">${esc(x.name||x.email)} · ${when}${x.page?` · <a href="${esc(x.page)}" target="_blank" rel="noopener">open the page</a>`:''}</div></div>
+        ${x.shot?`<a href="${esc(x.shot)}" target="_blank" rel="noopener noreferrer"><img class="fbshot" src="${esc(x.shot)}" alt=""></a>`:''}
+        <div class="fbnote">${esc(x.note)}<div class="fbmeta">${esc(x.name||x.email)} · ${when}${x.page?` · <a href="${esc(x.page)}" target="_blank" rel="noopener noreferrer">open the page</a>`:''}</div></div>
         <select data-fb="${x.id}">${['New','Working on it','Fixed','Not a bug'].map(s=>`<option${s===x.status?' selected':''}>${s}</option>`).join('')}</select>
       </div>`;
     }).join('');
