@@ -2,6 +2,20 @@
   publish = "."
   functions = "netlify/functions"
 
+# ---- staging -------------------------------------------------------------------
+# Push to a branch called "staging" and Netlify builds it at its own URL, so a change
+# can be seen working before it reaches anybody's supporters. Until now every push
+# landed on the live site, which was survivable only because email is paused and no
+# page is public.
+#
+# TWO THINGS MUST BE SET IN THE NETLIFY UI, or staging writes to live data:
+#   1. Site configuration, Build and deploy, Branches: add "staging".
+#   2. Environment variables: for the staging context ONLY, override AIRTABLE_BASE
+#      with a duplicate of the base. Duplicating is a two-click job in Airtable.
+# Without step 2 this is not staging, it is a second door onto production.
+[context.staging.environment]
+  CL_ENV = "staging"
+
 [functions]
   node_bundler = "esbuild"
 
