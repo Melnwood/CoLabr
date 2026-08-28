@@ -43,7 +43,18 @@ const MARK = '<div style="margin:26px 0 4px;text-align:center;font-family:Georgi
   + 'font-size:17px;font-weight:600;color:#241f1b;letter-spacing:.01em">'
   + 'Co<span style="color:#FF6B5B">&#183;</span>labr</div>';
 
-async function sendMail({ to, subject, html, replyTo, fromName, essential }) {
+// Every send in the product comes through here, so this is the one place worth
+// watching. A blocked send is the sandbox fence doing its job and is not a fault;
+// anything else is mail that somebody expected and did not get.
+async function sendMail(opts) {
+  const res = await sendMailInner(opts);
+  if (res && !res.ok && !res.blocked) {
+    try { await require('./_alert').report('sendMail', res.error, 'subject: ' + String((opts && opts.subject) || '').slice(0, 60)); } catch (e) {}
+  }
+  return res;
+}
+
+async function sendMailInner({ to, subject, html, replyTo, fromName, essential }) {
   if (!to) return { ok: false, error: 'No recipient.' };
   if (html && html.indexOf('>Co<span style="color:#FF6B5B"') === -1) html = html + MARK;
   if (!essential) {

@@ -24,6 +24,11 @@
 [functions."billing-sweep"]
   schedule = "0 7 * * *"
 
+# Yesterday's faults, once a day at 06:30 UTC, and nothing at all on a clean day.
+# Recording errors is useless if nobody reads the table they land in.
+[functions."error-digest"]
+  schedule = "30 6 * * *"
+
 # Netlify has no built-in type for .webmanifest and falls back to octet-stream,
 # which Chrome logs as an error and some browsers refuse outright.
 [[headers]]
