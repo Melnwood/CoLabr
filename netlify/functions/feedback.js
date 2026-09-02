@@ -25,7 +25,7 @@ exports.handler = async function (event) {
       if (fr.ok) {
         rows = (((await fr.json()).records) || []).map(rec => {
           const c = rec.fields || {};
-          return { id: rec.id, note: c['Note'] || '', name: c['Name'] || '', email: c['Email'] || '', page: c['Page'] || '', shot: c['Screenshot'] || '', status: c['Status'] || 'New', created: rec.createdTime || '' };
+          return { id: rec.id, note: c['Note'] || '', name: c['Name'] || '', email: c['Email'] || '', page: c['Page'] || '', shot: c['Screenshot'] || '', status: c['Status'] || 'New', fix: c['Fix'] || '', created: rec.createdTime || '' };
         }).sort((a, z) => (z.created || '').localeCompare(a.created || ''));
       }
       return r(200, { ok: true, rows });
@@ -33,9 +33,31 @@ exports.handler = async function (event) {
     if (b.action === 'status') {
       if (!isAdmin(sess.email)) return r(403, { error: 'Admins only.' });
       if (!b.id || !b.status) return r(400, { error: 'Missing id/status.' });
+      // "Fixed" on its own asks a tester to take it on trust. Saying what changed
+      // lets them go and look, which is the whole point of them having reported it.
+      const fields = { Status: b.status };
+      if (typeof b.fix === 'string') fields.Fix = b.fix.slice(0, 2000);
       const pr = await fetch(`https://api.airtable.com/v0/${BASE}/${TABLE}`, { method: 'PATCH', headers: auth,
-        body: JSON.stringify({ records: [{ id: b.id, fields: { Status: b.status } }], typecast: true }) });
+        body: JSON.stringify({ records: [{ id: b.id, fields }], typecast: true }) });
       return pr.ok ? r(200, { ok: true }) : r(502, { error: 'Could not update.' });
+    }
+
+    // The shared list, for everyone testing rather than admins only. Without this a
+    // tester cannot tell whether last week's report was ever looked at, so the same
+    // thing gets reported three times and nobody feels heard. Emails are stripped:
+    // seeing that Jill raised something is the point, seeing her address is not.
+    if (b.action === 'board') {
+      let rows = [], url = `https://api.airtable.com/v0/${BASE}/${TABLE}?pageSize=100`;
+      const fr = await fetch(url, { headers: auth });
+      if (fr.ok) {
+        rows = (((await fr.json()).records) || []).map(rec => {
+          const c = rec.fields || {};
+          return { id: rec.id, note: c['Note'] || '', name: c['Name'] || '', page: c['Page'] || '',
+                   shot: c['Screenshot'] || '', status: c['Status'] || 'New', fix: c['Fix'] || '',
+                   created: rec.createdTime || '' };
+        }).sort((a, z) => (z.created || '').localeCompare(a.created || ''));
+      }
+      return r(200, { ok: true, rows, admin: isAdmin(sess.email), me: sess.email || '' });
     }
 
     // Help-chat oversight: every question anyone asked the bot, with triage status.

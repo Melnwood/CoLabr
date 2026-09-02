@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0D1B2A">
+<meta name="application-name" content="Co·labr">
+<meta name="apple-mobile-web-app-title" content="Co·labr">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Co·labr: what we are fixing</title>
+<style>
+  :root{--acc:#FF6600;--ink:#241f1b;--bg:#f4f1ec;--card:#fff;--line:#e7e0d6;--muted:#7a6c58;--text:#241f1b;--green:#2f9e63;--red:#c0392b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:22px 20px 90px}
+  .brandbar{display:flex;align-items:center;margin-bottom:14px}
+  .brandbar img{max-height:26px;max-width:150px;display:block}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .nav a{font-size:12.5px;font-weight:600;color:var(--text);background:#fff;border:1px solid var(--line);padding:8px 14px;border-radius:22px;text-decoration:none}
+  .nav a:hover{border-color:#d8cdb6}
+  h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px}
+  .lede{font-size:15px;line-height:1.6;color:var(--muted);margin:0 0 22px;max-width:60ch}
+  .lede b{color:var(--text)}
+
+  .tally{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 26px}
+  .pill{font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:20px;border:1px solid var(--line);background:#fff}
+  .pill.open{border-color:#f0c9a0;background:#fff8f2;color:#a35a00}
+  .pill.done{border-color:#bfe6cf;background:#eafaf1;color:#1f7a48}
+
+  .sect{font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+  .sect + .sect{margin-top:34px}
+  .grp{margin-bottom:36px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 17px;margin-bottom:11px}
+  .item.isdone{opacity:.72}
+  .meta{display:flex;gap:9px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);margin-bottom:8px}
+  .who{font-weight:700;color:var(--text)}
+  .chip{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:12px;border:1px solid var(--line)}
+  .chip.New{background:#fff8f2;border-color:#f0c9a0;color:#a35a00}
+  .chip.Working{background:#fffbe8;border-color:#e6d08a;color:#8a6b12}
+  .chip.Fixed{background:#eafaf1;border-color:#bfe6cf;color:#1f7a48}
+  .chip.Not{background:#f4f1ec;color:var(--muted)}
+  .note{font-size:15px;line-height:1.6;white-space:pre-wrap;margin:0 0 10px}
+  .where{font-size:12px;color:var(--muted);word-break:break-all;margin:0 0 10px}
+  .shot{display:block;max-width:210px;border:1px solid var(--line);border-radius:9px;margin:0 0 10px}
+
+  .fix{background:#f6fbf8;border-left:3px solid var(--green);border-radius:0 8px 8px 0;padding:11px 13px;margin:10px 0 0}
+  .fix b{display:block;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#1f7a48;margin-bottom:4px}
+  .fix p{margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap}
+
+  .admin{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);display:none}
+  .admin textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:14px;min-height:56px;resize:vertical;background:#fff}
+  .arow{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:9px}
+  .arow button{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--text);cursor:pointer;font-family:inherit}
+  .arow button:hover{border-color:#d8cdb6}
+  .arow button.save{background:var(--green);border-color:var(--green);color:#fff}
+  .state{font-size:14px;color:var(--muted);padding:26px 0}
+  .msg{font-size:13px;margin-left:4px}
+  .msg.ok{color:var(--green)} .msg.err{color:var(--red)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brandbar"><a href="https://www.josiahventure.com" target="_blank" rel="noopener noreferrer" title="Josiah Venture"><img class="jvlogo" src="/photos/jv-logo.png" alt="Josiah Venture"></a></div>
+    <div class="nav">
+      <a href="manage.html">My Dashboard</a>
+      <a href="sandbox.html">Sandbox</a>
+      <a href="admin.html" id="adminLink" style="display:none">Super admin</a>
+    </div>
+
+    <h1>What we are fixing</h1>
+    <p class="lede">Everything anyone has reported, and what was done about it. If something you raised is still here, <b>it has not been forgotten</b>. If it is marked fixed, the note says what changed so you can go and look.</p>
+
+    <div class="tally" id="tally"></div>
+    <div id="list"><div class="state">Loading…</div></div>
+  </div>
+
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ADMIN = false;
+
+function ago(iso){
+  if(!iso) return '';
+  const d = new Date(iso); if(isNaN(d)) return '';
+  const days = Math.floor((Date.now() - d) / 86400000);
+  if(days === 0) return 'today';
+  if(days === 1) return 'yesterday';
+  if(days < 30) return days + ' days ago';
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+}
+// The full URL is noise on a list. What matters is which screen it happened on.
+function screenOf(u){
+  try{
+    const p = new URL(u).pathname.replace(/^\//,'').replace(/\.html$/,'');
+    return p || 'the wall';
+  }catch(_){ return u ? String(u).slice(0,40) : ''; }
+}
+
+async function api(body){
+  const r = await fetch('/.netlify/functions/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.error || 'Could not reach the list.');
+  return d;
+}
+
+function card(x){
+  const done = x.status === 'Fixed' || x.status === 'Not a bug';
+  const chip = x.status === 'Working on it' ? 'Working' : (x.status === 'Not a bug' ? 'Not' : x.status);
+  return `<div class="item${done?' isdone':''}" data-id="${esc(x.id)}">
+    <div class="meta">
+      <span class="who">${esc(x.name || 'Someone')}</span>
+      <span>${esc(ago(x.created))}</span>
+      ${x.page?`<span>on <b>${esc(screenOf(x.page))}</b></span>`:''}
+      <span class="chip ${esc(chip)}">${esc(x.status)}</span>
+    </div>
+    <p class="note">${esc(x.note)}</p>
+    ${x.shot?`<a href="${esc(x.shot)}" target="_blank" rel="noopener noreferrer"><img class="shot" src="${esc(x.shot)}" alt="Screenshot from ${esc(x.name||'a tester')}" loading="lazy"></a>`:''}
+    ${x.fix?`<div class="fix"><b>What changed</b><p>${esc(x.fix)}</p></div>`:''}
+    <div class="admin"${ADMIN?' style="display:block"':''}>
+      <textarea data-fix placeholder="What did you actually change? This is what they will read.">${esc(x.fix||'')}</textarea>
+      <div class="arow">
+        <button type="button" class="save" data-set="Fixed">Fixed</button>
+        <button type="button" data-set="Working on it">Working on it</button>
+        <button type="button" data-set="Not a bug">Not a bug</button>
+        <span class="msg"></span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function render(rows){
+  const open = rows.filter(x => x.status !== 'Fixed' && x.status !== 'Not a bug');
+  const done = rows.filter(x => x.status === 'Fixed' || x.status === 'Not a bug');
+
+  document.getElementById('tally').innerHTML =
+    `<span class="pill open">${open.length} still open</span>` +
+    `<span class="pill done">${done.length} done</span>`;
+
+  const html =
+    (open.length ? `<div class="grp"><div class="sect">Still open</div>${open.map(card).join('')}</div>` : '') +
+    (done.length ? `<div class="grp"><div class="sect">Done</div>${done.map(card).join('')}</div>` : '') ||
+    '<div class="state">Nothing reported yet. The pencil, bottom right of any screen, is how things get here.</div>';
+  document.getElementById('list').innerHTML = html;
+
+  if(!ADMIN) return;
+  document.querySelectorAll('.item [data-set]').forEach(btn => btn.addEventListener('click', async () => {
+    const item = btn.closest('.item');
+    const msg = item.querySelector('.msg');
+    const fix = item.querySelector('[data-fix]').value.trim();
+    const status = btn.dataset.set;
+    // Saying it is fixed without saying what changed is the thing this page exists
+    // to stop, so it asks once rather than refusing outright.
+    if(status === 'Fixed' && !fix && !confirm('Mark this fixed without saying what changed?')) return;
+    item.querySelectorAll('button').forEach(b => b.disabled = true);
+    msg.className = 'msg'; msg.textContent = 'Saving…';
+    try{
+      await api({action:'status', id:item.dataset.id, status, fix});
+      msg.className = 'msg ok'; msg.textContent = 'Saved';
+      load();
+    }catch(e){
+      msg.className = 'msg err'; msg.textContent = e.message;
+      item.querySelectorAll('button').forEach(b => b.disabled = false);
+    }
+  }));
+}
+
+async function load(){
+  try{
+    const d = await api({action:'board'});
+    ADMIN = !!d.admin;
+    if(ADMIN){ const a = document.getElementById('adminLink'); if(a) a.style.display=''; }
+    render(d.rows || []);
+  }catch(e){
+    // A failed load must not read as an empty list, or nobody knows the difference.
+    document.getElementById('list').innerHTML =
+      `<div class="state">${esc(e.message)} <button type="button" onclick="load()" style="margin-left:8px;font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer">Try again</button></div>`;
+  }
+}
+load();
+</script>
+<script src="orgmark.js"></script>
+<script src="help.js"></script>
+</body>
+</html>
