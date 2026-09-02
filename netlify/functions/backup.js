@@ -24,9 +24,19 @@ exports.handler = async function (event) {
   try { const b = JSON.parse((event && event.body) || '{}'); if (b && b.next_run) scheduled = true; if (b && b.secret && b.secret === process.env.SESSION_SECRET) secretOk = true; } catch {}
   if (!scheduled && !secretOk) return { statusCode: 401, body: 'Not authorized.' };
 
-  const token = process.env.AIRTABLE_TOKEN, bucket = process.env.GCS_BUCKET;
+  const token = process.env.AIRTABLE_TOKEN;
+  // A snapshot of every table is the most sensitive object this system produces. It
+  // MUST NOT share a bucket with update photos, because that bucket is public so the
+  // photos can load on a wall. It did, and every supporter's name, email, message and
+  // prayer request was downloadable by anyone who knew the bucket name. Found 2026-08-28.
+  //
+  // No fallback to GCS_BUCKET on purpose. If the private bucket is not configured the
+  // backup does not run, because a backup that quietly writes somewhere public is worse
+  // than no backup at all.
+  const bucket = process.env.GCS_BACKUP_BUCKET;
   let sa; try { sa = JSON.parse(process.env.GCP_SA_KEY || ''); } catch { return done(500, 'No GCP key.'); }
-  if (!token || !bucket) return done(500, 'Missing config.');
+  if (!token) return done(500, 'Missing config.');
+  if (!bucket) return done(500, 'GCS_BACKUP_BUCKET is not set. Refusing to write a database snapshot rather than risk a public bucket.');
   const auth = { Authorization: 'Bearer ' + token };
 
   try {
