@@ -15,7 +15,13 @@ exports.handler = async function (event) {
   if (!isAdmin(session.email)) return r(403, { error: 'Admins only.' });
   try {
     const backup = require('./backup');
-    const out = await backup.handler({ httpMethod: 'POST', headers: {} });
+    // backup.js only answers to the Netlify scheduler or a caller carrying the secret.
+    // The admin check above is what authorises this; the secret is simply how that
+    // authority is handed on, and it never leaves the server.
+    const out = await backup.handler({
+      httpMethod: 'POST', headers: {},
+      body: JSON.stringify({ secret: process.env.SESSION_SECRET })
+    });
     let body = {};
     try { body = JSON.parse(out.body || '{}'); } catch (e) { body = { raw: String(out.body || '').slice(0, 200) }; }
     return r(out.statusCode === 200 ? 200 : 502, {
