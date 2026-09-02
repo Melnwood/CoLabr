@@ -17,7 +17,7 @@
  *
  *   node scripts/check.js
  */
-const fs = require('fs'), path = require('path'), vm = require('vm'), cp = require('child_process');
+import fs from 'fs'; import vm from 'vm'; import cp from 'child_process';
 const fail = [];
 const bad = (check, detail) => fail.push(`${check}: ${detail}`);
 
@@ -92,6 +92,32 @@ for (const f of tracked) {
   }
   if ((s.match(/"/g) || []).length % 2) bad('toml', 'odd number of quotes');
 }
+
+// ---- nothing sensitive readable by a stranger ----
+// A database snapshot sat in a public bucket for weeks because the code looked fine and
+// nobody fetched it back without credentials. This does exactly that. Skipped offline so
+// it never blocks a local run, but it runs in CI on every push.
+async function checkExposure() {
+  const bucket = 'colabr-photos-jv';                 // the deliberately public photo bucket
+  const mustNotBeThere = ['backups/', 'backups/latest.json'];
+  for (const prefix of mustNotBeThere) {
+    try {
+      const u = prefix.endsWith('/')
+        ? `https://storage.googleapis.com/storage/v1/b/${bucket}/o?prefix=${encodeURIComponent(prefix)}&maxResults=1`
+        : `https://storage.googleapis.com/${bucket}/${prefix}`;
+      const r = await fetch(u, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) continue;
+      if (prefix.endsWith('/')) {
+        const d = await r.json().catch(() => ({}));
+        if ((d.items || []).length) bad('exposure', `${prefix} is readable by anyone in the public bucket`);
+      } else {
+        bad('exposure', `${prefix} is downloadable by anyone, with no sign-in`);
+      }
+    } catch (e) { /* offline or blocked: not a failure, just unchecked */ }
+  }
+}
+
+await checkExposure();
 
 if (dashCount) {
   console.log(`\nwarning: ${dashCount} em or en dash${dashCount === 1 ? '' : 'es'} still in visible copy`);

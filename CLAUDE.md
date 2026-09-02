@@ -45,6 +45,14 @@ to Josiah Venture rather than anywhere invented. A stored value may be a bare do
 so normalise it to https or the browser reads it as a path. On working pages open it
 in a new tab: a logo must never cost somebody an unsaved draft.
 
+**Follow the data to where it lands, and check who can read it there.** Reading the
+code is not enough. On 2026-08-28 the three-hourly database snapshot was found sitting
+in a public bucket, downloadable by anyone, because the backup job reused the bucket
+that already had credentials wired up and nobody asked whether that bucket was public.
+It was, deliberately, so update photos would load. Both facts were known. Nobody joined
+them. Before calling anything done that writes data anywhere, fetch it back the way a
+stranger would, with no credentials, and see what comes back.
+
 **Fine-line SVG icons, never emoji.** Mature, not cheeky.
 
 **No em dashes or en dashes anywhere a reader sees.** Commas, full stops, or "and".
