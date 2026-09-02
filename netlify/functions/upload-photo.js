@@ -7,7 +7,13 @@ exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') return r(405, { error: 'Method not allowed' });
   if (!sessionFromEvent(event)) return r(401, { error: 'Please sign in.' });
 
-  const bucket = process.env.GCS_BUCKET;
+  // Update photos have to be public: they are embedded in emails that people open
+  // weeks later, and a signed URL would have expired by then. Sandbox screenshots are
+  // the opposite. They show whatever was on a tester's screen when something broke,
+  // which is routinely a live dashboard or somebody's private wall, and only signed-in
+  // members ever look at them. Those go somewhere strangers cannot reach.
+  const PRIVATE_FOLDERS = ['feedback'];
+  const privateBucket = process.env.GCS_PRIVATE_BUCKET || process.env.GCS_BACKUP_BUCKET || '';
   const keyRaw = process.env.GCP_SA_KEY;
   if (!bucket || !keyRaw) return r(500, { error: 'Photo storage is not set up yet.' });
   let sa; try { sa = JSON.parse(keyRaw); } catch { return r(500, { error: 'Service account key is not valid JSON.' }); }
@@ -18,6 +24,8 @@ exports.handler = async function (event) {
   const type = b.type || 'image/jpeg';
   const ext = (type.split('/')[1] || 'jpg').replace('jpeg', 'jpg').replace('svg+xml', 'svg');
   const folder = /^[a-z0-9_-]{1,24}$/i.test(b.folder || '') ? b.folder : 'updates';
+  const wantsPrivate = PRIVATE_FOLDERS.includes(folder) && !!privateBucket;
+  const bucket = wantsPrivate ? privateBucket : process.env.GCS_BUCKET;
   const name = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   try {
@@ -28,7 +36,11 @@ exports.handler = async function (event) {
       { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': type }, body: bytes }
     );
     if (!up.ok) { const t = await up.text(); return r(up.status, { error: 'Upload failed. ' + t.slice(0, 140) }); }
-    return r(200, { url: `https://storage.googleapis.com/${bucket}/${name}` });
+    // A private object has no public URL, so hand back the reader that checks the
+    // caller instead. Everything else keeps the direct storage link it has always had.
+    return r(200, { url: wantsPrivate
+      ? `/.netlify/functions/shot?f=${encodeURIComponent(name)}`
+      : `https://storage.googleapis.com/${bucket}/${name}` });
   } catch (e) {
     return r(502, { error: 'Could not upload the photo.' });
   }

@@ -1382,7 +1382,7 @@ async function openReader(i){
     // Inline tr only carries title+excerpt for the cards — the full body always comes
     // from the per-language file, so a stub can never shadow the real translation.
     let tr=(u.tr&&u.tr[target]&&Array.isArray(u.tr[target].blocks))?u.tr[target]:null;
-    if(!tr){ try{ const r=await fetch(TRBASE+'/translations/'+u.id+'/'+target+'.json',{cache:'no-store'});
+    if(!tr){ try{ const r=await fetch('/.netlify/functions/translation?u='+encodeURIComponent(u.id)+'&lang='+encodeURIComponent(target)+'&m='+encodeURIComponent(PAGEM||FAMILY||'')+(VIEWTOK?'&t='+encodeURIComponent(VIEWTOK):''),{cache:'no-store'});
       if(r.ok){ const d=await r.json(); if(d&&Array.isArray(d.blocks)) tr=d; } }catch(e){} }
     if(tr&&Array.isArray(tr.blocks)){ title=tr.title||title; blocks=tr.blocks;
       tnote=`<div class="trnote">${licon('globe',12)} Shown in ${langName(target)} · AI‑translated from ${(src&&src!=='en')?langName(src):'the original'}</div>`; }
@@ -1503,7 +1503,7 @@ function closeSub(){document.getElementById('subov').classList.remove('open');do
 ['followBtn','followBtn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',openSub);});
 
 // ---- reader language ----
-var TRBASE='https://storage.googleapis.com/colabr-photos-jv';
+/* Translations are no longer fetched from storage directly: they carry prayer requests, so they go through /.netlify/functions/translation, which checks the reader the same way the wall does. */
 var RLANGS=['en','cs','pl','uk','sk','ro','bg','sl','lv','et','hu','sr','de','es'];
 
 // The wall's own words, so a national team reads their page entirely in their

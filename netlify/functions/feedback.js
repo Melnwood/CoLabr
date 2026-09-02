@@ -6,6 +6,17 @@ const { sendMail, esc } = require('./_mail');
 const BASE = process.env.AIRTABLE_BASE || 'appsSmwptTnmK4luA';
 const TABLE = 'tblsPYpJB2IbdP975';
 
+// Rows written before the move still carry a direct storage link. Rewrite any of those
+// to the gated reader, so the browser stops asking a public bucket for a screenshot of
+// somebody's private wall. Objects already moved serve from the private bucket; ones
+// not yet moved still resolve, because the reader falls back while migration finishes.
+function gateShot(u) {
+  const v = String(u || '');
+  const m = /\/(feedback\/[A-Za-z0-9._-]+)$/.exec(v);
+  if (m) return `/.netlify/functions/shot?f=${encodeURIComponent(m[1])}`;
+  return v;
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') return r(405, { error: 'Method not allowed' });
   const sess = sessionFromEvent(event);
@@ -25,7 +36,7 @@ exports.handler = async function (event) {
       if (fr.ok) {
         rows = (((await fr.json()).records) || []).map(rec => {
           const c = rec.fields || {};
-          return { id: rec.id, note: c['Note'] || '', name: c['Name'] || '', email: c['Email'] || '', page: c['Page'] || '', shot: c['Screenshot'] || '', status: c['Status'] || 'New', fix: c['Fix'] || '', created: rec.createdTime || '' };
+          return { id: rec.id, note: c['Note'] || '', name: c['Name'] || '', email: c['Email'] || '', page: c['Page'] || '', shot: gateShot(c['Screenshot']), status: c['Status'] || 'New', fix: c['Fix'] || '', created: rec.createdTime || '' };
         }).sort((a, z) => (z.created || '').localeCompare(a.created || ''));
       }
       return r(200, { ok: true, rows });
@@ -53,7 +64,7 @@ exports.handler = async function (event) {
         rows = (((await fr.json()).records) || []).map(rec => {
           const c = rec.fields || {};
           return { id: rec.id, note: c['Note'] || '', name: c['Name'] || '', page: c['Page'] || '',
-                   shot: c['Screenshot'] || '', status: c['Status'] || 'New', fix: c['Fix'] || '',
+                   shot: gateShot(c['Screenshot']), status: c['Status'] || 'New', fix: c['Fix'] || '',
                    created: rec.createdTime || '' };
         }).sort((a, z) => (z.created || '').localeCompare(a.created || ''));
       }

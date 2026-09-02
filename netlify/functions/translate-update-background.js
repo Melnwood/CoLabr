@@ -20,7 +20,10 @@ exports.handler = async function (event) {
     if (!b.secret || (b.secret !== process.env.SESSION_SECRET && b.secret !== process.env.IMPORT_SECRET)) return j(401);
     if (!b.recordId) return j(400);
 
-    const airToken = process.env.AIRTABLE_TOKEN, key = process.env.ANTHROPIC_API_KEY, bucket = process.env.GCS_BUCKET;
+    const airToken = process.env.AIRTABLE_TOKEN, key = process.env.ANTHROPIC_API_KEY;
+    // Translations carry the whole update, prayer requests included, so they go to the
+    // private bucket and are served through /.netlify/functions/translation.
+    const bucket = process.env.GCS_PRIVATE_BUCKET || process.env.GCS_BACKUP_BUCKET || process.env.GCS_BUCKET;
     let sa; try { sa = JSON.parse(process.env.GCP_SA_KEY || ''); } catch { return j(500); }
     if (!airToken || !key || !bucket) return j(500);
     const auth = { Authorization: 'Bearer ' + airToken, 'Content-Type': 'application/json' };

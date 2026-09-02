@@ -275,12 +275,12 @@ function view(u){
   }
   return {title:u.title, blocks:u.blocks||[], translatedFrom:''};
 }
-const TRBASE='https://storage.googleapis.com/colabr-photos-jv';
+/* Translations go through the gated reader now, not straight from storage. */
 async function viewFull(u){
   const src=u.src||'en'; const d=view(u);
   if(src==='en') return d;
   try{
-    const r=await fetch(TRBASE+'/translations/'+u.id+'/en.json',{cache:'no-store'});
+    const r=await fetch('/.netlify/functions/translation?u='+encodeURIComponent(u.id)+'&lang=en',{cache:'no-store'});
     if(r.ok){ const t=await r.json(); if(t&&Array.isArray(t.blocks)) return {title:t.title||d.title, blocks:t.blocks, translatedFrom:src}; }
   }catch(e){}
   return d;
