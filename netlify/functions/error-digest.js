@@ -15,7 +15,7 @@ exports.handler = async function () {
 
   try {
     const since = encodeURIComponent(
-      "AND(OR({Kind}='Error',{Kind}='CSP'),DATETIME_DIFF(NOW(),CREATED_TIME(),'hours')<24)"
+      "AND(OR({Kind}='Error',{Kind}='CSP',{Kind}='Watch'),DATETIME_DIFF(NOW(),CREATED_TIME(),'hours')<24)"
     );
     const r = await fetch(`https://api.airtable.com/v0/${BASE}/${EVENTS}?filterByFormula=${since}&pageSize=100`, { headers: auth });
     if (!r.ok) return { statusCode: 200, body: 'query failed' };

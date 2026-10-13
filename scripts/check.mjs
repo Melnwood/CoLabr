@@ -97,9 +97,11 @@ for (const f of tracked) {
 // A database snapshot sat in a public bucket for weeks because the code looked fine and
 // nobody fetched it back without credentials. This does exactly that. Skipped offline so
 // it never blocks a local run, but it runs in CI on every push.
+const migrating = [];
 async function checkExposure() {
   const bucket = 'colabr-photos-jv';                 // the deliberately public photo bucket
   const mustNotBeThere = ['backups/', 'backups/latest.json'];
+  const shouldNotBeThere = ['translations/', 'feedback/'];   // migrating; warn until clean
   for (const prefix of mustNotBeThere) {
     try {
       const u = prefix.endsWith('/')
@@ -115,10 +117,23 @@ async function checkExposure() {
       }
     } catch (e) { /* offline or blocked: not a failure, just unchecked */ }
   }
+  for (const prefix of shouldNotBeThere) {
+    try {
+      const r = await fetch(`https://storage.googleapis.com/storage/v1/b/${bucket}/o?prefix=${encodeURIComponent(prefix)}&maxResults=1&fields=items(name)`,
+        { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) continue;
+      const d = await r.json().catch(() => ({}));
+      if ((d.items || []).length) migrating.push(prefix);
+    } catch (e) {}
+  }
 }
 
 await checkExposure();
 
+if (migrating.length) {
+  console.log(`\nwarning: still readable by anyone in the public bucket: ${migrating.join(' ')}`);
+  console.log('  run migrate-storage-background for each, then these become blocking');
+}
 if (dashCount) {
   console.log(`\nwarning: ${dashCount} em or en dash${dashCount === 1 ? '' : 'es'} still in visible copy`);
   console.log('  ' + dashFiles.join(' '));

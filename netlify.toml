@@ -1,6 +1,9 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  # Nothing reaches a supporter without passing these. A failing check fails the
+  # deploy, so a broken page cannot be published by anybody, including me at 2am.
+  command = "node scripts/check.mjs"
 
 # ---- staging -------------------------------------------------------------------
 # Push to a branch called "staging" and Netlify builds it at its own URL, so a change
@@ -40,6 +43,12 @@
 
 # Yesterday's faults, once a day at 06:30 UTC, and nothing at all on a clean day.
 # Recording errors is useless if nobody reads the table they land in.
+[functions."watchdog"]
+  # Checks the LIVE system every morning, half an hour before the digest that reports
+  # it. Source checks run at deploy; this is for the gap between correct code and a
+  # safe system, which is where the backup exposure lived.
+  schedule = "0 6 * * *"
+
 [functions."error-digest"]
   schedule = "30 6 * * *"
 
