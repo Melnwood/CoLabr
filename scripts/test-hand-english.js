@@ -11,6 +11,10 @@ const { privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048,
 process.env.AIRTABLE_TOKEN = 'tok';
 process.env.ANTHROPIC_API_KEY = 'key';
 process.env.GCS_BUCKET = 'bucket';
+// A translation carries the whole update, prayer requests included, so it goes to the
+// private bucket. This harness used to set only GCS_BUCKET, the public one, which is
+// how a test ends up certifying the behaviour you were trying to get rid of.
+process.env.GCS_PRIVATE_BUCKET = 'privatebucket';
 process.env.SESSION_SECRET = 'sekret';
 process.env.GCP_SA_KEY = JSON.stringify({ client_email: 'x@y.z', private_key: privateKey });
 
@@ -115,6 +119,15 @@ const check = (name, cond, detail) => {
   en = r.uploads['translations/recTEST/en.json'];
   check('title is the writer\'s own', en && en.title === 'Winter Academy', en && en.title);
   check('no translation call was made', r.asked.length === 0, JSON.stringify(r.asked));
+
+  console.log('\n— 6. no private bucket: refuses rather than writing somewhere public —');
+  const savedPriv = process.env.GCS_PRIVATE_BUCKET, savedBack = process.env.GCS_BACKUP_BUCKET;
+  delete process.env.GCS_PRIVATE_BUCKET; delete process.env.GCS_BACKUP_BUCKET;
+  r = await run(base());
+  check('wrote nothing at all', Object.keys(r.uploads).length === 0, JSON.stringify(Object.keys(r.uploads)));
+  check('never fell back to the public bucket', !Object.keys(r.uploads).length);
+  if (savedPriv) process.env.GCS_PRIVATE_BUCKET = savedPriv;
+  if (savedBack) process.env.GCS_BACKUP_BUCKET = savedBack;
 
   console.log('\n' + (fail ? 'FAILED ' + fail + ' / passed ' + pass : 'ALL ' + pass + ' CHECKS PASSED') + '\n');
   process.exit(fail ? 1 : 0);

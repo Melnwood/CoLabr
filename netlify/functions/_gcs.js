@@ -54,7 +54,13 @@ async function readObject(name) {
   const pub = publicBucket();
   if (pub) {
     const r = await fetch(`https://storage.googleapis.com/${pub}/${name}`);
-    if (r.ok) return { ok: true, body: await r.arrayBuffer(), type: r.headers.get('content-type') || 'application/octet-stream', from: 'public' };
+    if (r.ok) {
+      // Every one of these is an object still sitting where strangers can read it.
+      // Reported, deduplicated to one an hour, so "temporary until the migration
+      // runs" cannot quietly become how it works.
+      try { await require('./_alert').report('readObject', 'served from the PUBLIC bucket, migration still outstanding', name.split('/')[0] + '/'); } catch (e) {}
+      return { ok: true, body: await r.arrayBuffer(), type: r.headers.get('content-type') || 'application/octet-stream', from: 'public' };
+    }
   }
   return { ok: false };
 }

@@ -23,7 +23,15 @@ exports.handler = async function (event) {
     const airToken = process.env.AIRTABLE_TOKEN, key = process.env.ANTHROPIC_API_KEY;
     // Translations carry the whole update, prayer requests included, so they go to the
     // private bucket and are served through /.netlify/functions/translation.
-    const bucket = process.env.GCS_PRIVATE_BUCKET || process.env.GCS_BACKUP_BUCKET || process.env.GCS_BUCKET;
+    // No fallback to GCS_BUCKET. A translation is the whole update, prayer requests
+    // included, so writing one to the public bucket is the same mistake the backups
+    // made. backup.js refuses in this case and this did not, which is how a lesson
+    // gets learned in one file and not the one beside it.
+    const bucket = process.env.GCS_PRIVATE_BUCKET || process.env.GCS_BACKUP_BUCKET;
+    if (!bucket) {
+      try { await require('./_alert').report('translate', 'no private bucket set, refusing to write translations somewhere public'); } catch (e) {}
+      return j(200);
+    }
     let sa; try { sa = JSON.parse(process.env.GCP_SA_KEY || ''); } catch { return j(500); }
     if (!airToken || !key || !bucket) return j(500);
     const auth = { Authorization: 'Bearer ' + airToken, 'Content-Type': 'application/json' };
